@@ -1,0 +1,97 @@
+# NexusCRM - Development Prompts
+
+## Code Generation Prompts
+
+### Component Creation
+"Create a new React component for [feature] following the existing codebase patterns. Use TypeScript, Tailwind CSS for styling, and ensure it integrates with the ThemeContext for dark mode support."
+
+"Generate a reusable form component for [purpose] that matches the design system used in the settings pages, with proper validation and error handling."
+
+"Create a modal/dialog component that follows the existing UI patterns in the codebase, with support for dark mode and responsive design."
+
+### Feature Development
+"Add a new feature to [page] that allows users to [action]. Follow the existing API patterns in services/api.ts and integrate with Supabase for data persistence."
+
+"Implement a new filter option in the contacts page that filters by [criteria]. Ensure it works with the existing server-side pagination and sorting."
+
+"Create a new dashboard widget that displays [metric] using Recharts, following the patterns in the dashboard page."
+
+### API Integration
+"Add a new API endpoint integration in services/api.ts that fetches [data] from the Appointment360 API, following the existing contact fetching patterns with proper error handling and type mapping."
+
+"Create a Supabase service function that [action] following the patterns in services/supabase.ts, with proper TypeScript types and error handling."
+
+### Authentication & Authorization
+"Add role-based access control to [page/feature] that checks user roles stored in Supabase and restricts access accordingly."
+
+"Implement a new authentication method [method] following the existing Supabase auth patterns in contexts/AuthContext.tsx."
+
+### UI/UX Improvements
+"Improve the responsive design of [component/page] for mobile devices, ensuring it follows the mobile-first approach used in the codebase."
+
+"Add loading states and error boundaries to [page] following the patterns used in other pages, with proper user feedback."
+
+"Implement optimistic updates for [feature] to improve perceived performance, with proper error rollback handling."
+
+### TypeScript & Type Safety
+"Add TypeScript types for [data structure] in types/index.ts, ensuring they match the API response structure and are used consistently across the codebase."
+
+"Refactor [component] to use proper TypeScript types and remove any 'any' types, following the existing type patterns."
+
+### Testing & Debugging
+"Add error logging and monitoring to [feature] to help debug production issues, following the existing error handling patterns."
+
+"Create a debug utility that helps log API requests and responses for [service] during development."
+
+### Code Refactoring
+"Refactor [component] to extract reusable logic into a custom hook, following the patterns in hooks/useAuth.ts and hooks/useTheme.ts."
+
+"Optimize [page] for performance by implementing proper memoization and reducing unnecessary re-renders, following React best practices."
+
+### Documentation
+"Add JSDoc comments to [function/component] explaining its purpose, parameters, return values, and usage examples."
+
+"Create inline documentation for [complex logic] explaining the business rules and implementation details."
+
+## AI Assistant Prompts (for Gemini integration)
+
+"Explain how the AI assistant feature works in this codebase, including how it integrates with Google Gemini API and the function calling mechanism for contact search."
+
+"Add a new AI function capability that allows users to [action] through natural language, following the existing searchContacts function pattern."
+
+"How does the AI assistant maintain conversation context and save chat history to Supabase?"
+
+## Architecture & Design Questions
+
+"Explain the authentication flow in this application, from user registration through protected routes."
+
+"How does the theme switching work? Walk through the ThemeContext implementation and how it persists across page reloads."
+
+"Describe how server-side pagination is implemented in the contacts page and how it integrates with filtering and sorting."
+
+"What is the data flow for fetching contacts? Trace from the UI component through the API service to the external Appointment360 API."
+
+"How are environment variables configured in this Next.js application? Explain the difference between NEXT_PUBLIC_ and regular env vars."
+
+"What is the folder structure pattern for this Next.js app? Explain the route groups (auth) and (dashboard) and how they work."
+
+"How does the settings page handle multiple tabs and sub-routes? Explain the routing structure."
+
+## Troubleshooting Prompts
+
+"Debug why [component] is not rendering correctly in dark mode. Check ThemeContext integration and Tailwind classes."
+
+"Investigate why API calls are failing. Check environment variables, API endpoint configuration, and CORS settings."
+
+"Fix the layout issue on [page] where [problem]. Ensure responsive design patterns are followed."
+
+"Why is the Supabase authentication not working? Check the AuthContext implementation and Supabase configuration."
+
+## Migration & Upgrade Prompts
+
+"Upgrade Next.js to the latest version while maintaining compatibility with existing code and dependencies."
+
+"Migrate [feature] from client-side state to server-side state using Next.js Server Components, if applicable."
+
+"Add TypeScript strict mode to the project and fix all resulting type errors."
+
