@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../../hooks/useAuth';
 import { updateUserProfile } from '../../../../services/user';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
+import { Button } from '../../../../components/ui/Button';
+import { BellIcon, AlertTriangleIcon, SuccessIcon } from '../../../../components/icons/IconComponents';
+import { cn } from '../../../../utils/cn';
 
 const NotificationsSettings: React.FC = () => {
     const { user, refreshUserProfile } = useAuth();
@@ -47,48 +51,95 @@ const NotificationsSettings: React.FC = () => {
     };
 
     return (
-        <div>
-            <h2 className="text-2xl font-bold text-card-foreground mb-6">Notifications</h2>
-            <p className="text-muted-foreground mb-6">
-                Manage how you receive notifications from NexusCRM.
-            </p>
+        <div className="flex flex-col gap-6 w-full max-w-full">
+            <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                    <BellIcon className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                    <h2 className="text-3xl font-bold text-foreground">Notifications</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Manage how you receive notifications from NexusCRM</p>
+                </div>
+            </div>
 
             {errorMessage && (
-                <div className="mb-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500">
-                    {errorMessage}
-                </div>
+                <Card className="border-error/20 bg-error/5">
+                    <CardContent className="flex items-center gap-3 p-4">
+                        <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
+                        <p className="text-sm text-error">{errorMessage}</p>
+                    </CardContent>
+                </Card>
             )}
             
             {successMessage && (
-                <div className="mb-4 p-4 bg-green-500/10 border border-green-500/20 rounded-lg text-green-500">
-                    {successMessage}
-                </div>
+                <Card className="border-success/20 bg-success/5">
+                    <CardContent className="flex items-center gap-3 p-4">
+                        <SuccessIcon className="w-5 h-5 text-success flex-shrink-0" />
+                        <p className="text-sm text-success">{successMessage}</p>
+                    </CardContent>
+                </Card>
             )}
 
-            <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary">
-                    <div>
-                        <p className="font-medium text-card-foreground">Weekly Reports</p>
-                        <p className="text-sm text-muted-foreground">Receive a summary of your contact activity every week.</p>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notification Preferences</CardTitle>
+                    <CardDescription>Choose which notifications you want to receive</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/50">
+                        <div className="flex-1">
+                            <p className="font-medium text-foreground mb-1">Weekly Reports</p>
+                            <p className="text-sm text-muted-foreground">Receive a summary of your contact activity every week</p>
+                        </div>
+                        <button 
+                            onClick={() => handleToggle('weeklyReports')}
+                            className={cn(
+                                "relative w-14 h-8 rounded-full p-1 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                prefs.weeklyReports ? 'bg-primary' : 'bg-muted'
+                            )}
+                            aria-label={prefs.weeklyReports ? 'Disable weekly reports' : 'Enable weekly reports'}
+                            aria-pressed={prefs.weeklyReports}
+                            title={prefs.weeklyReports ? 'Disable weekly reports' : 'Enable weekly reports'}
+                        >
+                            <span className={cn(
+                                "block w-6 h-6 rounded-full bg-white transform transition-transform shadow-sm",
+                                prefs.weeklyReports ? 'translate-x-6' : 'translate-x-0'
+                            )}/>
+                        </button>
                     </div>
-                    <button onClick={() => handleToggle('weeklyReports')} className={`w-14 h-8 rounded-full p-1 transition-colors ${prefs.weeklyReports ? 'bg-primary' : 'bg-muted'}`}>
-                        <span className={`block w-6 h-6 rounded-full bg-white transform transition-transform ${prefs.weeklyReports ? 'translate-x-6' : 'translate-x-0'}`}/>
-                    </button>
-                </div>
-                 <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-secondary">
-                    <div>
-                        <p className="font-medium text-card-foreground">New Lead Alerts</p>
-                        <p className="text-sm text-muted-foreground">Get notified immediately when a new lead is added.</p>
+                    
+                    <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/50">
+                        <div className="flex-1">
+                            <p className="font-medium text-foreground mb-1">New Lead Alerts</p>
+                            <p className="text-sm text-muted-foreground">Get notified immediately when a new lead is added</p>
+                        </div>
+                        <button 
+                            onClick={() => handleToggle('newLeadAlerts')}
+                            className={cn(
+                                "relative w-14 h-8 rounded-full p-1 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
+                                prefs.newLeadAlerts ? 'bg-primary' : 'bg-muted'
+                            )}
+                            aria-label={prefs.newLeadAlerts ? 'Disable new lead alerts' : 'Enable new lead alerts'}
+                            aria-pressed={prefs.newLeadAlerts}
+                            title={prefs.newLeadAlerts ? 'Disable new lead alerts' : 'Enable new lead alerts'}
+                        >
+                            <span className={cn(
+                                "block w-6 h-6 rounded-full bg-white transform transition-transform shadow-sm",
+                                prefs.newLeadAlerts ? 'translate-x-6' : 'translate-x-0'
+                            )}/>
+                        </button>
                     </div>
-                    <button onClick={() => handleToggle('newLeadAlerts')} className={`w-14 h-8 rounded-full p-1 transition-colors ${prefs.newLeadAlerts ? 'bg-primary' : 'bg-muted'}`}>
-                        <span className={`block w-6 h-6 rounded-full bg-white transform transition-transform ${prefs.newLeadAlerts ? 'translate-x-6' : 'translate-x-0'}`}/>
-                    </button>
-                </div>
-            </div>
-             <div className="mt-6 text-right">
-                <button onClick={handleSaveChanges} disabled={isSaving} className="bg-primary-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-700 transition-colors disabled:bg-primary-400">
-                    {isSaving ? 'Saving...' : 'Save Preferences'}
-                </button>
+                </CardContent>
+            </Card>
+            
+            <div className="flex justify-end">
+                <Button 
+                    onClick={handleSaveChanges} 
+                    disabled={isSaving}
+                    isLoading={isSaving}
+                >
+                    Save Preferences
+                </Button>
             </div>
         </div>
     );

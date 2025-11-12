@@ -2,34 +2,68 @@
 
 import React from 'react';
 import { useTheme } from '../../../../hooks/useTheme';
-import { SunIcon, MoonIcon } from '../../../../components/icons/IconComponents';
+import { SunIcon, MoonIcon, PaintBrushIcon } from '../../../../components/icons/IconComponents';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
+import { Button } from '../../../../components/ui/Button';
+import { cn } from '../../../../utils/cn';
 
 const AppearanceSettings: React.FC = () => {
     const { theme, toggleTheme } = useTheme();
   
     return (
-      <div>
-        <h2 className="text-2xl font-bold mb-6 text-card-foreground">Appearance</h2>
-        <p className="text-muted-foreground mb-6">
-          Customize the look and feel of your workspace.
-        </p>
-        
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-card-foreground">Theme</h3>
-          <div className="flex items-center space-x-4 p-4 border border-border rounded-lg bg-secondary">
-            <p className="text-muted-foreground flex-1">
-              Choose between a light or dark theme for the application.
-            </p>
-            <div className="relative inline-flex items-center cursor-pointer p-1 bg-background rounded-full">
-              <button onClick={theme !== 'light' ? toggleTheme : undefined} className={`p-2 rounded-full ${theme === 'light' ? 'bg-primary text-white' : 'text-muted-foreground'}`}>
-                <SunIcon className="w-5 h-5"/>
-              </button>
-              <button onClick={theme !== 'dark' ? toggleTheme : undefined} className={`p-2 rounded-full ${theme === 'dark' ? 'bg-primary text-white' : 'text-muted-foreground'}`}>
-                <MoonIcon className="w-5 h-5"/>
-              </button>
+      <div className="flex flex-col gap-6 w-full max-w-full">
+        <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+                <PaintBrushIcon className="w-6 h-6 text-primary" />
             </div>
-          </div>
+            <div>
+                <h2 className="text-3xl font-bold text-foreground">Appearance</h2>
+                <p className="text-sm text-muted-foreground mt-1">Customize the look and feel of your workspace</p>
+            </div>
         </div>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>Theme</CardTitle>
+                <CardDescription>Choose between a light or dark theme for the application</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/50">
+                    <div className="flex-1">
+                        <p className="font-medium text-foreground mb-1">Current Theme</p>
+                        <p className="text-sm text-muted-foreground">
+                            {theme === 'light' ? 'Light mode' : 'Dark mode'} is currently active
+                        </p>
+                    </div>
+                    <div className="relative inline-flex items-center p-1 bg-background rounded-full border border-border shadow-sm">
+                        <Button
+                            variant={theme === 'light' ? 'primary' : 'ghost'}
+                            size="sm"
+                            iconOnly
+                            onClick={theme !== 'light' ? toggleTheme : undefined}
+                            className={cn(
+                                "rounded-full transition-all",
+                                theme === 'light' && "shadow-md"
+                            )}
+                        >
+                            <SunIcon className="w-5 h-5"/>
+                        </Button>
+                        <Button
+                            variant={theme === 'dark' ? 'primary' : 'ghost'}
+                            size="sm"
+                            iconOnly
+                            onClick={theme !== 'dark' ? toggleTheme : undefined}
+                            className={cn(
+                                "rounded-full transition-all",
+                                theme === 'dark' && "shadow-md"
+                            )}
+                        >
+                            <MoonIcon className="w-5 h-5"/>
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     );
 };

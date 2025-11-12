@@ -39,14 +39,14 @@ export interface ChatData {
  * API response for chat history (paginated)
  */
 interface ChatHistoryResponse {
-  count?: number;
-  next?: string | null;
-  previous?: string | null;
+  count: number;
+  next: string | null;
+  previous: string | null;
   results: Array<{
     id: number | string;
     title: string;
     created_at: string;
-    updated_at?: string;
+    updated_at?: string | null;
   }>;
 }
 
@@ -59,7 +59,16 @@ interface ChatResponse {
   title: string;
   messages: Message[];
   created_at: string;
-  updated_at?: string;
+  updated_at?: string | null;
+}
+
+/**
+ * Pagination metadata
+ */
+export interface PaginationMetadata {
+  count: number;
+  next: string | null;
+  previous: string | null;
 }
 
 /**
@@ -70,6 +79,13 @@ interface ServiceResponse<T> {
   data?: T;
   error?: ParsedError;
   message?: string;
+}
+
+/**
+ * Service response with pagination metadata
+ */
+interface PaginatedServiceResponse<T> extends ServiceResponse<T> {
+  pagination?: PaginationMetadata;
 }
 
 /**
@@ -103,15 +119,24 @@ const validateMessages = (messages: any[]): Message[] => {
 export const getChatHistory = async (params?: {
   limit?: number;
   offset?: number;
-  cursor?: string;
-}): Promise<ServiceResponse<ChatHistoryItem[]>> => {
+  ordering?: 'created_at' | 'updated_at' | '-created_at' | '-updated_at';
+}): Promise<PaginatedServiceResponse<ChatHistoryItem[]>> => {
   try {
     const queryParams = new URLSearchParams();
-    if (params?.limit) queryParams.set('limit', params.limit.toString());
-    if (params?.offset) queryParams.set('offset', params.offset.toString());
-    if (params?.cursor) queryParams.set('cursor', params.cursor);
+    if (params?.limit !== undefined) {
+      // Enforce max limit of 100
+      const limit = Math.min(params.limit, 100);
+      queryParams.set('limit', limit.toString());
+    }
+    if (params?.offset !== undefined) {
+      queryParams.set('offset', params.offset.toString());
+    }
+    if (params?.ordering) {
+      queryParams.set('ordering', params.ordering);
+    }
 
-    const url = `${API_BASE_URL}/ai-chats/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const queryString = queryParams.toString();
+    const url = `${API_BASE_URL}/api/v2/ai-chats/${queryString ? `?${queryString}` : ''}`;
     const response = await authenticatedFetch(url, {
       method: 'GET',
     });
@@ -125,6 +150,14 @@ export const getChatHistory = async (params?: {
           message: 'Authentication required. Please log in again.',
         };
       }
+      if (response.status === 403) {
+        return {
+          success: false,
+          data: [],
+          error: await parseApiError(response, 'Access forbidden'),
+          message: 'You do not have permission to access this resource.',
+        };
+      }
       const error = await parseApiError(response, 'Failed to fetch chat history');
       return {
         success: false,
@@ -134,25 +167,32 @@ export const getChatHistory = async (params?: {
       };
     }
 
-    const data: ChatHistoryResponse | ChatHistoryItem[] = await response.json();
+    const data: ChatHistoryResponse = await response.json();
     
-    // Handle both paginated and non-paginated responses
-    const results = 'results' in data ? data.results : data;
-    
-    const chatHistory: ChatHistoryItem[] = results.map((item) => ({
+    const chatHistory: ChatHistoryItem[] = data.results.map((item) => ({
       id: String(item.id),
       title: item.title || 'Untitled Chat',
       created_at: item.created_at,
-      updated_at: item.updated_at,
+      updated_at: item.updated_at || undefined,
     }));
 
     return {
       success: true,
       data: chatHistory,
+      pagination: {
+        count: data.count,
+        next: data.next,
+        previous: data.previous,
+      },
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to fetch chat history');
-    console.error('[AI_CHAT] Get chat history error:', parsedError);
+    console.error('[AI_CHAT] Get chat history error:', {
+      message: parsedError.message,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+      statusCode: parsedError.statusCode,
+    });
     return {
       success: false,
       data: [],
@@ -180,16 +220,30 @@ export const getChat = async (id: string): Promise<ServiceResponse<ChatData | nu
       };
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/ai-chats/${id}/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'GET',
     });
 
     if (!response.ok) {
       if (response.status === 404) {
         return {
-          success: true,
+          success: false,
           data: null,
+          error: {
+            message: 'Chat not found',
+            isNetworkError: false,
+            isTimeoutError: false,
+            statusCode: 404,
+          },
           message: 'Chat not found',
+        };
+      }
+      if (response.status === 403) {
+        return {
+          success: false,
+          data: null,
+          error: await parseApiError(response, 'Access forbidden'),
+          message: 'You do not have permission to access this chat.',
         };
       }
       const error = await parseApiError(response, 'Failed to fetch chat');
@@ -212,7 +266,7 @@ export const getChat = async (id: string): Promise<ServiceResponse<ChatData | nu
       title: data.title || 'Untitled Chat',
       messages,
       created_at: data.created_at,
-      updated_at: data.updated_at,
+      updated_at: data.updated_at || undefined,
     };
 
     return {
@@ -221,7 +275,12 @@ export const getChat = async (id: string): Promise<ServiceResponse<ChatData | nu
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to fetch chat');
-    console.error('[AI_CHAT] Get chat error:', parsedError);
+    console.error('[AI_CHAT] Get chat error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       data: null,
@@ -233,40 +292,50 @@ export const getChat = async (id: string): Promise<ServiceResponse<ChatData | nu
 
 /**
  * Create new chat
+ * 
+ * Note: user_id is automatically set from the JWT token, so it should not be provided.
+ * title and messages are optional (defaults to empty string and empty array respectively).
  */
 export const createChat = async (
-  chatData: Omit<ChatData, 'id' | 'created_at' | 'updated_at'>
-): Promise<ServiceResponse<ChatHistoryItem>> => {
+  chatData: {
+    title?: string;
+    messages?: Message[];
+  }
+): Promise<ServiceResponse<ChatData>> => {
   try {
-    // Validate input
-    if (!chatData.user_id || !chatData.title) {
-      return {
-        success: false,
-        error: {
-          message: 'User ID and title are required',
-          isNetworkError: false,
-          isTimeoutError: false,
-        },
-        message: 'User ID and title are required to create a chat',
-      };
+    // Validate messages if provided
+    const messages = chatData.messages ? validateMessages(chatData.messages) : [];
+
+    // Prepare request body (user_id is set automatically from token)
+    const requestBody: {
+      title?: string;
+      messages?: Message[];
+    } = {};
+
+    if (chatData.title !== undefined) {
+      requestBody.title = chatData.title;
     }
 
-    // Validate messages
-    const messages = validateMessages(chatData.messages || []);
+    if (messages.length > 0) {
+      requestBody.messages = messages;
+    }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/ai-chats/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        user_id: chatData.user_id,
-        title: chatData.title,
-        messages,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: await parseApiError(response, 'Authentication required'),
+          message: 'Authentication required. Please log in again.',
+        };
+      }
       const error = await parseApiError(response, 'Failed to create chat');
       return {
         success: false,
@@ -276,19 +345,31 @@ export const createChat = async (
     }
 
     const data: ChatResponse = await response.json();
-    const chatItem: ChatHistoryItem = {
+    
+    // Validate and normalize messages
+    const normalizedMessages = validateMessages(data.messages || []);
+
+    const chatDataResult: ChatData = {
       id: String(data.id),
-      title: data.title || 'Untitled Chat',
+      user_id: String(data.user_id),
+      title: data.title || '',
+      messages: normalizedMessages,
       created_at: data.created_at,
+      updated_at: data.updated_at || undefined,
     };
 
     return {
       success: true,
-      data: chatItem,
+      data: chatDataResult,
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to create chat');
-    console.error('[AI_CHAT] Create chat error:', parsedError);
+    console.error('[AI_CHAT] Create chat error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       error: parsedError,
@@ -299,16 +380,18 @@ export const createChat = async (
 
 /**
  * Update existing chat
+ * 
+ * Note: This is a partial update - only provided fields will be updated.
+ * updated_at is automatically set by the API, so it should not be sent.
  */
 export const updateChat = async (
   id: string,
-  chatData: Partial<ChatData>
-): Promise<ServiceResponse<boolean>> => {
+  chatData: Partial<Pick<ChatData, 'title' | 'messages'>>
+): Promise<ServiceResponse<ChatData>> => {
   try {
     if (!id || typeof id !== 'string') {
       return {
         success: false,
-        data: false,
         error: {
           message: 'Invalid chat ID',
           isNetworkError: false,
@@ -318,7 +401,11 @@ export const updateChat = async (
       };
     }
 
-    const updateData: Partial<ChatResponse> = {};
+    // Prepare update data (only include provided fields)
+    const updateData: {
+      title?: string;
+      messages?: Message[];
+    } = {};
     
     if (chatData.title !== undefined) {
       updateData.title = chatData.title;
@@ -328,11 +415,8 @@ export const updateChat = async (
       // Validate messages before sending
       updateData.messages = validateMessages(chatData.messages);
     }
-    
-    // Always update the updated_at timestamp
-    updateData.updated_at = new Date().toISOString();
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/ai-chats/${id}/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -341,25 +425,68 @@ export const updateChat = async (
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        return {
+          success: false,
+          error: await parseApiError(response, 'Authentication required'),
+          message: 'Authentication required. Please log in again.',
+        };
+      }
+      if (response.status === 403) {
+        return {
+          success: false,
+          error: await parseApiError(response, 'Access forbidden'),
+          message: 'You do not have permission to update this chat.',
+        };
+      }
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: {
+            message: 'Chat not found',
+            isNetworkError: false,
+            isTimeoutError: false,
+            statusCode: 404,
+          },
+          message: 'Chat not found',
+        };
+      }
       const error = await parseApiError(response, 'Failed to update chat');
       return {
         success: false,
-        data: false,
         error,
         message: formatErrorMessage(error, 'Failed to update chat'),
       };
     }
 
+    const data: ChatResponse = await response.json();
+    
+    // Validate and normalize messages
+    const normalizedMessages = validateMessages(data.messages || []);
+
+    const updatedChatData: ChatData = {
+      id: String(data.id),
+      user_id: String(data.user_id),
+      title: data.title || '',
+      messages: normalizedMessages,
+      created_at: data.created_at,
+      updated_at: data.updated_at || undefined,
+    };
+
     return {
       success: true,
-      data: true,
+      data: updatedChatData,
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to update chat');
-    console.error('[AI_CHAT] Update chat error:', parsedError);
+    console.error('[AI_CHAT] Update chat error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
-      data: false,
       error: parsedError,
       message: formatErrorMessage(parsedError, 'Failed to update chat'),
     };
@@ -368,6 +495,8 @@ export const updateChat = async (
 
 /**
  * Delete chat
+ * 
+ * Note: Returns 204 No Content on success (empty response body).
  */
 export const deleteChat = async (id: string): Promise<ServiceResponse<boolean>> => {
   try {
@@ -384,17 +513,38 @@ export const deleteChat = async (id: string): Promise<ServiceResponse<boolean>> 
       };
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/ai-chats/${id}/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'DELETE',
     });
 
     if (!response.ok) {
-      if (response.status === 404) {
-        // Already deleted, consider it successful
+      if (response.status === 401) {
         return {
-          success: true,
-          data: true,
-          message: 'Chat already deleted',
+          success: false,
+          data: false,
+          error: await parseApiError(response, 'Authentication required'),
+          message: 'Authentication required. Please log in again.',
+        };
+      }
+      if (response.status === 403) {
+        return {
+          success: false,
+          data: false,
+          error: await parseApiError(response, 'Access forbidden'),
+          message: 'You do not have permission to delete this chat.',
+        };
+      }
+      if (response.status === 404) {
+        return {
+          success: false,
+          data: false,
+          error: {
+            message: 'Chat not found',
+            isNetworkError: false,
+            isTimeoutError: false,
+            statusCode: 404,
+          },
+          message: 'Chat not found',
         };
       }
       const error = await parseApiError(response, 'Failed to delete chat');
@@ -406,13 +556,19 @@ export const deleteChat = async (id: string): Promise<ServiceResponse<boolean>> 
       };
     }
 
+    // 204 No Content - successful deletion (no response body)
     return {
       success: true,
       data: true,
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to delete chat');
-    console.error('[AI_CHAT] Delete chat error:', parsedError);
+    console.error('[AI_CHAT] Delete chat error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       data: false,

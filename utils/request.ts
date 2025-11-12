@@ -117,7 +117,7 @@ const executeRequest = async (
     try {
       // Apply request interceptors
       let finalUrl = url;
-      let finalOptions = options;
+      let finalOptions: RequestInit = options;
       
       for (const interceptor of requestInterceptors) {
         [finalUrl, finalOptions] = interceptor(finalUrl, finalOptions);

@@ -13,24 +13,27 @@ A comprehensive, modern web-based contact management system built with Next.js, 
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 
 ### Installation
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Create a `.env.local` file in the root directory:
+
 ```env
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 API_KEY=your_gemini_api_key
-NEXT_PUBLIC_API_BASE_URL=http://107.21.188.21/api
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
 ```
 
 3. Run the development server:
+
 ```bash
 npm run dev
 ```
@@ -39,7 +42,7 @@ npm run dev
 
 ## Project Structure
 
-```
+```txt
 app/
   (auth)/              # Authentication routes (login, register)
   (dashboard)/         # Protected dashboard routes
@@ -98,4 +101,3 @@ All environment variables should be prefixed with `NEXT_PUBLIC_` if they need to
 ## License
 
 Private project - All rights reserved.
-

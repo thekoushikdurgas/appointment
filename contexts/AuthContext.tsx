@@ -2,13 +2,13 @@
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/index';
-import { login as apiLogin, register as apiRegister, logout as apiLogout, getSession } from '../services/auth';
+import { login as apiLogin, register as apiRegister, logout as apiLogout, getSession, ServiceResponse } from '../services/auth';
 import { getUserProfile } from '../services/user';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, pass: string) => Promise<{success: boolean, message: string}>;
-  register: (name: string, email: string, pass: string) => Promise<{success: boolean, message: string}>;
+  login: (email: string, pass: string) => Promise<ServiceResponse>;
+  register: (name: string, email: string, pass: string) => Promise<ServiceResponse>;
   logout: () => void;
   isLoading: boolean;
   isLoggingOut: boolean;
@@ -17,7 +17,7 @@ interface AuthContextType {
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   // isLoading is true only during the initial session check on app load.
   const [isLoading, setIsLoading] = useState(true);
@@ -50,8 +50,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     console.log('[AUTH] AuthProvider mounted. Checking for initial session.');
 
-    // Check the current session once on load.
-    getSession().then(async (sessionData) => {
+    // Check the current session once on load (silent mode to suppress error notifications)
+    getSession(true).then(async (sessionData) => {
       console.log(`[AUTH] Initial session fetch complete.`);
       
       if (sessionData?.user) {
@@ -69,48 +69,70 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
       setUser(null);
     });
+  }, []); // Only run once on mount
 
-    // Set up polling to check session periodically (replaces Supabase's onAuthStateChange)
+  // Set up polling to check session periodically (replaces onAuthStateChange pattern)
+  // This effect runs separately to avoid re-creating the interval when user changes
+  useEffect(() => {
+    let isMounted = true;
+    
     const sessionCheckInterval = setInterval(async () => {
+      if (!isMounted) return;
+      
       try {
-        const sessionData = await getSession();
-        if (!sessionData && user) {
-          console.log('[AUTH] Session expired. Clearing user state.');
-          setUser(null);
-        } else if (sessionData && !user) {
-          console.log('[AUTH] Session found. Fetching profile.');
-          await fetchUserProfile(sessionData.user);
-        }
+        // Use silent mode for background checks to suppress error notifications
+        const sessionData = await getSession(true);
+        // Use a ref-like pattern by checking user state via a closure
+        // We'll check the current state by calling setUser with a function
+        setUser((currentUser) => {
+          if (!sessionData && currentUser) {
+            console.log('[AUTH] Session expired. Clearing user state.');
+            return null;
+          } else if (sessionData && !currentUser) {
+            console.log('[AUTH] Session found. Fetching profile.');
+            // Fetch profile asynchronously - it will call setUser internally
+            fetchUserProfile(sessionData.user).catch((error) => {
+              console.error('[AUTH] Error fetching profile during session check:', error);
+            });
+          }
+          return currentUser; // Return current user if no state change needed
+        });
       } catch (error) {
         console.error('[AUTH] Error checking session:', error);
       }
     }, 60000); // Check every minute
 
     return () => {
+      isMounted = false;
       console.log('[AUTH] AuthProvider unmounting. Clearing session check interval.');
       clearInterval(sessionCheckInterval);
     };
-  }, [user]); // Include user in dependencies to re-check when user changes
+  }, []); // Only set up interval once on mount
 
   const refreshUserProfile = async () => {
     console.log('[AUTH] Manual profile refresh triggered.');
-    const sessionData = await getSession();
-    if (sessionData?.user) {
-      await fetchUserProfile(sessionData.user);
-      console.log('[AUTH] Profile refresh complete.');
-    } else {
-      console.log('[AUTH] No session found during manual refresh.');
-      setUser(null);
+    try {
+      const sessionData = await getSession();
+      if (sessionData?.user) {
+        await fetchUserProfile(sessionData.user);
+        console.log('[AUTH] Profile refresh complete.');
+      } else {
+        console.log('[AUTH] No session found during manual refresh.');
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('[AUTH] Error during manual profile refresh:', error);
+      // Don't clear user on error - might be temporary network issue
     }
   };
 
-  const login = async (email: string, pass: string): Promise<{success: boolean, message: string}> => {
+  const login = async (email: string, pass: string): Promise<ServiceResponse> => {
     console.log(`[AUTH] Attempting login for: ${email}`);
     const result = await apiLogin(email, pass);
     
     if (!result.success) {
       console.error(`[AUTH] Login failed for ${email}:`, result.message);
-      return { success: false, message: result.message };
+      return result; // Return full ServiceResponse with fieldErrors and nonFieldErrors
     }
     
     console.log(`[AUTH] Login successful for ${email}. Fetching profile...`);
@@ -120,21 +142,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const sessionData = await getSession();
       if (sessionData?.user) {
         await fetchUserProfile(sessionData.user);
+      } else {
+        console.warn('[AUTH] Login succeeded but no session data available. Profile will be fetched on next session check.');
       }
     } catch (error) {
       console.error('[AUTH] Error fetching profile after login:', error);
+      // Don't fail login if profile fetch fails - tokens are stored, profile can be fetched later
+      // Return success but log the error
     }
     
-    return { success: true, message: '' };
+    return result; // Return full ServiceResponse
   };
 
-  const register = async (name: string, email: string, pass: string): Promise<{success: boolean, message: string}> => {
+  const register = async (name: string, email: string, pass: string): Promise<ServiceResponse> => {
     console.log(`[AUTH] Attempting registration for: ${email}`);
     const result = await apiRegister(name, email, pass);
 
     if (!result.success) {
       console.error(`[AUTH] Registration failed for ${email}:`, result.message);
-      return { success: false, message: result.message };
+      return result; // Return full ServiceResponse with fieldErrors and nonFieldErrors
     }
     
     console.log('[AUTH] Registration successful. User profile should be created automatically.');
@@ -144,12 +170,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const sessionData = await getSession();
       if (sessionData?.user) {
         await fetchUserProfile(sessionData.user);
+      } else {
+        console.log('[AUTH] Registration succeeded but no session data available. This is normal if email verification is required.');
       }
     } catch (error) {
       console.error('[AUTH] Error fetching profile after registration:', error);
+      // Don't fail registration if profile fetch fails - registration was successful
     }
     
-    return { success: true, message: result.message || 'Registration successful! Please check your email to verify your account.' };
+    return result; // Return full ServiceResponse
   };
 
   const logout = () => {

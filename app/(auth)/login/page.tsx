@@ -1,19 +1,37 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../../hooks/useAuth';
-import { LogoIcon, AlertTriangleIcon } from '../../../components/icons/IconComponents';
+import { LogoIcon, AlertTriangleIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '../../../components/icons/IconComponents';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Input } from '../../../components/ui/Input';
+import { Button } from '../../../components/ui/Button';
+import { Checkbox } from '../../../components/ui/Checkbox';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../components/ui/Card';
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+}
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  // Note: rememberMe is currently not used - would need backend support for longer token expiration
   const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [touched, setTouched] = useState<{ email: boolean; password: boolean }>({
+    email: false,
+    password: false,
+  });
   const { login, user, isLoading } = useAuth();
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
+  const errorAnnouncementRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -21,17 +39,118 @@ const LoginPage: React.FC = () => {
     }
   }, [user, isLoading, router]);
 
+  // Announce errors to screen readers
+  useEffect(() => {
+    if (errors.general && errorAnnouncementRef.current) {
+      errorAnnouncementRef.current.focus();
+    }
+  }, [errors.general]);
+
+  const validateEmail = (emailValue: string): string | undefined => {
+    if (!emailValue.trim()) {
+      return 'Email is required';
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailValue)) {
+      return 'Please enter a valid email address';
+    }
+    return undefined;
+  };
+
+  const validatePassword = (passwordValue: string): string | undefined => {
+    if (!passwordValue) {
+      return 'Password is required';
+    }
+    if (passwordValue.length < 1) {
+      return 'Password cannot be empty';
+    }
+    return undefined;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    
+    const emailError = validateEmail(email);
+    if (emailError) {
+      newErrors.email = emailError;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      newErrors.password = passwordError;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (field: 'email' | 'password') => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    
+    if (field === 'email') {
+      const emailError = validateEmail(email);
+      setErrors((prev) => ({ ...prev, email: emailError }));
+    } else if (field === 'password') {
+      const passwordError = validatePassword(password);
+      setErrors((prev) => ({ ...prev, password: passwordError }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    
+    // Clear previous errors
+    setErrors({});
+    setTouched({ email: true, password: true });
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
     setIsLoggingIn(true);
-    const result = await login(email, password);
-    if (!result.success) {
-      setError(result.message);
+
+    try {
+      const result = await login(email.trim(), password);
+      
+      if (!result.success) {
+        const newErrors: FormErrors = {};
+        
+        // Extract field-specific errors from API response
+        if (result.fieldErrors) {
+          if (result.fieldErrors.email && result.fieldErrors.email.length > 0) {
+            newErrors.email = result.fieldErrors.email[0]; // Show first error for email
+          }
+          if (result.fieldErrors.password && result.fieldErrors.password.length > 0) {
+            newErrors.password = result.fieldErrors.password[0]; // Show first error for password
+          }
+        }
+        
+        // Handle non-field errors (e.g., "Must include 'email' and 'password'")
+        if (result.nonFieldErrors && result.nonFieldErrors.length > 0) {
+          newErrors.general = result.nonFieldErrors[0];
+        } else if (!newErrors.email && !newErrors.password) {
+          // Only set general error if no field-specific errors exist
+          newErrors.general = result.message;
+        }
+        
+        setErrors(newErrors);
+      } else {
+        // Success - redirect will happen via useEffect when user state updates
+        // Clear form
+        setEmail('');
+        setPassword('');
+        setErrors({});
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      // Handle unexpected errors
+      console.error('[LOGIN] Unexpected error:', error);
+      setErrors({
+        general: 'An unexpected error occurred. Please try again.',
+      });
+    } finally {
       setIsLoggingIn(false);
-    } else {
-      // Redirect will happen via useEffect when user state updates
-      router.push('/dashboard');
     }
   };
 
@@ -44,99 +163,144 @@ const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary">
-      <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-2xl shadow-2xl border border-border">
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <LogoIcon className="w-16 h-16 text-primary-500" />
-          </div>
-          <h1 className="text-3xl font-bold text-card-foreground">Welcome Back</h1>
-          <p className="mt-2 text-muted-foreground">Sign in to continue to NexusCRM.</p>
-        </div>
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="flex items-start p-3 space-x-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg">
-              <AlertTriangleIcon className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-              <p>{error}</p>
+    <div className="auth-page">
+      <div className="auth-container">
+        <div className="auth-header">
+          <div className="flex-center">
+            <div className="p-3 bg-primary/10 rounded-full">
+              <LogoIcon className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
             </div>
-          )}
-          <div>
-            <label htmlFor="email" className="text-sm font-medium text-muted-foreground">
-              Email address
-            </label>
-            <input
+          </div>
+          <h1 className="auth-title">Welcome Back</h1>
+          <p className="auth-description">
+            Sign in to continue to NexusCRM
+          </p>
+        </div>
+        <Card className="w-full max-w-md shadow-xl animate-fade-in">
+          <CardContent>
+            <form ref={formRef} className="auth-form" onSubmit={handleSubmit} noValidate>
+            {/* Screen reader error announcement */}
+            <div
+              ref={errorAnnouncementRef}
+              role="alert"
+              aria-live="assertive"
+              className="visually-hidden"
+              tabIndex={-1}
+            >
+              {errors.general && errors.general}
+            </div>
+
+            {/* General error message */}
+            {errors.general && (
+              <div 
+                className="alert alert-error flex items-start gap-2 animate-slide-up-fade"
+                role="alert"
+              >
+                <AlertTriangleIcon className="w-5 h-5 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <p>{errors.general}</p>
+              </div>
+            )}
+
+            {/* Email field */}
+            <Input
               id="email"
               name="email"
               type="email"
+              label="Email address"
               autoComplete="email"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border bg-background border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email && touched.email) {
+                  setErrors((prev) => ({ ...prev, email: undefined }));
+                }
+              }}
+              onBlur={() => handleBlur('email')}
+              error={touched.email ? errors.email : undefined}
               placeholder="admin@nexuscrm.com"
+              disabled={isLoggingIn}
+              leftIcon={<MailIcon className="w-5 h-5" />}
             />
-          </div>
-          <div>
-            <label htmlFor="password"className="text-sm font-medium text-muted-foreground">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border bg-background border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="any password for demo"
-            />
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
+            {/* Password field */}
+            <div className="space-y-1">
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                label="Password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (errors.password && touched.password) {
+                    setErrors((prev) => ({ ...prev, password: undefined }));
+                  }
+                }}
+                onBlur={() => handleBlur('password')}
+                error={touched.password ? errors.password : undefined}
+                placeholder="Enter your password"
+                disabled={isLoggingIn}
+                leftIcon={<LockIcon className="w-5 h-5" />}
+                rightIcon={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOffIcon className="w-5 h-5" />
+                    ) : (
+                      <EyeIcon className="w-5 h-5" />
+                    )}
+                  </button>
+                }
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+              <Checkbox
                 id="remember-me"
-                name="remember-me"
-                type="checkbox"
+                label="Remember me"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-border rounded"
+                disabled={isLoggingIn}
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-muted-foreground">
-                Remember me
-              </label>
-            </div>
 
-            <div className="text-sm">
-              <button type="button" onClick={() => alert('Forgot password functionality is not yet implemented.')} className="font-medium text-primary-500 hover:underline">
-                Forgot your password?
+              <button 
+                type="button" 
+                onClick={() => alert('Forgot password functionality is not yet implemented.')} 
+                className="text-sm font-medium text-primary hover:underline transition-colors"
+                disabled={isLoggingIn}
+              >
+                Forgot password?
               </button>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isLoggingIn}
-            className="flex items-center justify-center w-full py-3 font-semibold text-white transition-colors duration-200 rounded-lg bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 disabled:cursor-not-allowed"
-          >
-            {isLoggingIn ? (
-              <>
-                <svg className="w-5 h-5 mr-2 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Signing In...</span>
-              </>
-            ) : 'Sign In'}
-          </button>
-        </form>
-         <p className="text-sm text-center text-muted-foreground">
-            Don't have an account?{' '}
-            <Link href="/register" className="font-medium text-primary-500 hover:underline">
-                Sign Up
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={isLoggingIn}
+              disabled={isLoggingIn}
+              className="mt-6"
+            >
+              Sign In
+            </Button>
+          </form>
+          
+          <p className="auth-footer">
+            Don&apos;t have an account?{' '}
+            <Link href="/register" className="auth-link">
+              Sign Up
             </Link>
-        </p>
+          </p>
+        </CardContent>
+      </Card>
       </div>
     </div>
   );

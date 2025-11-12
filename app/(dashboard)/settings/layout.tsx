@@ -3,7 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IdentificationIcon, PaintBrushIcon, CreditCardIcon, UsersIcon, ShieldCheckIcon, BellIcon } from '../../../components/icons/IconComponents';
+import { IdentificationIcon, PaintBrushIcon, CreditCardIcon, UsersIcon, ShieldCheckIcon, BellIcon, SettingsIcon } from '../../../components/icons/IconComponents';
+import { Card } from '../../../components/ui/Card';
+import { cn } from '../../../utils/cn';
 
 const settingsTabs: { id: string; label: string; icon: React.ReactElement<{ className?: string }>; path: string }[] = [
   { id: 'Profile', label: 'Profile', icon: <IdentificationIcon />, path: '/settings/profile' },
@@ -22,35 +24,53 @@ export default function SettingsLayout({
   const pathname = usePathname();
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+    <div className="settings-layout">
+      {/* <div className="settings-header">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-primary/10">
+            <SettingsIcon className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="settings-title">Settings</h1>
+            <p className="settings-description">Manage your account settings and preferences</p>
+          </div>
+        </div>
+      </div> */}
       
-      <div className="border-b border-border">
-        <nav className="-mb-px flex space-x-4 sm:space-x-6 overflow-x-auto" aria-label="Tabs">
-          {settingsTabs.map((tab) => {
-            const isActive = pathname === tab.path || (tab.path === '/settings/profile' && pathname === '/settings');
-            return (
-              <Link
-                key={tab.id}
-                href={tab.path}
-                className={`flex items-center px-1 py-3 text-sm font-medium border-b-2 whitespace-nowrap group ${
-                  isActive
-                    ? 'border-primary text-primary font-semibold'
-                    : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
-                }`}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {React.cloneElement(tab.icon, { className: 'w-5 h-5 mr-2 flex-shrink-0' })}
-                <span>{tab.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+      <Card>
+        <div className="border-b border-border">
+          <nav className="flex gap-4 sm:gap-6 overflow-x-auto px-6" aria-label="Tabs">
+            {settingsTabs.map((tab) => {
+              const isActive = pathname === tab.path || (tab.path === '/settings/profile' && pathname === '/settings');
+              return (
+                <Link
+                  key={tab.id}
+                  href={tab.path}
+                  className={cn(
+                    "flex items-center px-1 py-4 text-sm font-medium border-b-2 whitespace-nowrap transition-colors",
+                    isActive
+                      ? 'border-primary text-primary font-semibold'
+                      : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
+                  )}
+                  aria-current={isActive ? 'page' : undefined}
+                >
+                  {React.cloneElement(tab.icon, { 
+                    className: cn(
+                      'w-5 h-5 mr-2 flex-shrink-0 transition-colors',
+                      isActive ? 'text-primary' : 'text-muted-foreground'
+                    )
+                  })}
+                  <span>{tab.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </Card>
 
-      <div className="bg-card p-4 sm:p-6 rounded-lg shadow-md border border-border min-h-[400px]">
+      <Card className="min-h-[400px]">
         {children}
-      </div>
+      </Card>
     </div>
   );
 }

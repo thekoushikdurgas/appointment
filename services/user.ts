@@ -1,3 +1,43 @@
+/**
+ * User Service
+ * 
+ * Provides user profile management functionality for the application.
+ * 
+ * **Key Functions:**
+ * - `getUserProfile()` - Fetch current user profile (uses `authenticatedFetch`)
+ * - `updateUserProfile()` - Update user profile information (uses `authenticatedFetch`)
+ * - `uploadUserAvatar()` - Upload user avatar image (uses `authenticatedFetch`)
+ * 
+ * **Authentication:**
+ * - All functions use `authenticatedFetch` from auth.ts
+ * - Automatically handles token refresh on 401 errors
+ * - Returns null or error response if authentication fails
+ * 
+ * **Error Handling:**
+ * - All functions return ServiceResponse<T> with success, message, data, and error fields
+ * - Errors are parsed and formatted using errorHandler utilities
+ * - Network errors, timeout errors, and API errors are all handled consistently
+ * 
+ * **Usage Pattern:**
+ * ```typescript
+ * import { getUserProfile, updateUserProfile } from '../services/user';
+ * 
+ * // Get user profile
+ * const profile = await getUserProfile(sessionUser);
+ * if (profile) {
+ *   console.log('User:', profile.name);
+ * }
+ * 
+ * // Update profile
+ * const result = await updateUserProfile({ name: 'New Name' });
+ * if (result.success) {
+ *   console.log('Profile updated:', result.data);
+ * } else {
+ *   console.error('Error:', result.message);
+ * }
+ * ```
+ */
+
 import { User } from '../types/index';
 import { authenticatedFetch } from './auth';
 import { API_BASE_URL } from './api';
@@ -20,6 +60,8 @@ interface ApiUserProfile {
     weeklyReports: boolean;
     newLeadAlerts: boolean;
   };
+  created_at?: string;
+  updated_at?: string;
   [key: string]: any;
 }
 
@@ -40,6 +82,8 @@ interface ServiceResponse<T> {
   data?: T;
   message: string;
   error?: ParsedError;
+  fieldErrors?: Record<string, string[]>; // Field-specific errors for easier access
+  nonFieldErrors?: string[]; // Non-field errors for easier access
 }
 
 /**
@@ -101,7 +145,7 @@ const mapApiToUser = (apiUser: any, sessionUser?: any): User => {
  */
 export const getUserProfile = async (sessionUser?: any): Promise<User | null> => {
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/users/profile/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/profile/`, {
       method: 'GET',
     });
 
@@ -118,7 +162,12 @@ export const getUserProfile = async (sessionUser?: any): Promise<User | null> =>
     return mapApiToUser(data, sessionUser);
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to fetch user profile');
-    console.error('[USER] Get user profile error:', parsedError);
+    console.error('[USER] Get user profile error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return null;
   }
 };
@@ -136,8 +185,9 @@ export const updateUserProfile = async (profileData: Partial<User>): Promise<Ser
     if (profileData.timezone !== undefined) apiData.timezone = profileData.timezone;
     if (profileData.notifications !== undefined) apiData.notifications = profileData.notifications;
     if (profileData.avatarUrl !== undefined) apiData.avatar_url = profileData.avatarUrl;
+    if (profileData.role !== undefined) apiData.role = profileData.role;
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/users/profile/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/profile/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -151,6 +201,8 @@ export const updateUserProfile = async (profileData: Partial<User>): Promise<Ser
         success: false,
         message: formatErrorMessage(error, 'Failed to update profile'),
         error,
+        fieldErrors: error.fieldErrors,
+        nonFieldErrors: error.nonFieldErrors,
       };
     }
 
@@ -162,11 +214,18 @@ export const updateUserProfile = async (profileData: Partial<User>): Promise<Ser
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to update profile');
-    console.error('[USER] Update user profile error:', parsedError);
+    console.error('[USER] Update user profile error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       message: formatErrorMessage(parsedError, 'Failed to update profile'),
       error: parsedError,
+      fieldErrors: parsedError.fieldErrors,
+      nonFieldErrors: parsedError.nonFieldErrors,
     };
   }
 };
@@ -211,40 +270,19 @@ export const uploadUserAvatar = async (file: File): Promise<ServiceResponse<{ us
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/users/profile/avatar/`, {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/profile/avatar/`, {
       method: 'POST',
       body: formData,
     });
 
     if (!response.ok) {
-      let errorMessage = 'Failed to upload avatar';
-      try {
-        const errorData = await response.json();
-        if (errorData.avatar && Array.isArray(errorData.avatar)) {
-          errorMessage = errorData.avatar[0];
-        } else if (errorData.detail) {
-          errorMessage = errorData.detail;
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-        }
-      } catch (parseError) {
-        const error = await parseApiError(response, 'Failed to upload avatar');
-        return {
-          success: false,
-          message: formatErrorMessage(error, 'Failed to upload avatar'),
-          error,
-        };
-      }
-      
+      const error = await parseApiError(response, 'Failed to upload avatar');
       return {
         success: false,
-        message: errorMessage,
-        error: {
-          message: errorMessage,
-          statusCode: response.status,
-          isNetworkError: false,
-          isTimeoutError: false,
-        },
+        message: formatErrorMessage(error, 'Failed to upload avatar'),
+        error,
+        fieldErrors: error.fieldErrors,
+        nonFieldErrors: error.nonFieldErrors,
       };
     }
 
@@ -259,11 +297,68 @@ export const uploadUserAvatar = async (file: File): Promise<ServiceResponse<{ us
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to upload avatar');
-    console.error('[USER] Upload user avatar error:', parsedError);
+    console.error('[USER] Upload user avatar error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       message: formatErrorMessage(parsedError, 'Failed to upload avatar'),
       error: parsedError,
+      fieldErrors: parsedError.fieldErrors,
+      nonFieldErrors: parsedError.nonFieldErrors,
+    };
+  }
+};
+
+/**
+ * Promote current user to admin role
+ * 
+ * This endpoint allows authenticated users to self-promote to admin role.
+ * The operation is logged for audit purposes.
+ */
+export const promoteToAdmin = async (): Promise<ServiceResponse<User>> => {
+  try {
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/promote-to-admin/`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const error = await parseApiError(response, 'Failed to promote user to admin');
+      return {
+        success: false,
+        message: formatErrorMessage(error, 'Failed to promote user to admin'),
+        error,
+        fieldErrors: error.fieldErrors,
+        nonFieldErrors: error.nonFieldErrors,
+      };
+    }
+
+    const data: ApiUserProfile = await response.json();
+    return {
+      success: true,
+      message: 'User promoted to admin successfully',
+      data: mapApiToUser(data),
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(error, 'Failed to promote user to admin');
+    console.error('[USER] Promote to admin error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      success: false,
+      message: formatErrorMessage(parsedError, 'Failed to promote user to admin'),
+      error: parsedError,
+      fieldErrors: parsedError.fieldErrors,
+      nonFieldErrors: parsedError.nonFieldErrors,
     };
   }
 };

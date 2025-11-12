@@ -1,7 +1,18 @@
 import { request } from '../utils/request';
 import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '../utils/errorHandler';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://107.21.188.21/api';
+/**
+ * Get the API base URL from environment variable
+ * Always returns the full backend URL for direct API calls.
+ * Backend must support CORS for browser requests to work.
+ */
+const getApiBaseUrl = (): string => {
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+  // Remove trailing slash if present to avoid double slashes
+  return backendUrl.replace(/\/$/, '');
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 /**
  * API info response interface
@@ -44,12 +55,15 @@ export interface ApiInfoResponse {
 
 /**
  * Get API information and available endpoints with timeout handling
+ * 
+ * NOTE: This is a public endpoint and does not require authentication.
+ * Using `request` instead of `authenticatedFetch` is intentional.
  */
 export const getApiInfo = async (timeout: number = 10000): Promise<ApiInfoResponse> => {
     try {
-        // Root endpoint is at the base URL without /api
-        const baseUrl = API_BASE_URL.replace('/api', '');
-        const response = await request(`${baseUrl}/`, {
+        // Root endpoint is at the base URL
+        // Public endpoint - no authentication required
+        const response = await request(`${API_BASE_URL}/`, {
           method: 'GET',
           timeout,
           retries: 1,
@@ -71,7 +85,12 @@ export const getApiInfo = async (timeout: number = 10000): Promise<ApiInfoRespon
         };
     } catch (error) {
         const parsedError = parseExceptionError(error, 'Failed to fetch API info');
-        console.error('[API] Failed to fetch API info:', parsedError);
+        console.error('[API] Failed to fetch API info:', {
+            message: parsedError.message,
+            statusCode: parsedError.statusCode,
+            isNetworkError: parsedError.isNetworkError,
+            isTimeoutError: parsedError.isTimeoutError,
+        });
         return {
             success: false,
             message: formatErrorMessage(parsedError, 'Failed to fetch API info'),

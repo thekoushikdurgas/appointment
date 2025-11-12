@@ -10,7 +10,7 @@
 "Create a modal/dialog component that follows the existing UI patterns in the codebase, with support for dark mode and responsive design."
 
 ### Feature Development
-"Add a new feature to [page] that allows users to [action]. Follow the existing API patterns in services/api.ts and integrate with Supabase for data persistence."
+"Add a new feature to [page] that allows users to [action]. Follow the existing API patterns in services/api.ts and integrate with the Appointment360 API for data persistence."
 
 "Implement a new filter option in the contacts page that filters by [criteria]. Ensure it works with the existing server-side pagination and sorting."
 
@@ -19,12 +19,12 @@
 ### API Integration
 "Add a new API endpoint integration in services/api.ts that fetches [data] from the Appointment360 API, following the existing contact fetching patterns with proper error handling and type mapping."
 
-"Create a Supabase service function that [action] following the patterns in services/supabase.ts, with proper TypeScript types and error handling."
+"Create a new service function that [action] following the patterns in services/api.ts, with proper TypeScript types and error handling."
 
 ### Authentication & Authorization
-"Add role-based access control to [page/feature] that checks user roles stored in Supabase and restricts access accordingly."
+"Add role-based access control to [page/feature] that checks user roles stored in the backend API and restricts access accordingly."
 
-"Implement a new authentication method [method] following the existing Supabase auth patterns in contexts/AuthContext.tsx."
+"Implement a new authentication method [method] following the existing auth patterns in contexts/AuthContext.tsx and services/auth.ts."
 
 ### UI/UX Improvements
 "Improve the responsive design of [component/page] for mobile devices, ensuring it follows the mobile-first approach used in the codebase."
@@ -59,7 +59,7 @@
 
 "Add a new AI function capability that allows users to [action] through natural language, following the existing searchContacts function pattern."
 
-"How does the AI assistant maintain conversation context and save chat history to Supabase?"
+"How does the AI assistant maintain conversation context and save chat history to the backend API?"
 
 ## Architecture & Design Questions
 
@@ -85,7 +85,7 @@
 
 "Fix the layout issue on [page] where [problem]. Ensure responsive design patterns are followed."
 
-"Why is the Supabase authentication not working? Check the AuthContext implementation and Supabase configuration."
+"Why is the authentication not working? Check the AuthContext implementation and API configuration in services/auth.ts."
 
 ## Migration & Upgrade Prompts
 
@@ -95,3 +95,448 @@
 
 "Add TypeScript strict mode to the project and fix all resulting type errors."
 
+now my full project and all pages, tabs, components, buttons, input boxes, and text in dark-light ui, more icons and a more user-friendly modern style
+
+Now, create a good-looking loading page for my project, and then welcome page
+
+Now, add a loading screen for my project, and then create an auth flow for my project
+
+Now, create a good-looking loading page, and then a welcome page, and all auth pages
+
+Now my full project and all pages, tabs, components, buttons, input boxes, and text will be fully responsive on all screen sizes.
+
+The loading is still loading, not going to the welcome page. What happened? This issue has occurred repeatedly. Please fix it permanently.
+
+See the image, and then, like that on the Contacts page, the Contacts table should be fully responsive on all screen sizes. Please add both a vertical scroll bar and a horizontal scroll bar.
+
+Now implement Firebase for the auth flow and storage for my codebase
+{
+  "apiKey": "AIzaSyAZYzNlpWNQVHMN1_R3_XEh2W4_mDWyJmw",
+  "authDomain": "studio-3226400778-b5249.firebaseapp.com",
+  "projectId": "studio-3226400778-b5249",
+  "storageBucket": "studio-3226400778-b5249.appspot.com",
+  "messagingSenderId": "749960864381",
+  "appId": "1:749960864381:web:8d56f877c29d28d7a20714"
+}
+
+So now, when the user logs in and signs up completely, create a session or cookie or local storage for the user so next time this user comes so he automatically logs in and signs up. 
+
+
+Now give me SQL code for inserting User Profiles, contacts.
+
+Now check all files in my codebase and break all files into pages, components, utilities, services, hooks, contexts, etc
+
+
+
+Now the sidebar is the height of the screen and scrollable
+
+Also, all texts will be in dark-light theme
+
+Please read the files and folders thoroughly to learn about Genkit in JavaScript. After that, implement it correctly into my codebase and make the necessary modifications. Take the time to understand and analyze the material deeply. Once you have a good grasp of it, break your tasks into smaller parts and create a plan in the @genkit.md file.
+
+in my codebase find all console statements and remove all console statements and replace with logger statements and then modify my codebase  , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks and  then create a plan here @logger.md 
+
+Please proceed with modifying my codebase as planned, as  check all Progress Tracker and all Checkboxes, and if all tasks are completed, then fill all checkboxes one by one, Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks.
+
+read my codebase @Laravel  and then thick about this app create in django python codebase , create Progress Tracker and all Checkboxs Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks so make a plan in  @structure.md 
+
+how many pages in my codebase
+
+read all pages in my codebase and then thick about this app create in django python codebase , create Progress Tracker and all Checkboxs Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks so make a plan in  @pages.md 
+
+how many flows in my codebase
+
+read all flows in my codebase and then thick about this app create in django python codebase , create Progress Tracker and all Checkboxs Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks so make a plan in  @flows.md 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Read all the above and previous prompts and their answers, then give me all the screens with all integrations and all components and all functions and all assets and how the screens are connected or the pathway of screen to create this app named "prbal".
+
+Read all the above and previous prompts and their answers, then give me all the pages with all integrations and all components and all functions and all assets and how the pages are connected or the pathway of screen to create this app named "prbal".
+
+Read all the above and previous prompts and their answers, then give me all the plans to create this app named "prbal".
+
+refreactor my whole flutter app named 'prbal' app to complete my app run and mantained the file readme.md 
+
+read my flutter codebase that name 'prbal' and edit or refractor as my prompts  and mantained the file readme.md 
+
+read the terminal ther are errors to completly solved  my app step by step and then finally the run the app
+
+Can you give me a blueprint for this plan in creating an app flutter, and how I integrate this plan in this app.
+
+Read all the above and previous prompts and their answers, then give me all the plans to create this app named "prbal".
+
+Read all the above and previous prompts and their answers, then give me all the screens and how the screens are connected or the pathway of screen to create this app named "prbal".
+
+Read all the above and previous prompts and their answers, then give me all the pages and how the pages are connected or the pathway of screen to create this app named "prbal".
+
+Read all the above and previous prompts and their answers, then give me all the screens with all integrations and all components and all functions and all assets and how the screens are connected or the pathway of screen to create this app named "prbal".
+
+Read all the above and previous prompts and their answers, then give me all the pages with all integrations and all components and all functions and all assets and how the pages are connected or the pathway of screen to create this app named "prbal".
+
+update my codebase
+
+
+Read all the above and previous prompts and their answers, then give me a brief file Structure to make this project whose name is "prbal".
+
+Read all the above and previous prompts and their answers, then give me a prompts to make this project whose name is "prbal".
+
+Read all the above and previous prompts and their answers, then give me  only one prompt to make this project whose name is "prbal".
+
+Read all the above and previous prompts and their answers, then give me only one prompt to create this project named is "prbal" with his full deeply analyze . prompt start with "Build a mobile app that ..."
+
+Read all the above and previous prompts and their answers, then give me a brief on every screen and how all screens are well-connected or pathways of screens to make this application whose name is "prbal".
+
+Read all the above and previous prompts and their answers, then for this business model give me brief plans to make this application for every plan to define every integration to define every Components to define every Functions to define every Assets.
+
+Read all the above and previous prompts and their answers, then give me all pages for this Onboarding Screen with every page's UI showing all defined all suggestion integrations and all suggestion components and also all suggestion functions and also all suggestion assets with his full configuration and app name is "prbal"
+
+Read all the above and previous prompts and their answers, then give me all pages for this Onboarding Screen with every page's UI showing all defined all suggestion integrations and all suggestion components and also all suggestion functions and also all suggestion assets with his full configuration and app name is "prbal"
+
+Read all the above and previous prompts and their answers, then give me all screens for this business model with every screen's UI shows all components suggestion component
+
+Read all the above and previous prompts and their answers, then give me all pages for this Home Screen with every page's UI showing all components suggestion component
+
+Read all the above and previous prompts and their answers, then give me brief plans to make this application for every plan to define every integration to define every Components to define every Functions to define every Assets . start creating login to chat response with his full configuration and app name is "budgtai"
+
+Read all the above and previous prompts and their answers, then give me a brief on every plan to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every integration to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Components to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Suggestions for Improvement to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Assets to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every pages and how all pages are well-connected or pathways of pages to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Technology Stack to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Additional Insights and Clarifications to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Potential Issues and Suggestions to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Scalability and Extensibility to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every How It Works in Practice to make this application which name is "budgtai".
+
+Read all the above and previous prompts and their answers, then give me a brief on every Why This Implementation Stands Out to make this application which name is "budgtai".
+
+
+
+
+
+so in-app 'prbal' there are 4 tabs
+1. The dashboard tab designed like it every reads unread SMS and tracks all Transaction and updated the exist statement it add then shows in dashboard see in progress bar and when new Transactions are added statement it has two buttons yes or no
+2. also add a tab to show all SMS in mobile and all SMS are converted to Transactions tracks all statement see in progress bar and when new Transactions add in statement it two buttons yes or no also read SMS in mobile to read credit or debit details to read salary also read every day spends every where and saved every spend saved in mongodb by Ai in refractor flutter that named 'prbal'  and mantained the file readme.md also read SMS in mobile to read credit or debit details analysis by AI openrouter model to read salary also read every day spends everywhere and saved every spend saved in mongodb
+
+
+To integrate OpenRouter's free models into your flutter app "prbal" and add a dropdown for selecting free models in the settings page, follow this implementation plan using the provided knowledge base:
+
+---
+
+### 1. Fetch Free Models from OpenRouter API
+Use the OpenRouter `/models` endpoint to list all models and filter for free ones [[2]][[8]]:  
+```javascript
+// services/openrouter.js
+import { OpenAI } from 'openai';
+
+
+export async function fetchFreeModels() {
+  try {
+    const response = await openai.models.list(); // GET /models [[2]]
+    // Filter free models (e.g., those with ":free" suffix or price=0)
+    return response.data.filter(model => 
+      model.id.includes('a83bb7e3-efba-48f0-bba8-b512dfb8e1160
+    );
+  } catch (error) {
+    console.error("Failed to fetch models:", error);
+    return [];
+  }
+}
+```
+
+---
+
+### 2. Settings Page UI with Model Dropdown
+Create a `SettingsScreen` with a dropdown to select models using `react-native-dropdown-picker` [[6]]:  
+```javascript
+// screens/SettingsScreen.js
+import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
+import DropDownPicker from 'react-native-dropdown-picker';
+import { fetchFreeModels } from '../services/openrouter';
+
+const SettingsScreen = () => {
+  const [models, setModels] = useState([]);
+  const [selectedModel, setSelectedModel] = useState(null);
+
+  useEffect(() => {
+    // Fetch and format models on load
+    fetchFreeModels().then(fetchedModels => {
+      setModels(fetchedModels.map(model => ({
+        label: model.name || model.id,
+        value: model.id,
+      })));
+    });
+  }, []);
+
+  return (
+    <View>
+      <Text>Select Free Model:</Text>
+      <DropDownPicker
+        items={models}
+        value={selectedModel}
+        onChangeItem={item => setSelectedModel(item.value)}
+        placeholder="Choose a model"
+      />
+    </View>
+  );
+};
+
+export default SettingsScreen;
+```
+
+---
+
+### 3. Use Selected Model in AI Requests
+Pass the selected model ID to your AI service [[1]][[5]]:  
+```javascript
+// services/ai.js
+import { OpenAI } from 'openai';
+
+
+export async function getAIResponse(prompt, selectedModel) {
+  const completion = await openai.chat.completions.create({
+    model: selectedModel, // Use the user-selected model
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return completion.choices[0].message.content;
+}
+```
+
+---
+
+### 4. Key Implementation Notes
+- Free Model Filtering:  
+  OpenRouter labels free models with suffixes like `:free` (e.g., `google/gemini-2.0-flash-lite-preview-02-05:free`) [[7]][[8]].  
+- Error Handling:  
+  Add loading states and error messages for network failures [[9]].  
+- Persistent Storage:  
+  Save the selected model to `AsyncStorage` to persist user preferences [[4]].  
+
+---
+
+### 5. durgas Workflow
+1. Settings Page: User selects a free model (e.g., `google/gemini-2.0-flash-lite`).  
+2. AI Interaction: The selected model is used for all chat/completion requests [[5]][[6]].  
+
+By integrating this dropdown, "prbal" users can dynamically choose free OpenRouter models for budgeting insights while minimizing costs.
+3. also, add a tab to show calendar to show how daily and monthly total spending and how much to spend exits or when it is good to give me suggestions by ai by r reading by spends by Ai in refractor flutter that named 'prbal'  and maintained the file 
+4.  for the settings tab
+
+yes go ahead ilike your plan can you continue your work
+
+Read all the above and previous prompts and their answers, then 
+
+then edit my flutter app "prbal"
+
+for Provider there are 4 tabs:-
+1. dashboard for design for all services list its sub catagory also showned as box  and serch bar go to explore page and all news or his calender for services and  provider 
+2. explore screen for map view provide serch taker's services with all filters and list all services list in map in real time
+3. provides all list all pending , onboarding , completed services and bookings
+4. settings page for providers profile and user and servicers and app settings configation
+for Taker there are 4 tabs:-
+1. dashboard for design for all services list its sub catagory also showned as box  and serch bar go to explore page and all news or recent services and discounted prices for any servics we promote
+2. explore screen for map view taker serch taker's services with all filters and list all services list in map in real time
+3. takers all list all pending , onboarding , completed services and bookings
+4. settings page for takers profile and user and servicers and app settings configation
+
+
+For Provider, there are 4 tabs:-
+1. Dashboard for design for all services lists its subcategory, also shown as a box, and a search bar, go to the  explore page, and all news or his calendar for services and providers 
+2. Explore screen for map view, provides search taker's services with all filters and lists all services in the map in real time
+3. provides a list of all pending, onboarding, completed services and bookings
+4. settings page for providers' profiles, users, services and app settings configuration                   
+For Taker, there are 4 tabs:-
+1. Dashboard for design for all services lists its subcategory, also shown as a box  and search bar, go to the explore page, and all news, recent services, and discounted prices for any services we promote
+2. Explore screen for the map view, taker a search taker's post services with all filters, and list all services on the map in real time
+3. takers all list all pending, onboarding, completed services and bookings
+4. Settings page for takers' profile, user, servicers, and app settings configuration
+
+
+read my flutter codebase that name 'prbal' and give one line for every dart file for what's reqiurement of this flutter app "prbal' project
+
+read my flutter codebase that name 'prbal' and give one line for every files in android folder for what's reqiurement of this flutter app "prbal' project
+
+read my flutter codebase that name 'prbal' and give one line for every dart file for what's reqiurement of this proect
+
+read my flutter codebase that name 'prbal' and then
+
+give all screens required in this flutter app "prbal"
+
+give all Navigation Flow required in this flutter app "prbal"
+
+flutter analyze . then edit my flutter app "prbal"
+
+then edit my flutter app "prbal"
+
+yes go ahead ilike your plan can you continue your work and then edit my flutter app "prbal"
+
+and then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+yes go ahead ilike your plan can you continue your work and then edit my flutter app "prbal" and  then complete my flutter app architecture and app flow
+
+learn and understand and analysis for 100 dart files
+
+learn and understand and analysis this in deeply and then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+learn and understand and analysis my flutter android app "prbal" in deeply
+
+learn and understand and analysis my flutter android app "prbal" in deeply in model foldes all models and give me a description requirement description for each model in the prbal Flutter app
+
+now stored in cacheBox a intro_watched variable when the app start if it is fasle after splash screen go to onboarding and if it is true after splash screen go to welcome page learn and understand and analysis this deeply thick edit my flutter app "prbal"
+
+when my app start it start with splash screen where all pre required load or await or asyn do here and then start the app and then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+learn and understand and analysis this files deeply and thick to solved and edit my flutter app "prbal"
+
+learn and understand and analysis this deeply to solved and edit my flutter app "prbal"
+
+give me full system architecture and flow and give me all the screens with all integrations and all components and all functions and all assets and how the screens are connected or the pathway of screen  start this project give steps and commands and prompts to complete the project named "prbal" and also give full file structure
+
+thick to solved and edit my flutter app "prbal"
+
+Read every line and solve every problem. Can you do it for me
+
+thick to solved and enhancemented my flutter app "prbal"
+
+now learn and understand and analysis this thick deeply to edit my flutter app "prbal"
+
+yes go ahead ilike your plan can you continue your work
+
+Clean architecture and learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Testing Infrastructure learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+State management using BLoC pattern learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Comprehensive error handling learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Multi-language support learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Theme customization learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Modular components learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Firebase integration learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Local storage with Hive learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Dependency injection learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Data Model Improvements learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Firebase Security Rules Enhancement learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Authentication Enhancements learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Performance Optimizations learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Error Handling Improvements learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Service Provider Features  learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+UI/UX Improvements  learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Analytics and Monitoring learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Localization Enhancements learn and understand and analysis this then complete my flutter app architecture and app flow and then edit my flutter app "prbal"
+
+Analyze the state management setuplearn and understand and analysis my flutter android app "prbal" in deeply
+
+Review the UI/UX implementationlearn and understand and analysis my flutter android app "prbal" in deeply
+
+Check the Firebase integrationlearn and understand and analysis my flutter android app "prbal" in deeply

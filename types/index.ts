@@ -20,11 +20,14 @@ export interface Contact {
   annualRevenue?: number;
   totalFunding?: number;
   latestFundingAmount?: number;
+  latestFunding?: string; // Latest funding info (e.g., "Series B")
+  lastRaisedAt?: string; // Last raised date (e.g., "2023-06-01")
   seniority?: string;
   departments?: string;
   keywords?: string;
   technologies?: string;
   emailStatus?: string;
+  primaryEmailCatchAllStatus?: string; // Catch-all status for primary email
   stage?: string;
   city?: string;
   state?: string;
@@ -45,6 +48,26 @@ export interface Contact {
   createdAt?: string;
   updatedAt?: string;
   userId?: string;
+}
+
+/**
+ * Contact creation data interface
+ * 
+ * Matches the ContactCreate schema from the API.
+ * All fields are optional as per the API specification.
+ */
+export interface ContactCreate {
+  uuid?: string;
+  first_name?: string;
+  last_name?: string;
+  company_id?: string;
+  email?: string;
+  title?: string;
+  departments?: string[];
+  mobile_phone?: string;
+  email_status?: string;
+  text_search?: string;
+  seniority?: string;
 }
 
 export interface User {
@@ -74,6 +97,7 @@ export interface Plan {
 export interface ChartData {
   name: string;
   value: number;
+  [key: string]: string | number | undefined;
 }
 
 export interface ExportHistory {

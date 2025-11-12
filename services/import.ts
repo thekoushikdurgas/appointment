@@ -8,22 +8,31 @@ import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } f
 export type ImportJobStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 /**
+ * Import error interface
+ */
+export interface ImportError {
+  row_number: number;
+  error_message: string;
+  row_data: Record<string, any>;
+}
+
+/**
  * Import job response interface
  */
 export interface ImportJob {
-  id: number;
+  job_id: string; // UUID string, not numeric ID
   status: ImportJobStatus;
   total_rows: number;
   success_count: number;
   error_count: number;
   upload_file_path: string;
-  error_file_path: string;
+  error_file_path: string | null;
   message: string;
   started_at: string | null;
   finished_at: string | null;
   created_at: string;
   updated_at: string;
-  errors_url: string;
+  errors?: ImportError[]; // Included when include_errors=true
 }
 
 /**
@@ -47,11 +56,19 @@ export interface PollJobOptions {
 
 /**
  * Get import endpoint information
+ * 
+ * @param requestId - Optional X-Request-Id header value for request tracking
  */
-export const getImportInfo = async (): Promise<ServiceResponse<string>> => {
+export const getImportInfo = async (requestId?: string): Promise<ServiceResponse<string>> => {
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/contacts/import/`, {
+    const headers: HeadersInit = {};
+    if (requestId) {
+      headers['X-Request-Id'] = requestId;
+    }
+
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/import/`, {
       method: 'GET',
+      headers,
     });
 
     if (!response.ok) {
@@ -83,7 +100,12 @@ export const getImportInfo = async (): Promise<ServiceResponse<string>> => {
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to get import info');
-    console.error('[IMPORT] Get import info error:', parsedError);
+    console.error('[IMPORT] Get import info error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       message: formatErrorMessage(parsedError, 'Failed to get import info'),
@@ -94,8 +116,11 @@ export const getImportInfo = async (): Promise<ServiceResponse<string>> => {
 
 /**
  * Upload contacts CSV file
+ * 
+ * @param file - The CSV file to upload
+ * @param requestId - Optional X-Request-Id header value for request tracking
  */
-export const uploadContactsCSV = async (file: File): Promise<ServiceResponse<{ jobId: number }>> => {
+export const uploadContactsCSV = async (file: File, requestId?: string): Promise<ServiceResponse<{ jobId: string }>> => {
   try {
     // Validate file type
     const allowedExtensions = ['.csv'];
@@ -131,9 +156,15 @@ export const uploadContactsCSV = async (file: File): Promise<ServiceResponse<{ j
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/contacts/import/`, {
+    const headers: HeadersInit = {};
+    if (requestId) {
+      headers['X-Request-Id'] = requestId;
+    }
+
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/import/`, {
       method: 'POST',
       body: formData,
+      headers,
     });
 
     if (!response.ok) {
@@ -159,10 +190,10 @@ export const uploadContactsCSV = async (file: File): Promise<ServiceResponse<{ j
     }
 
     const data = await response.json();
-    if (!data.job_id) {
+    if (!data.job_id || typeof data.job_id !== 'string') {
       return {
         success: false,
-        message: 'Invalid response from server: job ID not found',
+        message: 'Invalid response from server: job ID not found or invalid',
         error: {
           message: 'Invalid response format',
           isNetworkError: false,
@@ -178,7 +209,12 @@ export const uploadContactsCSV = async (file: File): Promise<ServiceResponse<{ j
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to upload CSV file');
-    console.error('[IMPORT] Upload CSV error:', parsedError);
+    console.error('[IMPORT] Upload CSV error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       message: formatErrorMessage(parsedError, 'Failed to upload CSV file'),
@@ -189,10 +225,14 @@ export const uploadContactsCSV = async (file: File): Promise<ServiceResponse<{ j
 
 /**
  * Get import job status
+ * 
+ * @param jobId - The import job ID (UUID string)
+ * @param includeErrors - If true, includes error records in the response
+ * @param requestId - Optional X-Request-Id header value for request tracking
  */
-export const getImportJobStatus = async (jobId: number): Promise<ServiceResponse<ImportJob>> => {
+export const getImportJobStatus = async (jobId: string, includeErrors?: boolean, requestId?: string): Promise<ServiceResponse<ImportJob>> => {
   try {
-    if (!jobId || typeof jobId !== 'number') {
+    if (!jobId || typeof jobId !== 'string') {
       return {
         success: false,
         message: 'Invalid job ID',
@@ -204,8 +244,20 @@ export const getImportJobStatus = async (jobId: number): Promise<ServiceResponse
       };
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/contacts/import/${jobId}/`, {
+    const headers: HeadersInit = {};
+    if (requestId) {
+      headers['X-Request-Id'] = requestId;
+    }
+
+    // Build URL with optional include_errors parameter
+    let url = `${API_BASE_URL}/api/v1/contacts/import/${jobId}/`;
+    if (includeErrors === true) {
+      url += '?include_errors=true';
+    }
+
+    const response = await authenticatedFetch(url, {
       method: 'GET',
+      headers,
     });
 
     if (!response.ok) {
@@ -248,7 +300,12 @@ export const getImportJobStatus = async (jobId: number): Promise<ServiceResponse
     };
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to get import job status');
-    console.error('[IMPORT] Get import job status error:', parsedError);
+    console.error('[IMPORT] Get import job status error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
       message: formatErrorMessage(parsedError, 'Failed to get import job status'),
@@ -261,7 +318,7 @@ export const getImportJobStatus = async (jobId: number): Promise<ServiceResponse
  * Poll import job status until completion or failure
  */
 export const pollImportJobStatus = async (
-  jobId: number,
+  jobId: string,
   options: PollJobOptions = {}
 ): Promise<ServiceResponse<ImportJob>> => {
   const {
@@ -305,11 +362,14 @@ export const pollImportJobStatus = async (
 };
 
 /**
- * Download import errors CSV file
+ * Get import errors as JSON array
+ * 
+ * @param jobId - The import job ID (UUID string)
+ * @param requestId - Optional X-Request-Id header value for request tracking
  */
-export const downloadImportErrors = async (jobId: number): Promise<ServiceResponse<Blob>> => {
+export const getImportErrors = async (jobId: string, requestId?: string): Promise<ServiceResponse<ImportError[]>> => {
   try {
-    if (!jobId || typeof jobId !== 'number') {
+    if (!jobId || typeof jobId !== 'string') {
       return {
         success: false,
         message: 'Invalid job ID',
@@ -321,17 +381,23 @@ export const downloadImportErrors = async (jobId: number): Promise<ServiceRespon
       };
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/contacts/import/${jobId}/errors/`, {
+    const headers: HeadersInit = {};
+    if (requestId) {
+      headers['X-Request-Id'] = requestId;
+    }
+
+    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/import/${jobId}/errors/`, {
       method: 'GET',
+      headers,
     });
 
     if (!response.ok) {
       if (response.status === 404) {
         return {
           success: false,
-          message: 'Import job not found or no error file available',
+          message: 'Import job not found or no errors available',
           error: {
-            message: 'Import job not found or no error file available',
+            message: 'Import job not found or no errors available',
             statusCode: 404,
             isNetworkError: false,
             isTimeoutError: false,
@@ -350,53 +416,31 @@ export const downloadImportErrors = async (jobId: number): Promise<ServiceRespon
           },
         };
       }
-      const error = await parseApiError(response, 'Failed to download import errors');
+      const error = await parseApiError(response, 'Failed to get import errors');
       return {
         success: false,
-        message: formatErrorMessage(error, 'Failed to download import errors'),
+        message: formatErrorMessage(error, 'Failed to get import errors'),
         error,
       };
     }
 
-    // Check if response is actually a CSV file
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('text/csv')) {
-      // If not CSV, try to get error message from JSON response
-      try {
-        const errorData = await response.json();
-        return {
-          success: false,
-          message: errorData.detail || 'Failed to download error file',
-          error: {
-            message: errorData.detail || 'Failed to download error file',
-            isNetworkError: false,
-            isTimeoutError: false,
-          },
-        };
-      } catch {
-        return {
-          success: false,
-          message: 'Unexpected response format. Expected CSV file.',
-          error: {
-            message: 'Unexpected response format',
-            isNetworkError: false,
-            isTimeoutError: false,
-          },
-        };
-      }
-    }
-
-    const blob = await response.blob();
+    // API returns JSON array of error records
+    const errors: ImportError[] = await response.json();
     return {
       success: true,
-      data: blob,
+      data: Array.isArray(errors) ? errors : [],
     };
   } catch (error) {
-    const parsedError = parseExceptionError(error, 'Failed to download import errors');
-    console.error('[IMPORT] Download import errors error:', parsedError);
+    const parsedError = parseExceptionError(error, 'Failed to get import errors');
+    console.error('[IMPORT] Get import errors error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
     return {
       success: false,
-      message: formatErrorMessage(parsedError, 'Failed to download import errors'),
+      message: formatErrorMessage(parsedError, 'Failed to get import errors'),
       error: parsedError,
     };
   }

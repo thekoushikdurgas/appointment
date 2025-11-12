@@ -3,7 +3,6 @@ const nextConfig = {
   devIndicators: false,
   reactStrictMode: true,
   images: {
-    domains: ['picsum.photos'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -11,8 +10,7 @@ const nextConfig = {
       },
     ],
   },
-  allowedDevOrigins: ['192.168.1.6'],
-  // Environment variables with NEXT_PUBLIC_ prefix are automatically available in client components
+  allowedDevOrigins: ['192.168.1.6', '192.168.1.13'],
 }
 
 module.exports = nextConfig

@@ -1,15 +1,24 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Contact } from '../../../types/index';
-import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, TagIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon } from '../../../components/icons/IconComponents';
+import Image from 'next/image';
+import { Contact, ContactCreate } from '../../../types/index';
+import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, TagIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, MailIcon, PhoneIcon, BuildingIcon, MapPinIcon, CalendarIcon, UsersIcon, EditIcon, SuccessIcon, AlertTriangleIcon } from '../../../components/icons/IconComponents';
 import { useDebounce } from '../../../hooks/useDebounce';
-import { fetchContacts, fetchDistinctValues } from '../../../services/contact';
+import { fetchContacts, fetchDistinctValues, fetchFieldValues, ContactFilters, createContact } from '../../../services/contact';
+import { uploadContactsCSV, getImportJobStatus, pollImportJobStatus, getImportErrors, ImportJob, ImportError } from '../../../services/import';
+import { Input } from '../../../components/ui/Input';
+import { Button } from '../../../components/ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
+import { Card, CardContent } from '../../../components/ui/Card';
+import { Textarea } from '../../../components/ui/Textarea';
+import { Select } from '../../../components/ui/Select';
+import { cn } from '../../../utils/cn';
 
 type SortableColumn = 'name' | 'company' | 'title' | 'status' | 'emailStatus' | 'city' | 'state' | 'country' | 'industry' | 'phone' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
-interface Filters {
+interface Filters extends ContactFilters {
     status: Contact['status'] | 'All';
     emailStatus: 'All' | 'Verified' | 'Unverified' | 'Bounced';
     industry: string;
@@ -22,6 +31,61 @@ interface Filters {
     employees_max: string;
     annual_revenue_min: string;
     annual_revenue_max: string;
+    // Person filters
+    first_name: string;
+    last_name: string;
+    email: string;
+    departments: string;
+    // Phone filters
+    work_direct_phone: string;
+    home_phone: string;
+    mobile_phone: string;
+    corporate_phone: string;
+    other_phone: string;
+    // Company detail filters
+    company_name_for_emails: string;
+    company_address: string;
+    company_city: string;
+    company_state: string;
+    company_country: string;
+    company_phone: string;
+    // URL filters
+    person_linkedin_url: string;
+    company_linkedin_url: string;
+    facebook_url: string;
+    twitter_url: string;
+    website: string;
+    // Technology and funding filters
+    technologies: string;
+    latest_funding: string;
+    last_raised_at: string;
+    // Additional numeric ranges
+    total_funding_min: string;
+    total_funding_max: string;
+    latest_funding_amount_min: string;
+    latest_funding_amount_max: string;
+    // Exact match filters
+    primary_email_catch_all_status: string;
+    seniority: string;
+    stage: string;
+    // Date range filters (ISO datetime format strings)
+    created_at_after: string;
+    created_at_before: string;
+    updated_at_after: string;
+    updated_at_before: string;
+    // Location filters
+    company_location?: string;
+    contact_location?: string;
+    // Exclusion filters (multi-value, case-insensitive)
+    exclude_company_ids?: string[];
+    exclude_titles?: string[];
+    exclude_company_locations?: string[];
+    exclude_contact_locations?: string[];
+    exclude_seniorities?: string[];
+    exclude_departments?: string[];
+    exclude_technologies?: string[];
+    exclude_keywords?: string[];
+    exclude_industries?: string[];
 }
 
 const initialFilters: Filters = {
@@ -37,32 +101,85 @@ const initialFilters: Filters = {
     employees_max: '',
     annual_revenue_min: '',
     annual_revenue_max: '',
+    // Person filters
+    first_name: '',
+    last_name: '',
+    email: '',
+    departments: '',
+    // Phone filters
+    work_direct_phone: '',
+    home_phone: '',
+    mobile_phone: '',
+    corporate_phone: '',
+    other_phone: '',
+    // Company detail filters
+    company_name_for_emails: '',
+    company_address: '',
+    company_city: '',
+    company_state: '',
+    company_country: '',
+    company_phone: '',
+    // URL filters
+    person_linkedin_url: '',
+    company_linkedin_url: '',
+    facebook_url: '',
+    twitter_url: '',
+    website: '',
+    // Technology and funding filters
+    technologies: '',
+    latest_funding: '',
+    last_raised_at: '',
+    // Additional numeric ranges
+    total_funding_min: '',
+    total_funding_max: '',
+    latest_funding_amount_min: '',
+    latest_funding_amount_max: '',
+    // Exact match filters
+    primary_email_catch_all_status: '',
+    seniority: '',
+    stage: '',
+    // Date range filters
+    created_at_after: '',
+    created_at_before: '',
+    updated_at_after: '',
+    updated_at_before: '',
+    // Location filters
+    company_location: '',
+    contact_location: '',
+    // Exclusion filters
+    exclude_company_ids: [],
+    exclude_titles: [],
+    exclude_company_locations: [],
+    exclude_contact_locations: [],
+    exclude_seniorities: [],
+    exclude_departments: [],
+    exclude_technologies: [],
+    exclude_keywords: [],
+    exclude_industries: [],
 };
 
 const StatusBadge: React.FC<{ status: Contact['status'] }> = ({ status }) => {
-  const baseClasses = "px-3 py-1 text-xs font-medium rounded-full inline-block whitespace-nowrap";
   const statusClasses = {
-    Lead: "bg-yellow-400/20 text-yellow-500",
-    Customer: "bg-green-400/20 text-green-500",
-    Archived: "bg-gray-400/20 text-gray-500",
+    Lead: "badge badge-status-lead",
+    Customer: "badge badge-status-customer",
+    Archived: "badge badge-status-archived",
   };
-  return <span className={`${baseClasses} ${statusClasses[status]}`}>{status}</span>;
+  return <span className={statusClasses[status]}>{status}</span>;
 };
 
 const EmailStatusBadge: React.FC<{ status: string | undefined }> = ({ status }) => {
     if (!status) return <span className="text-muted-foreground">-</span>;
     
-    const baseClasses = "px-3 py-1 text-xs font-medium rounded-full inline-block whitespace-nowrap";
     const statusClasses: { [key: string]: string } = {
-      valid: "bg-green-400/20 text-green-500",
-      unknown: "bg-gray-400/20 text-gray-500",
-      invalid: "bg-red-400/20 text-red-500",
+      valid: "badge badge-email-valid",
+      unknown: "badge badge-email-unknown",
+      invalid: "badge badge-email-invalid",
     };
     
-    const statusClass = statusClasses[status] || "bg-blue-400/20 text-blue-500";
+    const statusClass = statusClasses[status] || "badge badge-primary";
     const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1);
     
-    return <span className={`${baseClasses} ${statusClass}`}>{formattedStatus}</span>;
+    return <span className={statusClass}>{formattedStatus}</span>;
 };
 
 
@@ -78,7 +195,7 @@ const Highlight: React.FC<{ text: string | undefined; highlight: string }> = ({ 
     <span>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-primary/20 text-primary-600 dark:text-primary-400 rounded px-1 py-0.5">
+          <mark key={i} className="bg-primary/20 text-primary rounded px-1 py-0.5">
             {part}
           </mark>
         ) : (
@@ -91,125 +208,334 @@ const Highlight: React.FC<{ text: string | undefined; highlight: string }> = ({ 
 
 const DetailItem: React.FC<{label: string; value?: string | number | null}> = ({ label, value }) => (
     value ? (
-        <div>
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="font-medium text-card-foreground">{value}</p>
+        <div className="contact-detail-item">
+            <p className="contact-detail-label">{label}</p>
+            <p className="contact-detail-value">{value}</p>
         </div>
     ) : null
 );
 
 const ContactDetailModal: React.FC<{ contact: Contact; onClose: () => void }> = ({ contact, onClose }) => {
     const tags = contact.tags?.split(',').map(t => t.trim()).filter(Boolean) || [];
+    const technologies = contact.technologies?.split(',').map(t => t.trim()).filter(Boolean) || [];
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-card rounded-2xl shadow-2xl w-full max-w-3xl border border-border max-h-[90vh] flex flex-col animate-fade-in" onClick={e => e.stopPropagation()}>
-                <header className="p-6 border-b border-border flex items-start justify-between">
-                    <div className="flex items-center gap-4">
-                        <img src={contact.avatarUrl} alt={contact.name} className="w-16 h-16 rounded-full" />
+        <div className="contact-modal-overlay" onClick={onClose}>
+            <div className="contact-modal-content" onClick={e => e.stopPropagation()}>
+                <header className="contact-modal-header">
+                    <div className="contact-modal-header-info">
+                        <Image src={contact.avatarUrl} alt={contact.name} className="contact-modal-avatar" width={64} height={64} />
                         <div>
-                            <h2 className="text-2xl font-bold text-card-foreground">{contact.name}</h2>
+                            <h2 className="text-2xl font-bold text-foreground">{contact.name}</h2>
                             <p className="text-muted-foreground">{contact.title || 'No title specified'}</p>
                             <p className="text-muted-foreground flex items-center gap-2"><OfficeBuildingIcon className="w-4 h-4" /> {contact.company}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary">
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary" aria-label="Close contact details" title="Close contact details">
                         <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
                     </button>
                 </header>
                 
-                <main className="p-6 overflow-y-auto space-y-8">
+                <main className="contact-modal-body">
                     <div className="flex items-center gap-4">
-                        {contact.personLinkedinUrl && <a href={contact.personLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><LinkedInIcon className="w-6 h-6"/></a>}
-                        {contact.twitterUrl && <a href={contact.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><TwitterIcon className="w-6 h-6"/></a>}
-                        {contact.facebookUrl && <a href={contact.facebookUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><FacebookIcon className="w-6 h-6"/></a>}
-                        {contact.website && <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary"><GlobeAltIcon className="w-6 h-6"/></a>}
+                        {contact.personLinkedinUrl && <a href={contact.personLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Person LinkedIn profile"><LinkedInIcon className="w-6 h-6"/></a>}
+                        {contact.twitterUrl && <a href={contact.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Twitter profile"><TwitterIcon className="w-6 h-6"/></a>}
+                        {contact.facebookUrl && <a href={contact.facebookUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Facebook profile"><FacebookIcon className="w-6 h-6"/></a>}
+                        {contact.website && <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Website"><GlobeAltIcon className="w-6 h-6"/></a>}
+                        {contact.companyLinkedinUrl && <a href={contact.companyLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Company LinkedIn profile"><LinkedInIcon className="w-6 h-6"/></a>}
                     </div>
 
-                    <section>
-                        <h3 className="text-lg font-semibold mb-4 text-card-foreground">Contact Information</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <section className="contact-modal-section">
+                        <h3>Contact Information</h3>
+                        <div className="contact-modal-grid">
                             <DetailItem label="Email" value={contact.email} />
                             <DetailItem label="Phone" value={contact.phone} />
                             <DetailItem label="Location" value={`${contact.city || ''} ${contact.state || ''} ${contact.country || ''}`.trim()} />
                             <DetailItem label="Email Status" value={contact.emailStatus} />
+                            <DetailItem label="Primary Email Catch-All Status" value={contact.primaryEmailCatchAllStatus} />
+                            <DetailItem label="Departments" value={contact.departments} />
+                            <DetailItem label="Seniority" value={contact.seniority} />
+                            <DetailItem label="Stage" value={contact.stage} />
                         </div>
                     </section>
                     
-                    <section>
-                        <h3 className="text-lg font-semibold mb-4 text-card-foreground">Company Information</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <section className="contact-modal-section">
+                        <h3>Company Information</h3>
+                        <div className="contact-modal-grid">
                             <DetailItem label="Company" value={contact.company} />
+                            <DetailItem label="Company Name for Emails" value={contact.companyNameForEmails} />
                             <DetailItem label="Industry" value={contact.industry} />
                             <DetailItem label="Employees" value={contact.employeesCount} />
                             <DetailItem label="Company Phone" value={contact.companyPhone} />
+                            <DetailItem label="Company Address" value={contact.companyAddress} />
+                            <DetailItem label="Company Location" value={`${contact.companyCity || ''} ${contact.companyState || ''} ${contact.companyCountry || ''}`.trim()} />
                             <DetailItem label="Annual Revenue" value={contact.annualRevenue ? `$${contact.annualRevenue.toLocaleString()}`: null} />
                             <DetailItem label="Website" value={contact.website} />
                         </div>
                     </section>
+
+                    {(contact.totalFunding || contact.latestFunding || contact.latestFundingAmount || contact.lastRaisedAt) && (
+                    <section className="contact-modal-section">
+                        <h3>Funding Information</h3>
+                        <div className="contact-modal-grid">
+                                <DetailItem label="Total Funding" value={contact.totalFunding ? `$${contact.totalFunding.toLocaleString()}` : null} />
+                                <DetailItem label="Latest Funding" value={contact.latestFunding} />
+                                <DetailItem label="Latest Funding Amount" value={contact.latestFundingAmount ? `$${contact.latestFundingAmount.toLocaleString()}` : null} />
+                                <DetailItem label="Last Raised At" value={contact.lastRaisedAt} />
+                            </div>
+                        </section>
+                    )}
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {tags.length > 0 && (
-                            <section>
-                                <h3 className="text-lg font-semibold mb-4 text-card-foreground flex items-center gap-2"><TagIcon className="w-5 h-5"/> Tags</h3>
-                                <div className="flex flex-wrap gap-2">
+                            <section className="contact-modal-section">
+                                <h3 className="flex items-center gap-2"><TagIcon className="w-5 h-5"/> Tags</h3>
+                                <div className="contact-modal-tags">
                                     {tags.map(tag => (
-                                        <span key={tag} className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary-600 dark:text-primary-400">{tag}</span>
+                                        <span key={tag} className="contact-modal-tag">{tag}</span>
                                     ))}
                                 </div>
                             </section>
                         )}
-                        {contact.notes && (
-                            <section>
-                                <h3 className="text-lg font-semibold mb-4 text-card-foreground">Notes</h3>
-                                <div className="prose prose-sm dark:prose-invert max-w-none bg-secondary p-4 rounded-lg border border-border">
-                                    <p>{contact.notes}</p>
+                        {technologies.length > 0 && (
+                            <section className="contact-modal-section">
+                                <h3>Technologies</h3>
+                                <div className="contact-modal-tags">
+                                    {technologies.map(tech => (
+                                        <span key={tech} className="contact-modal-tag">{tech}</span>
+                                    ))}
                                 </div>
                             </section>
                         )}
                     </div>
+
+                    {(contact.createdAt || contact.updatedAt) && (
+                        <section className="contact-modal-section">
+                            <h3>Timestamps</h3>
+                            <div className="contact-modal-grid">
+                                <DetailItem label="Created At" value={contact.createdAt ? new Date(contact.createdAt).toLocaleString() : null} />
+                                <DetailItem label="Updated At" value={contact.updatedAt ? new Date(contact.updatedAt).toLocaleString() : null} />
+                            </div>
+                        </section>
+                    )}
+                    
+                    {contact.notes && (
+                        <section className="contact-modal-section">
+                            <h3>Notes</h3>
+                            <div className="bg-secondary p-4 rounded-lg border border-border">
+                                <p>{contact.notes}</p>
+                            </div>
+                        </section>
+                    )}
                 </main>
             </div>
-             <style jsx>{`
-                @keyframes fade-in {
-                    from { opacity: 0; transform: scale(0.95); }
-                    to { opacity: 1; transform: scale(1); }
-                }
-                .animate-fade-in {
-                    animation: fade-in 0.2s ease-out forwards;
-                }
-            `}</style>
         </div>
     );
 };
 
 const FilterInput: React.FC<{ label: string; name: keyof Filters, value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string }> = 
-({ label, name, value, onChange, placeholder }) => (
-    <div>
-        <label htmlFor={name} className="block text-sm font-medium text-muted-foreground mb-1">{label}</label>
-        <input id={name} name={name} type="text" value={value} onChange={onChange} placeholder={placeholder} className="w-full border bg-background border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"/>
-    </div>
-);
+({ label, name, value, onChange, placeholder }) => {
+    const nameString = String(name);
+    return (
+        <div>
+            <label htmlFor={nameString} className="form-label">{label}</label>
+            <input id={nameString} name={nameString} type="text" value={value} onChange={onChange} placeholder={placeholder} className="input text-sm"/>
+        </div>
+    );
+};
 
 const FilterRangeInput: React.FC<{ label: string; minName: keyof Filters, minValue: string; maxName: keyof Filters, maxValue: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; }> =
-({ label, minName, minValue, maxName, maxValue, onChange }) => (
-    <div>
-        <label className="block text-sm font-medium text-muted-foreground mb-1">{label}</label>
-        <div className="flex items-center gap-2">
-            <input name={minName} type="number" value={minValue} onChange={onChange} placeholder="Min" className="w-full border bg-background border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"/>
-            <span className="text-muted-foreground">-</span>
-            <input name={maxName} type="number" value={maxValue} onChange={onChange} placeholder="Max" className="w-full border bg-background border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"/>
+({ label, minName, minValue, maxName, maxValue, onChange }) => {
+    const minNameString = String(minName);
+    const maxNameString = String(maxName);
+    return (
+        <div>
+            <label className="form-label">{label}</label>
+            <div className="flex items-center gap-2">
+                <input name={minNameString} type="number" value={minValue} onChange={onChange} placeholder="Min" className="input text-sm"/>
+                <span className="text-muted-foreground">-</span>
+                <input name={maxNameString} type="number" value={maxValue} onChange={onChange} placeholder="Max" className="input text-sm"/>
+            </div>
         </div>
-    </div>
-);
+    );
+};
+
+/**
+ * FilterDateRange component for date range inputs
+ * Converts between user-friendly datetime-local format and ISO 8601 format for API
+ */
+const FilterDateRange: React.FC<{ 
+    label: string; 
+    afterName: keyof Filters; 
+    afterValue: string; 
+    beforeName: keyof Filters; 
+    beforeValue: string; 
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}> = ({ label, afterName, afterValue, beforeName, beforeValue, onChange }) => {
+    const afterNameString = String(afterName);
+    const beforeNameString = String(beforeName);
+    
+    // Convert ISO format to datetime-local format for display
+    const isoToLocal = (iso: string): string => {
+        if (!iso) return '';
+        try {
+            const date = new Date(iso);
+            if (isNaN(date.getTime())) return '';
+            // Format as YYYY-MM-DDTHH:mm for datetime-local input
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        } catch {
+            return '';
+        }
+    };
+    
+    // Convert datetime-local format to ISO format for API
+    const localToIso = (local: string): string => {
+        if (!local) return '';
+        try {
+            const date = new Date(local);
+            if (isNaN(date.getTime())) return '';
+            return date.toISOString();
+        } catch {
+            return '';
+        }
+    };
+    
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const isoValue = localToIso(value);
+        // Create a synthetic event with ISO value
+        const syntheticEvent = {
+            ...e,
+            target: {
+                ...e.target,
+                name,
+                value: isoValue,
+            }
+        } as React.ChangeEvent<HTMLInputElement>;
+        onChange(syntheticEvent);
+    };
+    
+    return (
+        <div>
+            <label className="form-label">{label}</label>
+            <div className="flex flex-col gap-2">
+                <div>
+                    <label htmlFor={`${afterNameString}_input`} className="text-xs text-muted-foreground mb-1">From</label>
+                    <input 
+                        id={`${afterNameString}_input`}
+                        name={afterNameString} 
+                        type="datetime-local" 
+                        value={isoToLocal(afterValue)} 
+                        onChange={handleChange}
+                        className="input text-sm"
+                    />
+                </div>
+                <div>
+                    <label htmlFor={`${beforeNameString}_input`} className="text-xs text-muted-foreground mb-1">To</label>
+                    <input 
+                        id={`${beforeNameString}_input`}
+                        name={beforeNameString} 
+                        type="datetime-local" 
+                        value={isoToLocal(beforeValue)} 
+                        onChange={handleChange}
+                        className="input text-sm"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * FilterMultiSelect component for managing exclusion filter arrays
+ * Allows adding multiple values as tags/chips with remove functionality
+ */
+const FilterMultiSelect: React.FC<{
+    label: string;
+    name: keyof Filters;
+    values: string[];
+    onAdd: (name: keyof Filters, value: string) => void;
+    onRemove: (name: keyof Filters, value: string) => void;
+    placeholder?: string;
+}> = ({ label, name, values, onAdd, onRemove, placeholder }) => {
+    const [inputValue, setInputValue] = useState('');
+    const nameString = String(name);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && inputValue.trim()) {
+            e.preventDefault();
+            const trimmed = inputValue.trim();
+            if (!values.includes(trimmed)) {
+                onAdd(name, trimmed);
+                setInputValue('');
+            }
+        }
+    };
+
+    const handleBlur = () => {
+        if (inputValue.trim()) {
+            const trimmed = inputValue.trim();
+            if (!values.includes(trimmed)) {
+                onAdd(name, trimmed);
+                setInputValue('');
+            }
+        }
+    };
+
+    return (
+        <div>
+            <label htmlFor={nameString} className="form-label">{label}</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+                {values.map((value, index) => (
+                    <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-secondary text-foreground rounded-md text-sm"
+                    >
+                        <span>{value}</span>
+                        <button
+                            type="button"
+                            onClick={() => onRemove(name, value)}
+                            className="hover:text-destructive focus:outline-none"
+                            aria-label={`Remove ${value}`}
+                        >
+                            <XMarkIcon className="w-3 h-3" />
+                        </button>
+                    </span>
+                ))}
+            </div>
+            <input
+                id={nameString}
+                name={nameString}
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                placeholder={placeholder || 'Type and press Enter to add'}
+                className="input text-sm"
+            />
+        </div>
+    );
+};
 
 
 const FilterSidebar: React.FC<{
     filters: Filters;
     onFilterChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+    onAddExclusionValue: (name: keyof Filters, value: string) => void;
+    onRemoveExclusionValue: (name: keyof Filters, value: string) => void;
     clearFilters: () => void;
     uniqueIndustries: string[];
-}> = ({ filters, onFilterChange, clearFilters, uniqueIndustries }) => {
+    uniqueTitles: string[];
+    uniqueCompanies: string[];
+    isLoadingTitles: boolean;
+    isLoadingCompanies: boolean;
+}> = ({ filters, onFilterChange, onAddExclusionValue, onRemoveExclusionValue, clearFilters, uniqueIndustries, uniqueTitles, uniqueCompanies, isLoadingTitles, isLoadingCompanies }) => {
     const [openSections, setOpenSections] = useState<string[]>(['status', 'company']);
 
     const toggleSection = (section: string) => {
@@ -221,36 +547,73 @@ const FilterSidebar: React.FC<{
     const AccordionSection: React.FC<{ title: string; id: string; children: React.ReactNode }> = ({ title, id, children }) => {
         const isOpen = openSections.includes(id);
         return (
-            <div className="border-b border-border">
-                <button onClick={() => toggleSection(id)} className="w-full flex justify-between items-center py-3 text-left font-semibold text-card-foreground">
+            <div className="filter-accordion-section">
+                <button 
+                    onClick={() => toggleSection(id)} 
+                    className="filter-accordion-button" 
+                    aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${title} section`} 
+                    aria-expanded={isOpen ? 'true' : 'false'}
+                    title={`${isOpen ? 'Collapse' : 'Expand'} ${title} section`}
+                >
                     <span>{title}</span>
-                    {isOpen ? <ChevronUpIcon className="w-5 h-5"/> : <ChevronDownIcon className="w-5 h-5"/>}
+                    {isOpen ? <ChevronUpIcon className="w-5 h-5 text-muted-foreground"/> : <ChevronDownIcon className="w-5 h-5 text-muted-foreground"/>}
                 </button>
-                {isOpen && <div className="pb-4 space-y-4 text-sm">{children}</div>}
+                {isOpen && <div className="filter-accordion-content">{children}</div>}
             </div>
         );
     };
     
+    // Count active filters for badge
+    const activeFilterCount = useMemo(() => {
+        let count = 0;
+        Object.entries(filters).forEach(([key, value]) => {
+            if (key === 'status' || key === 'emailStatus' || key === 'industry') {
+                if (value && value !== 'All') count++;
+            } else if (Array.isArray(value)) {
+                // Count exclusion filters (non-empty arrays)
+                if (value.length > 0) count++;
+            } else if (value && value !== '') {
+                count++;
+            }
+        });
+        return count;
+    }, [filters]);
+    
     return (
-        <aside className="bg-card border-border lg:border-r h-full flex flex-col">
-            <div className="p-4 flex justify-between items-center border-b border-border">
-                <h2 className="text-lg font-bold text-card-foreground">Filters</h2>
-                <button onClick={clearFilters} className="text-sm font-medium text-primary-500 hover:underline">Clear All</button>
+        <aside className="filter-sidebar">
+            <div className="filter-sidebar-header">
+                <div className="filter-sidebar-title">
+                    <FilterIcon className="w-5 h-5 text-primary" />
+                    <h2>Filters</h2>
+                    {activeFilterCount > 0 && (
+                        <span className="filter-sidebar-badge">
+                            {activeFilterCount}
+                        </span>
+                    )}
+                </div>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    aria-label="Clear all filters"
+                >
+                    Clear All
+                </Button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                <AccordionSection title="Status" id="status">
+            <div className="filter-sidebar-content">
+                <AccordionSection title="Status & Stage" id="status">
                     <div>
-                        <label htmlFor="status" className="block text-sm font-medium text-muted-foreground mb-1">Contact Status (Stage)</label>
-                        <select id="status" name="status" value={filters.status} onChange={onFilterChange} className="w-full border bg-background border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <label htmlFor="status" className="form-label">Contact Status (Stage)</label>
+                        <select id="status" name="status" value={filters.status} onChange={onFilterChange} className="select text-sm">
                             <option value="All">All Statuses</option>
                             <option value="Lead">Lead</option>
                             <option value="Customer">Customer</option>
                             <option value="Archived">Archived</option>
                         </select>
                     </div>
-                     <div>
-                        <label htmlFor="emailStatus" className="block text-sm font-medium text-muted-foreground mb-1">Email Status</label>
-                        <select id="emailStatus" name="emailStatus" value={filters.emailStatus} onChange={onFilterChange} className="w-full border bg-background border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                    <div>
+                        <label htmlFor="emailStatus" className="form-label">Email Status</label>
+                        <select id="emailStatus" name="emailStatus" value={filters.emailStatus} onChange={onFilterChange} className="select text-sm">
                             <option value="All">All Email Statuses</option>
                             <option value="valid">Verified</option>
                             <option value="unknown">Unverified</option>
@@ -259,15 +622,51 @@ const FilterSidebar: React.FC<{
                     </div>
                 </AccordionSection>
                 
+                <AccordionSection title="Person Information" id="person">
+                    <FilterInput label="First Name" name="first_name" value={filters.first_name} onChange={onFilterChange} placeholder="e.g. John" />
+                    <FilterInput label="Last Name" name="last_name" value={filters.last_name} onChange={onFilterChange} placeholder="e.g. Doe" />
+                    <FilterInput label="Email" name="email" value={filters.email} onChange={onFilterChange} placeholder="e.g. john@example.com" />
+                    <FilterInput label="Departments" name="departments" value={filters.departments} onChange={onFilterChange} placeholder="e.g. executive, sales" />
+                </AccordionSection>
+
+                <AccordionSection title="Phone Numbers" id="phone">
+                    <FilterInput label="Work Direct Phone" name="work_direct_phone" value={filters.work_direct_phone} onChange={onFilterChange} placeholder="+1234567890" />
+                    <FilterInput label="Home Phone" name="home_phone" value={filters.home_phone} onChange={onFilterChange} placeholder="+1234567890" />
+                    <FilterInput label="Mobile Phone" name="mobile_phone" value={filters.mobile_phone} onChange={onFilterChange} placeholder="+1234567890" />
+                    <FilterInput label="Corporate Phone" name="corporate_phone" value={filters.corporate_phone} onChange={onFilterChange} placeholder="+1234567890" />
+                    <FilterInput label="Other Phone" name="other_phone" value={filters.other_phone} onChange={onFilterChange} placeholder="+1234567890" />
+                </AccordionSection>
+                
                 <AccordionSection title="Contact Info" id="contact">
-                    <FilterInput label="Title" name="title" value={filters.title} onChange={onFilterChange} placeholder="e.g. CEO, Manager" />
+                    <div>
+                        <label htmlFor="title" className="form-label">Title</label>
+                        <select 
+                            id="title" 
+                            name="title" 
+                            value={filters.title} 
+                            onChange={onFilterChange} 
+                            className="select text-sm"
+                            disabled={isLoadingTitles}
+                        >
+                            <option value="">All Titles</option>
+                            {isLoadingTitles ? (
+                                <option value="" disabled>Loading titles...</option>
+                            ) : (
+                                uniqueTitles.map(title => (
+                                    <option key={title} value={title}>
+                                        {title}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                    </div>
                     <FilterInput label="Keywords" name="tags" value={filters.tags} onChange={onFilterChange} placeholder="e.g. saas, b2b" />
                 </AccordionSection>
                 
                 <AccordionSection title="Company Info" id="company">
                     <div>
-                        <label htmlFor="industry" className="block text-sm font-medium text-muted-foreground mb-1">Industry</label>
-                        <select id="industry" name="industry" value={filters.industry} onChange={onFilterChange} className="w-full border bg-background border-border rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
+                        <label htmlFor="industry" className="form-label">Industry</label>
+                        <select id="industry" name="industry" value={filters.industry} onChange={onFilterChange} className="select text-sm">
                              <option value="All">All Industries</option>
                             {uniqueIndustries.map(industry => (
                                 <option key={industry} value={industry}>
@@ -276,17 +675,1164 @@ const FilterSidebar: React.FC<{
                             ))}
                         </select>
                     </div>
+                    <div>
+                        <label htmlFor="company_name_for_emails" className="form-label">Company Name</label>
+                        <select 
+                            id="company_name_for_emails" 
+                            name="company_name_for_emails" 
+                            value={filters.company_name_for_emails} 
+                            onChange={onFilterChange} 
+                            className="select text-sm"
+                            disabled={isLoadingCompanies}
+                        >
+                            <option value="">All Companies</option>
+                            {isLoadingCompanies ? (
+                                <option value="" disabled>Loading companies...</option>
+                            ) : (
+                                uniqueCompanies.map(company => (
+                                    <option key={company} value={company}>
+                                        {company}
+                                    </option>
+                                ))
+                            )}
+                        </select>
+                    </div>
+                    <FilterInput label="Company Address" name="company_address" value={filters.company_address} onChange={onFilterChange} placeholder="e.g. 123 Main St" />
+                    <FilterInput label="Company Phone" name="company_phone" value={filters.company_phone} onChange={onFilterChange} placeholder="+1234567890" />
                     <FilterRangeInput label="Employees" minName="employees_min" minValue={filters.employees_min} maxName="employees_max" maxValue={filters.employees_max} onChange={onFilterChange} />
                     <FilterRangeInput label="Annual Revenue" minName="annual_revenue_min" minValue={filters.annual_revenue_min} maxName="annual_revenue_max" maxValue={filters.annual_revenue_max} onChange={onFilterChange} />
                 </AccordionSection>
 
                 <AccordionSection title="Location" id="location">
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-2">Location Search</h4>
+                    <FilterInput 
+                        label="Company Location" 
+                        name="company_location" 
+                        value={filters.company_location || ''} 
+                        onChange={onFilterChange} 
+                        placeholder="Search company address, city, state, country"
+                    />
+                    <FilterInput 
+                        label="Contact Location" 
+                        name="contact_location" 
+                        value={filters.contact_location || ''} 
+                        onChange={onFilterChange} 
+                        placeholder="Search contact location metadata"
+                    />
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 mt-4">Person Location</h4>
                     <FilterInput label="City" name="city" value={filters.city} onChange={onFilterChange} />
                     <FilterInput label="State" name="state" value={filters.state} onChange={onFilterChange} />
                     <FilterInput label="Country" name="country" value={filters.country} onChange={onFilterChange} />
+                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 mt-4">Company Location</h4>
+                    <FilterInput label="Company City" name="company_city" value={filters.company_city} onChange={onFilterChange} />
+                    <FilterInput label="Company State" name="company_state" value={filters.company_state} onChange={onFilterChange} />
+                    <FilterInput label="Company Country" name="company_country" value={filters.company_country} onChange={onFilterChange} />
+                </AccordionSection>
+
+                <AccordionSection title="Funding & Revenue" id="funding">
+                    <FilterRangeInput label="Total Funding" minName="total_funding_min" minValue={filters.total_funding_min} maxName="total_funding_max" maxValue={filters.total_funding_max} onChange={onFilterChange} />
+                    <FilterRangeInput label="Latest Funding Amount" minName="latest_funding_amount_min" minValue={filters.latest_funding_amount_min} maxName="latest_funding_amount_max" maxValue={filters.latest_funding_amount_max} onChange={onFilterChange} />
+                    <FilterInput label="Latest Funding" name="latest_funding" value={filters.latest_funding} onChange={onFilterChange} placeholder="e.g. Series B" />
+                    <FilterInput label="Last Raised At" name="last_raised_at" value={filters.last_raised_at} onChange={onFilterChange} placeholder="e.g. 2023-06-01" />
+                </AccordionSection>
+
+                <AccordionSection title="Web Presence" id="web">
+                    <FilterInput label="Person LinkedIn URL" name="person_linkedin_url" value={filters.person_linkedin_url} onChange={onFilterChange} placeholder="https://linkedin.com/in/..." />
+                    <FilterInput label="Company LinkedIn URL" name="company_linkedin_url" value={filters.company_linkedin_url} onChange={onFilterChange} placeholder="https://linkedin.com/company/..." />
+                    <FilterInput label="Facebook URL" name="facebook_url" value={filters.facebook_url} onChange={onFilterChange} placeholder="https://facebook.com/..." />
+                    <FilterInput label="Twitter URL" name="twitter_url" value={filters.twitter_url} onChange={onFilterChange} placeholder="https://twitter.com/..." />
+                    <FilterInput label="Website" name="website" value={filters.website} onChange={onFilterChange} placeholder="https://example.com" />
+                </AccordionSection>
+
+                <AccordionSection title="Technologies & Keywords" id="tech">
+                    <FilterInput label="Technologies" name="technologies" value={filters.technologies} onChange={onFilterChange} placeholder="e.g. Python, Django, PostgreSQL" />
+                    <FilterInput label="Keywords" name="tags" value={filters.tags} onChange={onFilterChange} placeholder="e.g. saas, b2b" />
+                </AccordionSection>
+
+                <AccordionSection title="Date Ranges" id="dates">
+                    <FilterDateRange 
+                        label="Created Date" 
+                        afterName="created_at_after" 
+                        afterValue={filters.created_at_after} 
+                        beforeName="created_at_before" 
+                        beforeValue={filters.created_at_before} 
+                        onChange={onFilterChange} 
+                    />
+                    <FilterDateRange 
+                        label="Updated Date" 
+                        afterName="updated_at_after" 
+                        afterValue={filters.updated_at_after} 
+                        beforeName="updated_at_before" 
+                        beforeValue={filters.updated_at_before} 
+                        onChange={onFilterChange} 
+                    />
+                </AccordionSection>
+
+                <AccordionSection title="Exclusion Filters" id="exclusion">
+                    <p className="text-xs text-muted-foreground mb-3">Exclude contacts matching any of these values</p>
+                    <FilterMultiSelect
+                        label="Exclude Titles"
+                        name="exclude_titles"
+                        values={filters.exclude_titles || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. Intern, Junior"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Industries"
+                        name="exclude_industries"
+                        values={filters.exclude_industries || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. Retail, Hospitality"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Departments"
+                        name="exclude_departments"
+                        values={filters.exclude_departments || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. HR, Legal"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Seniorities"
+                        name="exclude_seniorities"
+                        values={filters.exclude_seniorities || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. entry-level, intern"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Technologies"
+                        name="exclude_technologies"
+                        values={filters.exclude_technologies || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. PHP, COBOL"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Keywords"
+                        name="exclude_keywords"
+                        values={filters.exclude_keywords || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. startup, non-profit"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Company Locations"
+                        name="exclude_company_locations"
+                        values={filters.exclude_company_locations || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. New York, London"
+                    />
+                    <FilterMultiSelect
+                        label="Exclude Contact Locations"
+                        name="exclude_contact_locations"
+                        values={filters.exclude_contact_locations || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="e.g. San Francisco, Austin"
+                    />
+                </AccordionSection>
+
+                <AccordionSection title="Advanced Filters" id="advanced">
+                    <div>
+                        <label htmlFor="stage" className="form-label">Stage</label>
+                        <input id="stage" name="stage" type="text" value={filters.stage} onChange={onFilterChange} placeholder="e.g. lead, customer" className="input text-sm"/>
+                    </div>
+                    <div>
+                        <label htmlFor="seniority" className="form-label">Seniority</label>
+                        <input id="seniority" name="seniority" type="text" value={filters.seniority} onChange={onFilterChange} placeholder="e.g. c-level, director" className="input text-sm"/>
+                    </div>
+                    <div>
+                        <label htmlFor="primary_email_catch_all_status" className="form-label">Primary Email Catch-All Status</label>
+                        <input id="primary_email_catch_all_status" name="primary_email_catch_all_status" type="text" value={filters.primary_email_catch_all_status} onChange={onFilterChange} placeholder="e.g. valid, invalid" className="input text-sm"/>
+                    </div>
+                    <FilterMultiSelect
+                        label="Exclude Company IDs"
+                        name="exclude_company_ids"
+                        values={filters.exclude_company_ids || []}
+                        onAdd={onAddExclusionValue}
+                        onRemove={onRemoveExclusionValue}
+                        placeholder="Enter company UUID"
+                    />
                 </AccordionSection>
             </div>
         </aside>
+    );
+};
+
+/**
+ * FilterPill component for displaying active filters as removable pills
+ */
+const FilterPill: React.FC<{
+    label: string;
+    value: string | string[];
+    onRemove: () => void;
+}> = ({ label, value, onRemove }) => {
+    const displayValue = Array.isArray(value) ? value.join(', ') : value;
+    return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
+            <span className="font-medium">{label}:</span>
+            <span className="truncate max-w-[150px]" title={displayValue}>{displayValue}</span>
+            <button
+                onClick={onRemove}
+                className="hover:text-primary/80 focus:outline-none"
+                aria-label={`Remove ${label} filter`}
+            >
+                <XMarkIcon className="w-3 h-3" />
+            </button>
+        </span>
+    );
+};
+
+/**
+ * FilterSummaryBar component for displaying active filters with clear actions
+ */
+const FilterSummaryBar: React.FC<{
+    filters: Filters;
+    onClearAll: () => void;
+    onRemoveFilter: (key: keyof Filters) => void;
+}> = ({ filters, onClearAll, onRemoveFilter }) => {
+    const activeFilters = useMemo(() => {
+        const active: Array<{ key: keyof Filters; label: string; value: string | string[] }> = [];
+        
+        Object.entries(filters).forEach(([key, value]) => {
+            // Skip 'All' values and empty values
+            if (value === 'All' || value === '' || value === null || value === undefined) {
+                return;
+            }
+            // Handle array values (exclusion filters)
+            if (Array.isArray(value) && value.length > 0) {
+                active.push({
+                    key: key as keyof Filters,
+                    label: key.replace(/_/g, ' ').replace(/^exclude /, 'Exclude: '),
+                    value: value
+                });
+            }
+            // Handle string and number values
+            else if (typeof value === 'string' || typeof value === 'number') {
+                active.push({
+                    key: key as keyof Filters,
+                    label: key.replace(/_/g, ' '),
+                    value: String(value)
+                });
+            }
+        });
+        
+        return active;
+    }, [filters]);
+
+    if (activeFilters.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 p-3 bg-secondary/50 rounded-lg border border-border mb-4">
+            <span className="text-xs text-muted-foreground font-medium">
+                Active Filters ({activeFilters.length}):
+            </span>
+            {activeFilters.map((filter) => (
+                <FilterPill
+                    key={filter.key}
+                    label={filter.label}
+                    value={filter.value}
+                    onRemove={() => onRemoveFilter(filter.key)}
+                />
+            ))}
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearAll}
+                className="ml-auto text-xs"
+            >
+                Clear All
+            </Button>
+        </div>
+    );
+};
+
+/**
+ * Column configuration interface
+ */
+interface ColumnConfig {
+    id: string;
+    label: string;
+    field: keyof Contact;
+    visible: boolean;
+    sortable: boolean;
+    width?: string;
+    category: 'essential' | 'person' | 'company' | 'metrics' | 'status' | 'timestamps' | 'urls' | 'other';
+    render?: (contact: Contact) => React.ReactNode;
+}
+
+/**
+ * ColumnTogglePanel component for configuring visible table columns
+ */
+const ColumnTogglePanel: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    columns: ColumnConfig[];
+    onToggleColumn: (columnId: string) => void;
+    onToggleAll: (visible: boolean) => void;
+    onResetToDefault: () => void;
+}> = ({ isOpen, onClose, columns, onToggleColumn, onToggleAll, onResetToDefault }) => {
+    const columnsByCategory = useMemo(() => {
+        const categories: Record<string, ColumnConfig[]> = {
+            essential: [],
+            person: [],
+            company: [],
+            metrics: [],
+            status: [],
+            timestamps: [],
+            urls: [],
+            other: []
+        };
+        
+        columns.forEach(col => {
+            categories[col.category].push(col);
+        });
+        
+        return categories;
+    }, [columns]);
+
+    const visibleCount = columns.filter(c => c.visible).length;
+    const allSelected = visibleCount === columns.length;
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="column-toggle-overlay" onClick={onClose}>
+            <div className="column-toggle-panel" onClick={e => e.stopPropagation()}>
+                <div className="column-toggle-header">
+                    <h3 className="text-lg font-semibold text-foreground">Configure Columns</h3>
+                    <button
+                        onClick={onClose}
+                        className="p-1 rounded hover:bg-secondary"
+                        aria-label="Close column configuration"
+                    >
+                        <XMarkIcon className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                </div>
+                
+                <div className="column-toggle-body">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+                        <span className="text-sm text-muted-foreground">
+                            Showing {visibleCount} of {columns.length} columns
+                        </span>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onToggleAll(!allSelected)}
+                            >
+                                {allSelected ? 'Deselect All' : 'Select All'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={onResetToDefault}
+                            >
+                                Reset to Default
+                            </Button>
+                        </div>
+                    </div>
+
+                    {Object.entries(columnsByCategory).map(([category, cols]) => {
+                        if (cols.length === 0) return null;
+                        return (
+                            <div key={category} className="mb-4">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                                    {category}
+                                </h4>
+                                <div className="space-y-2">
+                                    {cols.map(col => (
+                                        <label
+                                            key={col.id}
+                                            className="flex items-center gap-2 cursor-pointer hover:bg-secondary/50 p-2 rounded"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={col.visible}
+                                                onChange={() => onToggleColumn(col.id)}
+                                                className="checkbox-input"
+                                            />
+                                            <span className="text-sm text-foreground">{col.label}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                <div className="column-toggle-footer">
+                    <Button variant="primary" onClick={onClose} className="w-full">
+                        Apply Changes
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * ImportJobStatus component for displaying import job progress and errors
+ */
+const ImportJobStatus: React.FC<{
+    job: ImportJob;
+    onClose: () => void;
+    onViewErrors: () => void;
+}> = ({ job, onClose, onViewErrors }) => {
+    const progress = job.total_rows > 0 ? (job.success_count / job.total_rows) * 100 : 0;
+    
+    return (
+        <div className="import-job-status">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-foreground">Import Status</h3>
+                <button onClick={onClose} className="p-1 rounded hover:bg-secondary" aria-label="Close">
+                    <XMarkIcon className="w-5 h-5 text-muted-foreground" />
+                </button>
+            </div>
+            
+            <div className="space-y-4">
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-foreground">Status</span>
+                        <span className={`badge ${
+                            job.status === 'completed' ? 'badge-status-customer' :
+                            job.status === 'failed' ? 'badge-status-archived' :
+                            job.status === 'running' ? 'badge-primary' :
+                            'badge-secondary'
+                        }`}>
+                            {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                        </span>
+                    </div>
+                    {job.message && (
+                        <p className="text-sm text-muted-foreground">{job.message}</p>
+                    )}
+                </div>
+
+                {job.status === 'running' && (
+                    <div>
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-foreground">Progress</span>
+                            <span className="text-sm text-muted-foreground">
+                                {job.success_count + job.error_count} / {job.total_rows}
+                            </span>
+                        </div>
+                        <div className="w-full bg-secondary rounded-full h-2">
+                            <div 
+                                className="bg-primary h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                    </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <p className="text-xs text-muted-foreground mb-1">Total Rows</p>
+                        <p className="text-lg font-semibold text-foreground">{job.total_rows.toLocaleString()}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-muted-foreground mb-1">Success</p>
+                        <p className="text-lg font-semibold text-success">{job.success_count.toLocaleString()}</p>
+                    </div>
+                    {job.error_count > 0 && (
+                        <div>
+                            <p className="text-xs text-muted-foreground mb-1">Errors</p>
+                            <p className="text-lg font-semibold text-destructive">{job.error_count.toLocaleString()}</p>
+                        </div>
+                    )}
+                </div>
+
+                {job.status === 'completed' && job.error_count > 0 && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onViewErrors}
+                        className="w-full"
+                    >
+                        View Errors ({job.error_count})
+                    </Button>
+                )}
+
+                {job.started_at && (
+                    <div className="text-xs text-muted-foreground">
+                        Started: {new Date(job.started_at).toLocaleString()}
+                    </div>
+                )}
+                {job.finished_at && (
+                    <div className="text-xs text-muted-foreground">
+                        Finished: {new Date(job.finished_at).toLocaleString()}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * ImportModal component for file upload and import initiation
+ */
+const ImportModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onImportStart: (jobId: string) => void;
+}> = ({ isOpen, onClose, onImportStart }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const droppedFile = e.dataTransfer.files[0];
+        if (droppedFile) {
+            handleFileSelect(droppedFile);
+        }
+    };
+
+    const handleFileSelect = (selectedFile: File) => {
+        setError(null);
+        const allowedExtensions = ['.csv'];
+        const fileExtension = '.' + selectedFile.name.split('.').pop()?.toLowerCase();
+        
+        if (!allowedExtensions.includes(fileExtension) && 
+            selectedFile.type !== 'text/csv' && 
+            selectedFile.type !== 'application/vnd.ms-excel') {
+            setError('Invalid file type. Only CSV files are allowed.');
+            return;
+        }
+
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (selectedFile.size > maxSize) {
+            setError('File too large. Maximum size is 50MB.');
+            return;
+        }
+
+        setFile(selectedFile);
+    };
+
+    const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            handleFileSelect(selectedFile);
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) {
+            setError('Please select a file to upload.');
+            return;
+        }
+
+        setIsUploading(true);
+        setError(null);
+
+        try {
+            const result = await uploadContactsCSV(file);
+            if (result.success && result.data) {
+                onImportStart(result.data.jobId);
+                setFile(null);
+                onClose();
+            } else {
+                setError(result.message || 'Failed to upload file. Please try again.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred. Please try again.');
+            console.error('Upload error:', err);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="contact-modal-overlay" onClick={onClose}>
+            <div className="contact-modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
+                <header className="contact-modal-header">
+                    <h2 className="text-2xl font-bold text-foreground">Import Contacts</h2>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary" aria-label="Close">
+                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
+                    </button>
+                </header>
+                
+                <main className="contact-modal-body">
+                    <div className="space-y-4">
+                        <div>
+                            <label className="form-label mb-2">Upload CSV File</label>
+                            <div
+                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                                    isDragging 
+                                        ? 'border-primary bg-primary/5' 
+                                        : 'border-border hover:border-primary/50'
+                                }`}
+                                onDragOver={handleDragOver}
+                                onDragLeave={handleDragLeave}
+                                onDrop={handleDrop}
+                            >
+                                {file ? (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-center gap-2">
+                                            <span className="text-sm font-medium text-foreground">{file.name}</span>
+                                            <button
+                                                onClick={() => setFile(null)}
+                                                className="p-1 rounded hover:bg-secondary"
+                                                aria-label="Remove file"
+                                            >
+                                                <XMarkIcon className="w-4 h-4 text-muted-foreground" />
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">
+                                            Drag and drop a CSV file here, or click to browse
+                                        </p>
+                                        <input
+                                            type="file"
+                                            accept=".csv,text/csv,application/vnd.ms-excel"
+                                            onChange={handleFileInputChange}
+                                            className="hidden"
+                                            id="file-upload"
+                                        />
+                                        <label htmlFor="file-upload" className="cursor-pointer">
+                                            <span className="inline-block">
+                                                <Button variant="outline" size="sm">
+                                                    Browse Files
+                                                </Button>
+                                            </span>
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {error && (
+                            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
+                                {error}
+                            </div>
+                        )}
+
+                        <div className="text-xs text-muted-foreground space-y-1">
+                            <p>• Maximum file size: 50MB</p>
+                            <p>• Only CSV files are supported</p>
+                            <p>• The import will be processed in the background</p>
+                        </div>
+                    </div>
+                </main>
+
+                <footer className="contact-modal-footer">
+                    <Button variant="ghost" onClick={onClose} disabled={isUploading}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="primary" 
+                        onClick={handleUpload} 
+                        disabled={!file || isUploading}
+                        leftIcon={isUploading ? undefined : <PlusIcon className="w-4 h-4" />}
+                    >
+                        {isUploading ? 'Uploading...' : 'Upload & Import'}
+                    </Button>
+                </footer>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * ImportErrorsModal component for displaying import errors
+ */
+const ImportErrorsModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    jobId: string;
+}> = ({ isOpen, onClose, jobId }) => {
+    const [errors, setErrors] = useState<ImportError[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const loadErrors = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await getImportErrors(jobId);
+            if (result.success && result.data) {
+                setErrors(result.data);
+            } else {
+                setError(result.message || 'Failed to load errors.');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred.');
+            console.error('Load errors error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [jobId]);
+
+    useEffect(() => {
+        if (isOpen && jobId) {
+            loadErrors();
+        }
+    }, [isOpen, jobId, loadErrors]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="contact-modal-overlay" onClick={onClose}>
+            <div className="contact-modal-content max-w-4xl max-h-[80vh]" onClick={e => e.stopPropagation()}>
+                <header className="contact-modal-header">
+                    <h2 className="text-2xl font-bold text-foreground">Import Errors</h2>
+                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary" aria-label="Close">
+                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
+                    </button>
+                </header>
+                
+                <main className="contact-modal-body overflow-y-auto">
+                    {isLoading ? (
+                        <div className="text-center py-8">
+                            <div className="spinner w-6 h-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
+                            <p className="text-sm text-muted-foreground">Loading errors...</p>
+                        </div>
+                    ) : error ? (
+                        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
+                            {error}
+                        </div>
+                    ) : errors.length === 0 ? (
+                        <div className="text-center py-8">
+                            <p className="text-muted-foreground">No errors found.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {errors.map((err, index) => (
+                                <div key={index} className="p-3 bg-secondary rounded border border-border">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium text-foreground mb-1">
+                                                Row {err.row_number}
+                                            </p>
+                                            <p className="text-sm text-destructive mb-2">{err.error_message}</p>
+                                            {err.row_data && Object.keys(err.row_data).length > 0 && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    <p className="font-medium mb-1">Row Data:</p>
+                                                    <pre className="bg-background p-2 rounded overflow-x-auto">
+                                                        {JSON.stringify(err.row_data, null, 2)}
+                                                    </pre>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </main>
+
+                <footer className="contact-modal-footer">
+                    <Button variant="primary" onClick={onClose}>
+                        Close
+                    </Button>
+                </footer>
+            </div>
+        </div>
+    );
+};
+
+/**
+ * CreateContactModal component for creating new contacts
+ */
+const CreateContactModal: React.FC<{
+    isOpen: boolean;
+    onClose: () => void;
+    onSuccess: () => void;
+}> = ({ isOpen, onClose, onSuccess }) => {
+    const [formData, setFormData] = useState<ContactCreate>({
+        first_name: '',
+        last_name: '',
+        email: '',
+        title: '',
+        departments: [],
+        mobile_phone: '',
+        email_status: '',
+        text_search: '',
+        seniority: '',
+        company_id: '',
+    });
+    const [departmentsInput, setDepartmentsInput] = useState('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [generalError, setGeneralError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Reset form when modal opens/closes
+    useEffect(() => {
+        if (!isOpen) {
+            setFormData({
+                first_name: '',
+                last_name: '',
+                email: '',
+                title: '',
+                departments: [],
+                mobile_phone: '',
+                email_status: '',
+                text_search: '',
+                seniority: '',
+                company_id: '',
+            });
+            setDepartmentsInput('');
+            setErrors({});
+            setGeneralError(null);
+            setSuccessMessage(null);
+        }
+    }, [isOpen]);
+
+    // Auto-dismiss success message
+    useEffect(() => {
+        if (successMessage) {
+            const timer = setTimeout(() => {
+                setSuccessMessage(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [successMessage]);
+
+    // Handle Escape key to close modal
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) {
+                onClose();
+            }
+        };
+        if (isOpen) {
+            document.addEventListener('keydown', handleEscape);
+            return () => document.removeEventListener('keydown', handleEscape);
+        }
+    }, [isOpen, onClose]);
+
+    const validateEmail = (email: string): boolean => {
+        if (!email) return true; // Optional field
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
+    const validatePhone = (phone: string): boolean => {
+        if (!phone) return true; // Optional field
+        // Basic phone validation - allows various formats
+        const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+        return phoneRegex.test(phone) && phone.replace(/\D/g, '').length >= 7;
+    };
+
+    const handleFieldChange = (field: keyof ContactCreate, value: string) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+        // Clear error for this field when user starts typing
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+        setGeneralError(null);
+    };
+
+    const handleDepartmentsChange = (value: string) => {
+        setDepartmentsInput(value);
+        // Parse comma-separated departments
+        const departments = value
+            .split(',')
+            .map(d => d.trim())
+            .filter(Boolean);
+        setFormData(prev => ({ ...prev, departments }));
+    };
+
+    const validateForm = (): boolean => {
+        const newErrors: Record<string, string> = {};
+
+        if (formData.email && !validateEmail(formData.email)) {
+            newErrors.email = 'Please enter a valid email address';
+        }
+
+        if (formData.mobile_phone && !validatePhone(formData.mobile_phone)) {
+            newErrors.mobile_phone = 'Please enter a valid phone number';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setGeneralError(null);
+        setSuccessMessage(null);
+
+        if (!validateForm()) {
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            // Prepare contact data - only include defined fields
+            const contactData: ContactCreate = {};
+            if (formData.first_name) contactData.first_name = formData.first_name;
+            if (formData.last_name) contactData.last_name = formData.last_name;
+            if (formData.email) contactData.email = formData.email;
+            if (formData.title) contactData.title = formData.title;
+            if (formData.departments && formData.departments.length > 0) contactData.departments = formData.departments;
+            if (formData.mobile_phone) contactData.mobile_phone = formData.mobile_phone;
+            if (formData.email_status) contactData.email_status = formData.email_status;
+            if (formData.text_search) contactData.text_search = formData.text_search;
+            if (formData.seniority) contactData.seniority = formData.seniority;
+            if (formData.company_id) contactData.company_id = formData.company_id;
+
+            const result = await createContact(contactData);
+
+            if (result.success && result.data) {
+                setSuccessMessage('Contact created successfully!');
+                // Wait a moment to show success message, then close and refresh
+                setTimeout(() => {
+                    onSuccess();
+                    onClose();
+                }, 1500);
+            } else {
+                // Handle field-specific errors
+                if (result.fieldErrors) {
+                    const fieldErrors: Record<string, string> = {};
+                    Object.entries(result.fieldErrors).forEach(([field, messages]) => {
+                        if (messages && messages.length > 0) {
+                            fieldErrors[field] = messages[0];
+                        }
+                    });
+                    setErrors(fieldErrors);
+                }
+                // Handle general errors
+                if (result.nonFieldErrors && result.nonFieldErrors.length > 0) {
+                    setGeneralError(result.nonFieldErrors[0]);
+                } else {
+                    setGeneralError(result.message || 'Failed to create contact. Please try again.');
+                }
+            }
+        } catch (error) {
+            console.error('Create contact error:', error);
+            setGeneralError('An unexpected error occurred. Please try again.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="contact-modal-overlay" onClick={onClose}>
+            <div className="contact-modal-content max-w-2xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                <header className="contact-modal-header">
+                    <h2 className="text-2xl font-bold text-foreground">Create New Contact</h2>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 rounded-full hover:bg-secondary" 
+                        aria-label="Close contact creation form"
+                        title="Close"
+                    >
+                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
+                    </button>
+                </header>
+                
+                <main className="contact-modal-body overflow-y-auto">
+                    <form id="create-contact-form" onSubmit={handleSubmit} className="space-y-4" noValidate>
+                        {/* General Error */}
+                        {generalError && (
+                            <Card className="border-error/20 bg-error/5">
+                                <CardContent className="flex items-center gap-3 p-4">
+                                    <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
+                                    <p className="text-sm text-error flex-1">{generalError}</p>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Success Message */}
+                        {successMessage && (
+                            <Card className="border-success/20 bg-success/5">
+                                <CardContent className="flex items-center gap-3 p-4">
+                                    <SuccessIcon className="w-5 h-5 text-success flex-shrink-0" />
+                                    <p className="text-sm text-success flex-1">{successMessage}</p>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Name Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Input
+                                label="First Name"
+                                id="first_name"
+                                type="text"
+                                value={formData.first_name || ''}
+                                onChange={(e) => handleFieldChange('first_name', e.target.value)}
+                                error={errors.first_name}
+                                placeholder="John"
+                                leftIcon={<UsersIcon className="w-4 h-4" />}
+                                fullWidth
+                            />
+                            <Input
+                                label="Last Name"
+                                id="last_name"
+                                type="text"
+                                value={formData.last_name || ''}
+                                onChange={(e) => handleFieldChange('last_name', e.target.value)}
+                                error={errors.last_name}
+                                placeholder="Doe"
+                                leftIcon={<UsersIcon className="w-4 h-4" />}
+                                fullWidth
+                            />
+                        </div>
+
+                        {/* Email */}
+                        <Input
+                            label="Email"
+                            id="email"
+                            type="email"
+                            value={formData.email || ''}
+                            onChange={(e) => handleFieldChange('email', e.target.value)}
+                            error={errors.email}
+                            placeholder="john@example.com"
+                            leftIcon={<MailIcon className="w-4 h-4" />}
+                            fullWidth
+                        />
+
+                        {/* Title */}
+                        <Input
+                            label="Job Title"
+                            id="title"
+                            type="text"
+                            value={formData.title || ''}
+                            onChange={(e) => handleFieldChange('title', e.target.value)}
+                            error={errors.title}
+                            placeholder="CEO, Manager, etc."
+                            leftIcon={<OfficeBuildingIcon className="w-4 h-4" />}
+                            fullWidth
+                        />
+
+                        {/* Departments */}
+                        <Input
+                            label="Departments"
+                            id="departments"
+                            type="text"
+                            value={departmentsInput}
+                            onChange={(e) => handleDepartmentsChange(e.target.value)}
+                            error={errors.departments}
+                            placeholder="executive, sales (comma-separated)"
+                            helperText="Enter departments separated by commas"
+                            leftIcon={<BuildingIcon className="w-4 h-4" />}
+                            fullWidth
+                        />
+
+                        {/* Mobile Phone */}
+                        <Input
+                            label="Mobile Phone"
+                            id="mobile_phone"
+                            type="tel"
+                            value={formData.mobile_phone || ''}
+                            onChange={(e) => handleFieldChange('mobile_phone', e.target.value)}
+                            error={errors.mobile_phone}
+                            placeholder="+1234567890"
+                            leftIcon={<PhoneIcon className="w-4 h-4" />}
+                            fullWidth
+                        />
+
+                        {/* Email Status */}
+                        <Select
+                            label="Email Status"
+                            id="email_status"
+                            value={formData.email_status || ''}
+                            onChange={(e) => handleFieldChange('email_status', e.target.value)}
+                            error={errors.email_status}
+                            options={[
+                                { value: '', label: 'Select email status (optional)' },
+                                { value: 'valid', label: 'Verified' },
+                                { value: 'unknown', label: 'Unverified' },
+                                { value: 'invalid', label: 'Bounced' },
+                            ]}
+                            placeholder="Select email status"
+                            fullWidth
+                        />
+
+                        {/* Seniority */}
+                        <Input
+                            label="Seniority"
+                            id="seniority"
+                            type="text"
+                            value={formData.seniority || ''}
+                            onChange={(e) => handleFieldChange('seniority', e.target.value)}
+                            error={errors.seniority}
+                            placeholder="c-level, director, manager, etc."
+                            fullWidth
+                        />
+
+                        {/* Company ID */}
+                        <Input
+                            label="Company ID (UUID)"
+                            id="company_id"
+                            type="text"
+                            value={formData.company_id || ''}
+                            onChange={(e) => handleFieldChange('company_id', e.target.value)}
+                            error={errors.company_id}
+                            placeholder="Company UUID (optional)"
+                            leftIcon={<BuildingIcon className="w-4 h-4" />}
+                            helperText="Optional: UUID of the related company"
+                            fullWidth
+                        />
+
+                        {/* Text Search */}
+                        <Textarea
+                            label="Search Text / Location"
+                            id="text_search"
+                            value={formData.text_search || ''}
+                            onChange={(e) => handleFieldChange('text_search', e.target.value)}
+                            error={errors.text_search}
+                            placeholder="Free-form search text, e.g., location information"
+                            helperText="Optional: Additional searchable text or location information"
+                            rows={3}
+                            fullWidth
+                        />
+                    </form>
+                </main>
+
+                <footer className="contact-modal-footer">
+                    <Button
+                        variant="outline"
+                        type="button"
+                        onClick={onClose}
+                        disabled={isSubmitting}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="primary"
+                        type="submit"
+                        form="create-contact-form"
+                        isLoading={isSubmitting}
+                        disabled={isSubmitting}
+                        leftIcon={!isSubmitting ? <PlusIcon className="w-4 h-4" /> : undefined}
+                    >
+                        {isSubmitting ? 'Creating...' : 'Create Contact'}
+                    </Button>
+                </footer>
+            </div>
+        </div>
     );
 };
 
@@ -297,48 +1843,231 @@ const Contacts: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   
-  const [sortColumn, setSortColumn] = useState<SortableColumn>('name');
+  // Sorting state
+  const [sortColumn, setSortColumn] = useState<SortableColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
+  // Filter state
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [uniqueIndustries, setUniqueIndustries] = useState<string[]>([]);
+  const [uniqueTitles, setUniqueTitles] = useState<string[]>([]);
+  const [uniqueCompanies, setUniqueCompanies] = useState<string[]>([]);
+  const [isLoadingTitles, setIsLoadingTitles] = useState(false);
+  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  // Dual pagination state
+  const [paginationMode, setPaginationMode] = useState<'cursor' | 'offset'>('cursor');
+  const [pageSize, setPageSize] = useState(25); // For cursor pagination
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [prevCursor, setPrevCursor] = useState<string | null>(null);
+  const [limit, setLimit] = useState(20); // For offset pagination
+  const [offset, setOffset] = useState(0);
   const [totalContacts, setTotalContacts] = useState(0);
-  const contactsPerPage = 20;
+  const [responseMeta, setResponseMeta] = useState<any>(null);
+
+  // Column configuration state
+  const [isColumnPanelOpen, setIsColumnPanelOpen] = useState(false);
+  
+  // Define default column configuration
+  const defaultColumns: ColumnConfig[] = [
+    // Essential columns (always visible by default)
+    { id: 'name', label: 'Name', field: 'name', visible: true, sortable: true, category: 'essential', width: '250px' },
+    { id: 'email', label: 'Email', field: 'email', visible: true, sortable: false, category: 'essential', width: '200px' },
+    { id: 'company', label: 'Company', field: 'company', visible: true, sortable: true, category: 'essential', width: '200px' },
+    { id: 'phone', label: 'Phone', field: 'phone', visible: true, sortable: false, category: 'essential', width: '150px' },
+    { id: 'status', label: 'Status', field: 'status', visible: true, sortable: true, category: 'status', width: '100px' },
+    
+    // Person information columns
+    { id: 'title', label: 'Title', field: 'title', visible: true, sortable: true, category: 'person', width: '150px' },
+    { id: 'city', label: 'City', field: 'city', visible: true, sortable: true, category: 'person', width: '120px' },
+    { id: 'state', label: 'State', field: 'state', visible: false, sortable: true, category: 'person', width: '100px' },
+    { id: 'country', label: 'Country', field: 'country', visible: false, sortable: true, category: 'person', width: '120px' },
+    { id: 'departments', label: 'Departments', field: 'departments', visible: false, sortable: false, category: 'person', width: '150px' },
+    { id: 'seniority', label: 'Seniority', field: 'seniority', visible: false, sortable: false, category: 'person', width: '120px' },
+    { id: 'stage', label: 'Stage', field: 'stage', visible: false, sortable: false, category: 'person', width: '100px' },
+    
+    // Company columns
+    { id: 'industry', label: 'Industry', field: 'industry', visible: false, sortable: true, category: 'company', width: '150px' },
+    { id: 'employeesCount', label: 'Employees', field: 'employeesCount', visible: false, sortable: false, category: 'company', width: '100px' },
+    { id: 'companyAddress', label: 'Company Address', field: 'companyAddress', visible: false, sortable: false, category: 'company', width: '200px' },
+    { id: 'companyCity', label: 'Company City', field: 'companyCity', visible: false, sortable: false, category: 'company', width: '120px' },
+    { id: 'companyState', label: 'Company State', field: 'companyState', visible: false, sortable: false, category: 'company', width: '100px' },
+    { id: 'companyCountry', label: 'Company Country', field: 'companyCountry', visible: false, sortable: false, category: 'company', width: '120px' },
+    { id: 'companyPhone', label: 'Company Phone', field: 'companyPhone', visible: false, sortable: false, category: 'company', width: '150px' },
+    
+    // Metrics columns
+    { id: 'annualRevenue', label: 'Annual Revenue', field: 'annualRevenue', visible: false, sortable: false, category: 'metrics', width: '150px' },
+    { id: 'totalFunding', label: 'Total Funding', field: 'totalFunding', visible: false, sortable: false, category: 'metrics', width: '150px' },
+    { id: 'latestFunding', label: 'Latest Funding', field: 'latestFunding', visible: false, sortable: false, category: 'metrics', width: '120px' },
+    { id: 'latestFundingAmount', label: 'Latest Funding Amount', field: 'latestFundingAmount', visible: false, sortable: false, category: 'metrics', width: '180px' },
+    { id: 'lastRaisedAt', label: 'Last Raised At', field: 'lastRaisedAt', visible: false, sortable: false, category: 'metrics', width: '120px' },
+    
+    // Status columns
+    { id: 'emailStatus', label: 'Email Status', field: 'emailStatus', visible: true, sortable: true, category: 'status', width: '120px' },
+    { id: 'primaryEmailCatchAllStatus', label: 'Catch-All Status', field: 'primaryEmailCatchAllStatus', visible: false, sortable: false, category: 'status', width: '150px' },
+    
+    // Timestamp columns
+    { id: 'createdAt', label: 'Created At', field: 'createdAt', visible: true, sortable: true, category: 'timestamps', width: '120px' },
+    { id: 'updatedAt', label: 'Updated At', field: 'updatedAt', visible: false, sortable: true, category: 'timestamps', width: '120px' },
+    
+    // URL columns
+    { id: 'website', label: 'Website', field: 'website', visible: false, sortable: false, category: 'urls', width: '150px' },
+    { id: 'personLinkedinUrl', label: 'LinkedIn (Person)', field: 'personLinkedinUrl', visible: false, sortable: false, category: 'urls', width: '150px' },
+    { id: 'companyLinkedinUrl', label: 'LinkedIn (Company)', field: 'companyLinkedinUrl', visible: false, sortable: false, category: 'urls', width: '150px' },
+    
+    // Other columns
+    { id: 'technologies', label: 'Technologies', field: 'technologies', visible: false, sortable: false, category: 'other', width: '150px' },
+    { id: 'keywords', label: 'Keywords', field: 'keywords', visible: false, sortable: false, category: 'other', width: '150px' },
+    { id: 'notes', label: 'Notes', field: 'notes', visible: false, sortable: false, category: 'other', width: '200px' },
+  ];
+
+  // Load column configuration from localStorage
+  const [columns, setColumns] = useState<ColumnConfig[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('contacts-columns-config');
+      if (saved) {
+        try {
+          const savedColumns = JSON.parse(saved);
+          // Merge with default columns to handle new columns
+          return defaultColumns.map(col => {
+            const savedCol = savedColumns.find((s: ColumnConfig) => s.id === col.id);
+            return savedCol ? { ...col, visible: savedCol.visible } : col;
+          });
+        } catch (e) {
+          console.error('Failed to parse saved columns:', e);
+        }
+      }
+    }
+    return defaultColumns;
+  });
+
+  // Save column configuration to localStorage
+  const saveColumnsToLocalStorage = useCallback((cols: ColumnConfig[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('contacts-columns-config', JSON.stringify(cols));
+    }
+  }, []);
+
+  // Column management functions
+  const toggleColumn = useCallback((columnId: string) => {
+    setColumns(prev => {
+      const updated = prev.map(col => 
+        col.id === columnId ? { ...col, visible: !col.visible } : col
+      );
+      saveColumnsToLocalStorage(updated);
+      return updated;
+    });
+  }, [saveColumnsToLocalStorage]);
+
+  const toggleAllColumns = useCallback((visible: boolean) => {
+    setColumns(prev => {
+      const updated = prev.map(col => ({ ...col, visible }));
+      saveColumnsToLocalStorage(updated);
+      return updated;
+    });
+  }, [saveColumnsToLocalStorage]);
+
+  const resetColumnsToDefault = useCallback(() => {
+    setColumns(defaultColumns);
+    saveColumnsToLocalStorage(defaultColumns);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveColumnsToLocalStorage]);
+
+  const visibleColumns = useMemo(() => columns.filter(col => col.visible), [columns]);
+
+  // Import state
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isImportStatusModalOpen, setIsImportStatusModalOpen] = useState(false);
+  const [isImportErrorsModalOpen, setIsImportErrorsModalOpen] = useState(false);
+  const [currentImportJob, setCurrentImportJob] = useState<ImportJob | null>(null);
+  const [currentImportJobId, setCurrentImportJobId] = useState<string | null>(null);
+
+  // Create contact state
+  const [isCreateContactModalOpen, setIsCreateContactModalOpen] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const debouncedFilters = useDebounce(filters, 300);
   const isSearching = searchTerm !== debouncedSearchTerm;
 
+  // Load contacts with dual pagination support
   const loadContacts = useCallback(async () => {
     setIsLoading(true);
     try {
-      const offset = (currentPage - 1) * contactsPerPage;
-      const data = await fetchContacts({
-          search: debouncedSearchTerm,
-          filters: debouncedFilters,
-          sortColumn,
-          sortDirection,
-          limit: contactsPerPage,
-          offset,
-      });
+      // Determine pagination mode based on whether custom sorting is applied
+      const isCustomSorting = sortColumn !== null;
+      const mode = isCustomSorting ? 'offset' : 'cursor';
+      
+      // Update pagination mode if it changed
+      if (paginationMode !== mode) {
+        setPaginationMode(mode);
+      }
+
+      // Prepare fetch parameters based on pagination mode
+      const fetchParams: any = {
+        search: debouncedSearchTerm,
+        filters: debouncedFilters,
+        include_meta: true, // Request metadata
+      };
+
+      if (mode === 'cursor') {
+        // Cursor pagination (default ordering by created_at)
+        fetchParams.pageSize = pageSize;
+        if (cursor) {
+          fetchParams.cursor = cursor;
+        }
+        // Don't set sortColumn/sortDirection for cursor mode (uses default -created_at)
+      } else {
+        // Limit-offset pagination (custom ordering)
+        fetchParams.sortColumn = sortColumn;
+        fetchParams.sortDirection = sortDirection;
+        fetchParams.limit = limit;
+        fetchParams.offset = offset;
+      }
+
+      const data = await fetchContacts(fetchParams);
+      
       setContacts(data.contacts);
       setTotalContacts(data.count);
+      setResponseMeta(data.meta);
+
+      // Extract cursor from next/previous URLs for cursor pagination
+      if (mode === 'cursor') {
+        if (data.next) {
+          const nextUrl = new URL(data.next);
+          const nextCursor = nextUrl.searchParams.get('cursor');
+          setNextCursor(nextCursor);
+        } else {
+          setNextCursor(null);
+        }
+        
+        if (data.previous) {
+          const prevUrl = new URL(data.previous);
+          const prevCursor = prevUrl.searchParams.get('cursor');
+          setPrevCursor(prevCursor);
+        } else {
+          setPrevCursor(null);
+        }
+      }
+
       // Handle errors if present
       if (data.error) {
-        console.error('Error fetching contacts:', data.error);
-        // Could show a toast notification here
+        console.error('Error fetching contacts:', {
+          message: data.error.message,
+          statusCode: data.error.statusCode,
+          isNetworkError: data.error.isNetworkError,
+          isTimeoutError: data.error.isTimeoutError,
+        });
       }
     } catch (error) {
-      console.error('Failed to load contacts:', error);
+      console.error('Failed to load contacts:', error instanceof Error ? error.message : String(error));
       setContacts([]);
       setTotalContacts(0);
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, debouncedSearchTerm, debouncedFilters, sortColumn, sortDirection]);
+  }, [debouncedSearchTerm, debouncedFilters, sortColumn, sortDirection, pageSize, cursor, limit, offset, paginationMode]);
 
   useEffect(() => {
     loadContacts();
@@ -352,6 +2081,55 @@ const Contacts: React.FC = () => {
     loadIndustries();
   }, []);
 
+  // Load titles for dropdown
+  useEffect(() => {
+    const loadTitles = async () => {
+        setIsLoadingTitles(true);
+        try {
+            const results = await fetchFieldValues('title', { distinct: true, ordering: 'value', limit: 100 });
+            // Extract values from results - API returns objects with 'id' and field value
+            const titles = results
+                .map(item => {
+                    // The API returns objects like { id: number, title: string } or { id: number, value: string }
+                    return item.title || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
+                })
+                .filter(Boolean)
+                .sort();
+            setUniqueTitles(titles);
+        } catch (error) {
+            console.error('Failed to load titles:', error);
+        } finally {
+            setIsLoadingTitles(false);
+        }
+    };
+    loadTitles();
+  }, []);
+
+  // Load companies for dropdown
+  useEffect(() => {
+    const loadCompanies = async () => {
+        setIsLoadingCompanies(true);
+        try {
+            const results = await fetchFieldValues('company', { distinct: true, ordering: 'value', limit: 100 });
+            // Extract values from results - API returns objects with 'id' and field value
+            const companies = results
+                .map(item => {
+                    // The API returns objects like { id: number, company: string } or { id: number, value: string }
+                    return item.company || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
+                })
+                .filter(Boolean)
+                .sort();
+            setUniqueCompanies(companies);
+        } catch (error) {
+            console.error('Failed to load companies:', error);
+        } finally {
+            setIsLoadingCompanies(false);
+        }
+    };
+    loadCompanies();
+  }, []);
+
+  // Sorting handler - switches to offset pagination
   const handleSort = (column: SortableColumn) => {
     if (sortColumn === column) {
       setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
@@ -359,175 +2137,532 @@ const Contacts: React.FC = () => {
       setSortColumn(column);
       setSortDirection('asc');
     }
-    setCurrentPage(1);
+    // Reset pagination when sorting changes
+    setOffset(0);
+    setCursor(null);
   };
+
+  // Pagination handlers
+  const handleNextPage = useCallback(() => {
+    if (paginationMode === 'cursor') {
+      if (nextCursor) {
+        setCursor(nextCursor);
+      }
+    } else {
+      setOffset(prev => prev + limit);
+    }
+  }, [paginationMode, nextCursor, limit]);
+
+  const handlePrevPage = useCallback(() => {
+    if (paginationMode === 'cursor') {
+      if (prevCursor) {
+        setCursor(prevCursor);
+      }
+    } else {
+      setOffset(prev => Math.max(0, prev - limit));
+    }
+  }, [paginationMode, prevCursor, limit]);
+
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    if (paginationMode === 'cursor') {
+      setPageSize(newSize);
+      setCursor(null); // Reset to first page
+    } else {
+      setLimit(newSize);
+      setOffset(0); // Reset to first page
+    }
+  }, [paginationMode]);
+
+  // Calculate current page for offset pagination
+  const currentPage = paginationMode === 'offset' ? Math.floor(offset / limit) + 1 : 1;
+  const totalPages = paginationMode === 'offset' ? Math.ceil(totalContacts / limit) : 1;
   
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
-    setCurrentPage(1);
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
+  };
+
+  const addExclusionValue = (name: keyof Filters, value: string) => {
+    setFilters(prev => {
+      const currentArray = (prev[name] as string[]) || [];
+      if (!currentArray.includes(value)) {
+        return { ...prev, [name]: [...currentArray, value] };
+      }
+      return prev;
+    });
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
+  };
+
+  const removeExclusionValue = (name: keyof Filters, value: string) => {
+    setFilters(prev => {
+      const currentArray = (prev[name] as string[]) || [];
+      return { ...prev, [name]: currentArray.filter(v => v !== value) };
+    });
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
   };
 
   const clearFilters = () => {
     setFilters(initialFilters);
-    setCurrentPage(1);
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
   };
 
-  const SortableHeader: React.FC<{ column: SortableColumn; label: string, className?: string }> = ({ column, label, className }) => {
-    const isSorted = sortColumn === column;
-    return (
-        <th className={`p-4 font-semibold text-muted-foreground ${className}`}>
-            <button onClick={() => handleSort(column)} className="flex items-center gap-1 group whitespace-nowrap">
-                <span className="group-hover:text-foreground transition-colors">{label}</span>
-                {isSorted 
-                    ? (sortDirection === 'asc' ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />)
-                    : <ChevronUpDownIcon className="w-4 h-4 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity" />
-                }
-            </button>
-        </th>
-    );
+  // Remove single filter handler for FilterSummaryBar
+  const removeFilter = useCallback((key: keyof Filters) => {
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      // Reset to initial value
+      if (Array.isArray(initialFilters[key])) {
+        newFilters[key] = [];
+      } else {
+        newFilters[key] = initialFilters[key];
+      }
+      return newFilters;
+    });
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
+  }, []);
+
+  // Import handlers
+  const handleImportStart = async (jobId: string) => {
+    setCurrentImportJobId(jobId);
+    setIsImportStatusModalOpen(true);
+    
+    // Start polling for job status
+    const result = await pollImportJobStatus(jobId, {
+      interval: 2000,
+      maxAttempts: 300,
+      onProgress: (job) => {
+        setCurrentImportJob(job);
+      },
+    });
+
+    if (result.success && result.data) {
+      setCurrentImportJob(result.data);
+      // Reload contacts if import completed successfully
+      if (result.data.status === 'completed') {
+        loadContacts();
+      }
+    }
   };
 
-  const totalPages = Math.ceil(totalContacts / contactsPerPage);
+  const handleViewErrors = () => {
+    setIsImportErrorsModalOpen(true);
+  };
+
+  // Poll import job status periodically
+  useEffect(() => {
+    if (currentImportJobId && isImportStatusModalOpen) {
+      const interval = setInterval(async () => {
+        const result = await getImportJobStatus(currentImportJobId);
+        if (result.success && result.data) {
+          setCurrentImportJob(result.data);
+          // Stop polling if job is completed or failed
+          if (result.data.status === 'completed' || result.data.status === 'failed') {
+            clearInterval(interval);
+            if (result.data.status === 'completed') {
+              loadContacts();
+            }
+          }
+        }
+      }, 2000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentImportJobId, isImportStatusModalOpen, loadContacts]);
+
+  // Helper function to render table cell content based on column
+  const renderCellContent = useCallback((column: ColumnConfig, contact: Contact) => {
+    const value = contact[column.field];
+    
+    // Special rendering for specific columns
+    switch (column.id) {
+      case 'name':
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <UsersIcon className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-foreground truncate">
+                <Highlight text={contact.name} highlight={debouncedSearchTerm} />
+              </p>
+              <p className="text-sm text-muted-foreground truncate">
+                <Highlight text={contact.email} highlight={debouncedSearchTerm} />
+              </p>
+            </div>
+          </div>
+        );
+      
+      case 'company':
+        return (
+          <div className="flex items-center gap-2">
+            <BuildingIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <Highlight text={contact.company} highlight={debouncedSearchTerm} />
+          </div>
+        );
+      
+      case 'status':
+        return <StatusBadge status={contact.status} />;
+      
+      case 'emailStatus':
+        return <EmailStatusBadge status={contact.emailStatus} />;
+      
+      case 'city':
+        return (
+          <div className="flex items-center gap-1 text-sm">
+            <MapPinIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {contact.city && contact.state ? `${contact.city}, ${contact.state}` : (contact.city || contact.state || contact.country || '-')}
+          </div>
+        );
+      
+      case 'createdAt':
+      case 'updatedAt':
+        return (
+          <div className="flex items-center gap-1 text-sm">
+            <CalendarIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {value ? new Date(value as string).toLocaleDateString() : '-'}
+          </div>
+        );
+      
+      case 'annualRevenue':
+      case 'totalFunding':
+      case 'latestFundingAmount':
+        return value ? `$${(value as number).toLocaleString()}` : '-';
+      
+      case 'employeesCount':
+        return value ? (value as number).toLocaleString() : '-';
+      
+      case 'phone':
+        return value ? (
+          <div className="flex items-center gap-1">
+            <PhoneIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {value as string}
+          </div>
+        ) : '-';
+      
+      case 'email':
+        return value ? (
+          <div className="flex items-center gap-1">
+            <MailIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            <Highlight text={value as string} highlight={debouncedSearchTerm} />
+          </div>
+        ) : '-';
+      
+      case 'website':
+      case 'personLinkedinUrl':
+      case 'companyLinkedinUrl':
+        return value ? (
+          <a href={value as string} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+            <GlobeAltIcon className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate max-w-[150px]">{value as string}</span>
+          </a>
+        ) : '-';
+      
+      default:
+        // Generic rendering for other columns
+        if (column.render) {
+          return column.render(contact);
+        }
+        return value ? String(value) : '-';
+    }
+  }, [debouncedSearchTerm]);
 
   return (
-    <div className="flex h-full max-h-[calc(100vh-8rem)]">
+    <div className="contacts-page">
         {isFilterSidebarOpen && (
-            <div className="lg:hidden fixed inset-0 bg-black/60 z-40" onClick={() => setIsFilterSidebarOpen(false)}></div>
+            <div className="contacts-filter-overlay lg:hidden" onClick={() => setIsFilterSidebarOpen(false)}></div>
         )}
-        <div className={`lg:hidden fixed inset-y-0 left-0 z-50 w-80 bg-card transform transition-transform duration-300 ${isFilterSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-             <FilterSidebar filters={filters} onFilterChange={handleFilterChange} clearFilters={clearFilters} uniqueIndustries={uniqueIndustries}/>
+        <div className={cn('contacts-filter-sidebar lg:hidden', isFilterSidebarOpen && 'contacts-filter-sidebar-open')}>
+             <FilterSidebar 
+                filters={filters} 
+                onFilterChange={handleFilterChange} 
+                onAddExclusionValue={addExclusionValue}
+                onRemoveExclusionValue={removeExclusionValue}
+                clearFilters={clearFilters} 
+                uniqueIndustries={uniqueIndustries}
+                uniqueTitles={uniqueTitles}
+                uniqueCompanies={uniqueCompanies}
+                isLoadingTitles={isLoadingTitles}
+                isLoadingCompanies={isLoadingCompanies}
+            />
         </div>
 
-        <div className="hidden lg:block w-80 flex-shrink-0">
-             <FilterSidebar filters={filters} onFilterChange={handleFilterChange} clearFilters={clearFilters} uniqueIndustries={uniqueIndustries}/>
+        <div className="hidden lg:block w-80 flex-shrink-0 max-h-full overflow-hidden">
+             <FilterSidebar 
+                filters={filters} 
+                onFilterChange={handleFilterChange} 
+                onAddExclusionValue={addExclusionValue}
+                onRemoveExclusionValue={removeExclusionValue}
+                clearFilters={clearFilters} 
+                uniqueIndustries={uniqueIndustries}
+                uniqueTitles={uniqueTitles}
+                uniqueCompanies={uniqueCompanies}
+                isLoadingTitles={isLoadingTitles}
+                isLoadingCompanies={isLoadingCompanies}
+            />
         </div>
 
-        <main className="flex-1 min-w-0 flex flex-col p-4 sm:p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h1 className="text-3xl font-bold text-card-foreground">Contacts</h1>
+        <main className="contacts-main">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Contacts</h1>
                 <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                    <button onClick={() => alert('This functionality is not supported by the current API.')} className="bg-primary-600 text-white font-bold py-2 px-4 rounded-lg cursor-pointer hover:bg-primary-700 transition-colors inline-flex items-center gap-2">
-                        <PlusIcon className="w-5 h-5"/>
-                        <span>Add/Import</span>
-                    </button>
+                    <Button
+                        onClick={() => setIsColumnPanelOpen(true)}
+                        variant="outline"
+                        size="md"
+                        leftIcon={<FilterIcon className="w-5 h-5" />}
+                    >
+                        <span className="hidden sm:inline">Columns ({visibleColumns.length}/{columns.length})</span>
+                        <span className="sm:hidden">Columns</span>
+                    </Button>
+                    <Button
+                        onClick={() => setIsCreateContactModalOpen(true)}
+                        variant="primary"
+                        size="md"
+                        leftIcon={<PlusIcon className="w-5 h-5" />}
+                    >
+                        <span className="hidden sm:inline">Create Contact</span>
+                        <span className="sm:hidden">Create</span>
+                    </Button>
                 </div>
             </div>
-            
-             <div className="flex items-center gap-2 w-full mb-4">
-                <div className="relative w-full">
-                  <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                    <SearchIcon className="w-5 h-5 text-muted-foreground" />
-                  </span>
-                  <input
-                    type="text"
-                    placeholder="Search by name, email, company..."
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                    className="w-full pl-10 pr-10 py-2 border bg-background border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                  {isSearching && (
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                      <svg className="w-5 h-5 text-muted-foreground animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                    </div>
-                  )}
-                </div>
-                <button onClick={() => setIsFilterSidebarOpen(true)} className="lg:hidden flex items-center gap-2 border bg-background border-border rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-primary-500 text-muted-foreground hover:bg-secondary">
-                    <FilterIcon className="w-4 h-4" />
-                </button>
-            </div>
-      
-            <div className="flex-1 overflow-auto">
-            {isLoading ? (
-              <div className="text-center py-10">
-                  <p className="text-muted-foreground">Loading contacts...</p>
-              </div>
-            ) : contacts.length === 0 ? (
-              <div className="text-center py-10">
-                  <p className="text-muted-foreground">
-                      No contacts found matching your criteria.
-                  </p>
-              </div>
-            ) : (
-                <div className="hidden md:block">
-                  <div className="overflow-auto border border-border rounded-lg">
-                    <table className="min-w-full w-full text-left">
-                      <thead className="bg-secondary sticky top-0 z-10">
-                        <tr>
-                          <SortableHeader column="name" label="Name" />
-                          <SortableHeader column="company" label="Company" />
-                          <SortableHeader column="title" label="Title" />
-                          <SortableHeader column="status" label="Status" />
-                          <SortableHeader column="emailStatus" label="Email Status" />
-                           <SortableHeader column="city" label="Location" />
-                          <SortableHeader column="created_at" label="Date Created" />
-                          <th className="p-4 font-semibold text-muted-foreground"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {contacts.map(contact => (
-                          <tr key={contact.id} className="border-b border-border hover:bg-secondary cursor-pointer" onClick={() => setSelectedContact(contact)}>
-                            <td className="p-4 flex items-center whitespace-nowrap min-w-[250px]">
-                              <img src={contact.avatarUrl} alt={contact.name} className="w-10 h-10 rounded-full mr-4" />
-                              <div>
-                                <p className="font-semibold text-card-foreground">
-                                  <Highlight text={contact.name} highlight={debouncedSearchTerm} />
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  <Highlight text={contact.email} highlight={debouncedSearchTerm} />
-                                </p>
-                              </div>
-                            </td>
-                            <td className="p-4 text-card-foreground whitespace-nowrap">
-                              <Highlight text={contact.company} highlight={debouncedSearchTerm} />
-                            </td>
-                            <td className="p-4 text-card-foreground whitespace-nowrap">
-                              <Highlight text={contact.title} highlight={debouncedSearchTerm} />
-                            </td>
-                            <td className="p-4 whitespace-nowrap">
-                              <StatusBadge status={contact.status} />
-                            </td>
-                            <td className="p-4 whitespace-nowrap">
-                                <EmailStatusBadge status={contact.emailStatus} />
-                            </td>
-                            <td className="p-4 text-card-foreground whitespace-nowrap">
-                                {contact.city && contact.state ? `${contact.city}, ${contact.state}` : (contact.city || contact.state || contact.country || '-')}
-                            </td>
-                            <td className="p-4 text-card-foreground whitespace-nowrap">
-                                {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : '-'}
-                            </td>
-                            <td className="p-4 text-right whitespace-nowrap">
-                              <button onClick={(e) => { e.stopPropagation(); alert('Edit functionality is not supported by the current API.')}} className="text-primary-500 hover:underline font-medium">Edit</button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+
+            {/* Response Metadata Display */}
+            {responseMeta && (
+                <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                        <strong>Strategy:</strong> {responseMeta.strategy}
+                    </span>
+                    {responseMeta.count_mode && (
+                        <span className="flex items-center gap-1">
+                            <strong>Count:</strong> {responseMeta.count_mode}
+                        </span>
+                    )}
+                    {responseMeta.using_replica && (
+                        <span className="flex items-center gap-1 text-primary">
+                            <strong>Using Replica</strong>
+                        </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                        <strong>Records:</strong> {responseMeta.returned_records}/{responseMeta.page_size}
+                    </span>
                 </div>
             )}
+            
+            <div className="contacts-search-bar">
+                <div className="relative flex-1">
+                    <Input
+                        type="text"
+                        placeholder="Search by name, email, company..."
+                        value={searchTerm}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCursor(null); setOffset(0); }}
+                        leftIcon={<SearchIcon className="w-5 h-5" />}
+                        rightIcon={isSearching ? (
+                            <svg className="w-5 h-5 text-muted-foreground animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : undefined}
+                        fullWidth
+                    />
+                </div>
+                <Button
+                    onClick={() => setIsFilterSidebarOpen(true)}
+                    variant="outline"
+                    size="md"
+                    iconOnly
+                    className="lg:hidden"
+                    aria-label="Open filters"
+                    title="Open filters"
+                >
+                    <FilterIcon className="w-5 h-5" />
+                </Button>
             </div>
-             {!isLoading && contacts.length > 0 && (
-                <div className="flex justify-between items-center pt-4 text-sm text-muted-foreground">
-                    <div>
-                        Showing <strong>{(currentPage - 1) * contactsPerPage + 1}</strong> to <strong>{Math.min(currentPage * contactsPerPage, totalContacts)}</strong> of <strong>{totalContacts}</strong> results
+
+            {/* Filter Summary Bar */}
+            <FilterSummaryBar
+                filters={filters}
+                onClearAll={clearFilters}
+                onRemoveFilter={removeFilter}
+            />
+      
+            <div className="contacts-table-container">
+            {isLoading ? (
+              <div className="text-center py-20">
+                  <div className="inline-block">
+                    <div className="spinner w-8 h-8 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">Loading contacts...</p>
+                  </div>
+              </div>
+            ) : contacts.length === 0 ? (
+              <Card className="text-center py-20">
+                  <p className="text-muted-foreground text-lg">
+                      No contacts found matching your criteria.
+                  </p>
+              </Card>
+            ) : (
+                  <Table responsive>
+                    <TableHeader>
+                      <TableRow>
+                        {visibleColumns.map(column => (
+                          <TableHead
+                            key={column.id}
+                            sortable={column.sortable}
+                            sortDirection={sortColumn === column.id ? sortDirection : null}
+                            onSort={column.sortable ? () => handleSort(column.id as SortableColumn) : undefined}
+                            className={`min-w-[${column.width}]`}
+                          >
+                            {column.label}
+                          </TableHead>
+                        ))}
+                        <TableHead className="text-right min-w-[80px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {contacts.map(contact => (
+                        <TableRow 
+                          key={contact.id} 
+                          onClick={() => setSelectedContact(contact)}
+                          className="cursor-pointer"
+                        >
+                          {visibleColumns.map(column => (
+                            <TableCell
+                              key={column.id}
+                              className={`${column.width ? `min-w-[${column.width}]` : ''} ${column.id === 'name' ? '' : 'whitespace-nowrap'}`}
+                            >
+                              {renderCellContent(column, contact)}
+                            </TableCell>
+                          ))}
+                          <TableCell className="text-right min-w-[80px]">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              iconOnly
+                              onClick={(e) => { 
+                                e.stopPropagation(); 
+                                alert('Edit functionality is not supported by the current API.');
+                              }}
+                              aria-label="Edit contact"
+                              title="Edit contact"
+                            >
+                              <EditIcon className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+            )}
+            </div>
+            {!isLoading && contacts.length > 0 && (
+                <div className="contacts-pagination">
+                    <div className="contacts-pagination-info">
+                        {paginationMode === 'cursor' ? (
+                            <>
+                                Showing <strong className="text-foreground">{contacts.length}</strong> contacts
+                                {totalContacts > 0 && ` (Total: ${totalContacts.toLocaleString()})`}
+                                <span className="ml-2 text-xs text-muted-foreground">(Cursor Pagination)</span>
+                            </>
+                        ) : (
+                            <>
+                                Showing <strong className="text-foreground">{offset + 1}</strong> to <strong className="text-foreground">{Math.min(offset + limit, totalContacts)}</strong> of <strong className="text-foreground">{totalContacts.toLocaleString()}</strong> results
+                                <span className="ml-2 text-xs text-muted-foreground">(Page {currentPage} of {totalPages})</span>
+                            </>
+                        )}
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed">
+                    <div className="contacts-pagination-controls">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            iconOnly
+                            onClick={handlePrevPage}
+                            disabled={paginationMode === 'cursor' ? !prevCursor : offset === 0}
+                            aria-label="Previous page"
+                            title="Previous page"
+                        >
                             <ChevronLeftIcon className="w-5 h-5"/>
-                        </button>
-                        <span>Page {currentPage} of {totalPages}</span>
-                        <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} className="p-2 rounded-md hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed">
+                        </Button>
+                        {paginationMode === 'offset' && (
+                            <span className="contacts-pagination-page">Page {currentPage} of {totalPages}</span>
+                        )}
+                        {paginationMode === 'cursor' && (
+                            <Select
+                                value={String(pageSize)}
+                                onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                                options={[
+                                    { value: '10', label: '10 per page' },
+                                    { value: '25', label: '25 per page' },
+                                    { value: '50', label: '50 per page' },
+                                    { value: '100', label: '100 per page' },
+                                ]}
+                                className="text-sm"
+                            />
+                        )}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            iconOnly
+                            onClick={handleNextPage}
+                            disabled={paginationMode === 'cursor' ? !nextCursor : offset + limit >= totalContacts}
+                            aria-label="Next page"
+                            title="Next page"
+                        >
                             <ChevronRightIcon className="w-5 h-5"/>
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
         </main>
       {selectedContact && <ContactDetailModal contact={selectedContact} onClose={() => setSelectedContact(null)} />}
+      
+      {/* Column Toggle Panel */}
+      <ColumnTogglePanel
+        isOpen={isColumnPanelOpen}
+        onClose={() => setIsColumnPanelOpen(false)}
+        columns={columns}
+        onToggleColumn={toggleColumn}
+        onToggleAll={toggleAllColumns}
+        onResetToDefault={resetColumnsToDefault}
+      />
+      
+      <ImportModal 
+        isOpen={isImportModalOpen} 
+        onClose={() => setIsImportModalOpen(false)} 
+        onImportStart={handleImportStart}
+      />
+      {isImportStatusModalOpen && currentImportJob && (
+        <div className="contact-modal-overlay" onClick={() => setIsImportStatusModalOpen(false)}>
+          <div className="contact-modal-content max-w-lg" onClick={e => e.stopPropagation()}>
+            <ImportJobStatus 
+              job={currentImportJob} 
+              onClose={() => setIsImportStatusModalOpen(false)}
+              onViewErrors={handleViewErrors}
+            />
+          </div>
+        </div>
+      )}
+      {currentImportJobId && (
+        <ImportErrorsModal 
+          isOpen={isImportErrorsModalOpen} 
+          onClose={() => setIsImportErrorsModalOpen(false)} 
+          jobId={currentImportJobId}
+        />
+      )}
+      <CreateContactModal
+        isOpen={isCreateContactModalOpen}
+        onClose={() => setIsCreateContactModalOpen(false)}
+        onSuccess={loadContacts}
+      />
     </div>
   );
 };

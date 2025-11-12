@@ -1,0 +1,56 @@
+contacts->
+    1. first_name -> em 
+    2. last_name -> em 
+    3. company_id -> em
+    4. email -> em
+    5. title -> em
+    5. location -> text_search
+    6. department_id -> em
+    6. email_status -> em (verified, unverified, unavailable, catch_all)
+    6. phone_number -> em
+    7 text_search (title + location) -> serach
+
+    8. seniority -> em
+
+
+contacts_metadata->
+    1. linkedin_url -> em
+    2. facebook_url -> em 
+    3. twitter_url -> em
+    4. website -> em
+
+    5. work_direct_phone -> em
+    6. home_phone -> em
+    7. mobile_phone -> em
+    9. other_phone -> em
+    10. stage -> em
+
+
+companies->
+    1. name -> em
+    2. employees_count -> em
+    3. industry -> em
+    4. keywords -> em
+    5. data_id -> em
+    5. location -> em
+    6. annual_revenue -> em
+    7. total_funding -> em
+    8. latest_funding -> em
+    9. technologies -> em
+    10 text_search (industry + location + keywords) -> serach
+
+        
+companies_metadata->
+    1. linkedin_url -> em
+    2. facebook_url -> em
+    3. twitter_url -> em
+    4. website -> em
+
+    5. company_name_for_emails -> em
+    6. phone_number -> em
+    7. last_raised_at -> em
+
+
+departments_and_jobs->
+    1. department -> em
+    2. job_function -> em

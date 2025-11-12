@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../hooks/useAuth';
 import Sidebar from '../../components/layout/Sidebar';
+import BottomNav from '../../components/layout/BottomNav';
 import { MenuIcon } from '../../components/icons/IconComponents';
+import { Button } from '../../components/ui/Button';
 
 export default function DashboardLayout({
   children,
@@ -14,7 +16,8 @@ export default function DashboardLayout({
   const { user, isLoading, isLoggingOut } = useAuth();
   const router = useRouter();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [isSidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar is always collapsed by default on desktop, only expands temporarily on hover/click
+  const [isSidebarCollapsed, setSidebarCollapsed] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !isLoggingOut && !user) {
@@ -31,21 +34,29 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-secondary text-foreground overflow-hidden">
+    <div className="dashboard-layout">
       <Sidebar
         isOpen={isSidebarOpen}
         setOpen={setSidebarOpen}
         isCollapsed={isSidebarCollapsed}
         setCollapsed={setSidebarCollapsed}
       />
-      <div className="flex-1 flex flex-col transition-all duration-300">
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
-          <button onClick={() => setSidebarOpen(true)} className="md:hidden text-muted-foreground mb-4 p-2 rounded-md hover:bg-muted">
-              <MenuIcon />
-          </button>
+      <div className="dashboard-main">
+        <main className="dashboard-content pb-20 md:pb-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            onClick={() => setSidebarOpen(true)}
+            className="hidden sm:block lg:hidden mb-4"
+            aria-label="Open sidebar"
+          >
+            <MenuIcon className="w-5 h-5" />
+          </Button>
           {children}
         </main>
       </div>
+      <BottomNav />
     </div>
   );
 }
