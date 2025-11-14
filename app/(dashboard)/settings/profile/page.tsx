@@ -10,34 +10,36 @@ import { Textarea } from '../../../../components/ui/Textarea';
 import { Select } from '../../../../components/ui/Select';
 import { Button } from '../../../../components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
+import { CollapsibleSection } from '../../../../components/ui/CollapsibleSection';
+import { Tooltip } from '../../../../components/ui/Tooltip';
+import { BottomSheet } from '../../../../components/ui/BottomSheet';
 import { UploadIcon, UsersIcon, IdentificationIcon, GlobeAltIcon, SaveIcon, AlertTriangleIcon, SuccessIcon, MailIcon, BriefcaseIcon, ShieldCheckIcon } from '../../../../components/icons/IconComponents';
-import { cn } from '../../../../utils/cn';
 
 const RoleBadge: React.FC<{ role: User['role'] }> = ({ role }) => {
   const roleConfig = {
     Admin: {
-      className: "bg-error/20 text-error border-error/30",
+      className: "glass-error",
+      icon: "🛡️"
     },
     Manager: {
-      className: "bg-warning/20 text-warning border-warning/30",
+      className: "glass-warning",
+      icon: "👔"
     },
     Member: {
-      className: "bg-info/20 text-info border-info/30",
+      className: "glass-info",
+      icon: "👤"
     },
   };
   
   const config = roleConfig[role];
   
-  const badgeClasses = {
-    Admin: "badge badge-error",
-    Manager: "badge badge-warning",
-    Member: "badge badge-primary",
-  };
-  
   return (
-    <span className={cn("badge inline-block border", badgeClasses[role])}>
-      {role}
-    </span>
+    <Tooltip content={`Your role: ${role}`} side="top">
+      <span className={`settings-role-badge settings-role-badge--${role.toLowerCase()}`}>
+        <span className="settings-role-badge__icon">{config.icon}</span>
+        {role}
+      </span>
+    </Tooltip>
   );
 };
 
@@ -235,128 +237,136 @@ const ProfileSettings: React.FC = () => {
   };
 
   if (!user) {
-    return <div>Loading user profile...</div>;
+    return <div className="settings-profile-loading">Loading user profile...</div>;
   }
 
   const isAdmin = user.role === 'Admin';
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-full">
-        <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-                <IdentificationIcon className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-                <h2 className="text-3xl font-bold text-foreground">Profile</h2>
-                <p className="text-sm text-muted-foreground mt-1">Manage your personal information and preferences</p>
-            </div>
-        </div>
+    <div className="settings-profile-page">
         
+        {/* Error Messages */}
         {errors.general && (
-          <Card className="border-error/20 bg-error/5">
-            <CardContent className="flex items-center gap-3 p-4">
-              <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
-              <p className="text-sm text-error">{errors.general}</p>
+          <Card variant="glass-frosted" className="settings-profile-error-card">
+            <CardContent className="settings-profile-error-card-content">
+              <AlertTriangleIcon className="settings-profile-error-card-icon" />
+              <p className="settings-profile-error-card-message">{errors.general}</p>
             </CardContent>
           </Card>
         )}
         
         {errors.avatar && (
-          <Card className="border-error/20 bg-error/5">
-            <CardContent className="flex items-center gap-3 p-4">
-              <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
-              <p className="text-sm text-error">Avatar: {errors.avatar}</p>
+          <Card variant="glass-frosted" className="settings-profile-error-card">
+            <CardContent className="settings-profile-error-card-content">
+              <AlertTriangleIcon className="settings-profile-error-card-icon" />
+              <p className="settings-profile-error-card-message">Avatar: {errors.avatar}</p>
             </CardContent>
           </Card>
         )}
         
         {successMessage && (
-          <Card className="border-success/20 bg-success/5">
-            <CardContent className="flex items-center gap-3 p-4">
-              <SuccessIcon className="w-5 h-5 text-success flex-shrink-0" />
-              <p className="text-sm text-success">{successMessage}</p>
+          <Card variant="glass-frosted" className="settings-profile-success-card">
+            <CardContent className="settings-profile-success-card-content">
+              <SuccessIcon className="settings-profile-success-card-icon" />
+              <p className="settings-profile-success-card-message">{successMessage}</p>
             </CardContent>
           </Card>
         )}
 
         {promoteError && (
-          <Card className="border-error/20 bg-error/5">
-            <CardContent className="flex items-center gap-3 p-4">
-              <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
-              <p className="text-sm text-error">{promoteError}</p>
+          <Card variant="glass-frosted" className="settings-profile-error-card">
+            <CardContent className="settings-profile-error-card-content">
+              <AlertTriangleIcon className="settings-profile-error-card-icon" />
+              <p className="settings-profile-error-card-message">{promoteError}</p>
             </CardContent>
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
-                <CardContent className="p-6 text-center">
-                    <div className="relative w-32 h-32 mx-auto mb-4 group">
-                        <Image 
-                            src={avatarPreview || user.avatarUrl} 
-                            alt="User Avatar" 
-                            className="w-full h-full rounded-full object-cover border-4 border-border" 
-                            width={128}
-                            height={128}
-                        />
-                        <label 
-                            htmlFor="avatar-upload" 
-                            className="absolute inset-0 bg-backdrop rounded-full flex items-center justify-center text-white cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                            <div className="flex flex-col items-center gap-1">
-                                <UploadIcon className="w-6 h-6" />
-                                <span className="text-xs font-medium">Change</span>
-                            </div>
-                        </label>
-                        <input 
-                            type="file" 
-                            id="avatar-upload" 
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleAvatarChange} 
-                        />
-                    </div>
-                    <h3 className="text-2xl font-bold text-card-foreground mb-1">{user.name}</h3>
-                    <div className="flex items-center justify-center gap-2 mb-2">
-                        <MailIcon className="w-4 h-4 text-muted-foreground" />
-                        <p className="text-muted-foreground">{user.email}</p>
-                    </div>
-                    <div className="mt-3">
+        <div className="settings-profile-grid">
+            {/* Avatar Card */}
+            <Card variant="glass-frosted" className="settings-profile-avatar-card">
+                <CardContent className="settings-profile-avatar-card-content">
+                    <Tooltip content="Click to upload a new avatar" side="bottom">
+                      <div className="settings-profile-avatar-wrapper">
+                          <div className="settings-profile-avatar-overlay" />
+                          <Image 
+                              src={avatarPreview || user.avatarUrl} 
+                              alt="User Avatar" 
+                              className="settings-profile-avatar-image" 
+                              width={128}
+                              height={128}
+                          />
+                          <label 
+                              htmlFor="avatar-upload" 
+                              className="settings-profile-avatar-label"
+                          >
+                              <div className="settings-profile-avatar-label-content">
+                                  <UploadIcon />
+                                  <span className="settings-profile-avatar-label-text">Change</span>
+                              </div>
+                          </label>
+                          <input 
+                              type="file" 
+                              id="avatar-upload" 
+                              className="settings-profile-avatar-input" 
+                              accept="image/*" 
+                              onChange={handleAvatarChange} 
+                          />
+                      </div>
+                    </Tooltip>
+                    <h3 className="settings-profile-avatar-name">{user.name}</h3>
+                    <Tooltip content={user.email} side="bottom">
+                      <div className="settings-profile-avatar-email">
+                          <MailIcon className="settings-profile-avatar-email-icon" />
+                          <p className="settings-profile-avatar-email-text">{user.email}</p>
+                      </div>
+                    </Tooltip>
+                    <div className="settings-profile-avatar-role">
                         <RoleBadge role={user.role} />
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="lg:col-span-2 space-y-6">
+            <div className="settings-profile-content">
                 {!isAdmin && (
-                    <Card className="border-warning/20 bg-warning/5">
+                    <Card variant="glass-frosted" className="settings-profile-promote-card">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <ShieldCheckIcon className="w-5 h-5 text-warning" />
-                                Upgrade to Admin
-                            </CardTitle>
-                            <CardDescription>
-                                Promote yourself to Admin role to access additional features and permissions
-                            </CardDescription>
+                            <div className="settings-profile-promote-header">
+                                <div className="settings-profile-promote-icon-wrapper">
+                                  <ShieldCheckIcon className="settings-profile-promote-icon" />
+                                </div>
+                                <div>
+                                  <CardTitle className="settings-profile-promote-title">
+                                    Upgrade to Admin
+                                    <Tooltip content="Gain full access to all features" side="top">
+                                      <span className="settings-profile-promote-info">ℹ️</span>
+                                    </Tooltip>
+                                  </CardTitle>
+                                  <CardDescription className="settings-profile-promote-description">
+                                    Promote yourself to Admin role to access additional features and permissions
+                                  </CardDescription>
+                                </div>
+                            </div>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="settings-profile-promote-content">
                             {showPromoteConfirm ? (
-                                <div className="space-y-4">
-                                    <div className="p-4 bg-background rounded-lg border border-warning/30">
-                                        <p className="text-sm text-foreground mb-2">
+                                <div className="settings-profile-promote-confirm">
+                                    <div className="settings-profile-promote-confirm-box">
+                                        <p className="settings-profile-promote-confirm-text">
                                             <strong>Are you sure you want to promote yourself to Admin?</strong>
                                         </p>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="settings-profile-promote-confirm-description">
                                             This action will grant you administrative privileges. The operation is logged for audit purposes.
                                         </p>
                                     </div>
-                                    <div className="flex gap-3">
+                                    <div className="settings-profile-promote-confirm-actions">
                                         <Button
                                             variant="primary"
                                             onClick={handlePromoteToAdmin}
                                             isLoading={isPromoting}
                                             disabled={isPromoting}
-                                            leftIcon={<ShieldCheckIcon className="w-4 h-4" />}
+                                            leftIcon={<ShieldCheckIcon />}
+                                            className="settings-profile-promote-confirm-btn"
                                         >
                                             {isPromoting ? 'Promoting...' : 'Confirm Promotion'}
                                         </Button>
@@ -367,6 +377,7 @@ const ProfileSettings: React.FC = () => {
                                                 setPromoteError(null);
                                             }}
                                             disabled={isPromoting}
+                                            className="settings-profile-promote-cancel-btn"
                                         >
                                             Cancel
                                         </Button>
@@ -376,8 +387,8 @@ const ProfileSettings: React.FC = () => {
                                 <Button
                                     variant="outline"
                                     onClick={handlePromoteToAdmin}
-                                    leftIcon={<ShieldCheckIcon className="w-4 h-4" />}
-                                    className="w-full sm:w-auto"
+                                    leftIcon={<ShieldCheckIcon />}
+                                    className="settings-profile-promote-btn"
                                 >
                                     Promote to Admin
                                 </Button>
@@ -386,13 +397,21 @@ const ProfileSettings: React.FC = () => {
                     </Card>
                 )}
 
-                <Card>
+                {/* Personal Information Form - Desktop */}
+                <Card variant="glass-frosted" className="settings-profile-form-card settings-profile-form-card--desktop">
                     <CardHeader>
-                        <CardTitle>Personal Information</CardTitle>
-                        <CardDescription>Update your profile details and preferences</CardDescription>
+                        <div className="settings-profile-form-header">
+                          <div className="settings-profile-form-icon-wrapper">
+                            <IdentificationIcon className="settings-profile-form-icon" />
+                          </div>
+                          <div>
+                            <CardTitle>Personal Information</CardTitle>
+                            <CardDescription>Update your profile details and preferences</CardDescription>
+                          </div>
+                        </div>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={handleProfileUpdate} className="space-y-4">
+                        <form onSubmit={handleProfileUpdate} className="settings-profile-form">
                             <Input
                                 label="Full Name"
                                 id="name"
@@ -405,8 +424,11 @@ const ProfileSettings: React.FC = () => {
                                   }
                                 }}
                                 error={errors.name}
-                                leftIcon={<UsersIcon className="w-4 h-4" />}
+                                leftIcon={<UsersIcon />}
                                 fullWidth
+                                variant="glass-frosted-heavy"
+                                tooltip="Your full name as it appears on official documents"
+                                tooltipPosition="right"
                             />
                             
                             <Input
@@ -422,8 +444,11 @@ const ProfileSettings: React.FC = () => {
                                 }}
                                 placeholder="e.g. Sales Manager"
                                 error={errors.jobTitle}
-                                leftIcon={<BriefcaseIcon className="w-4 h-4" />}
+                                leftIcon={<BriefcaseIcon />}
                                 fullWidth
+                                variant="glass-frosted-heavy"
+                                tooltip="Your current position or role"
+                                tooltipPosition="right"
                             />
                             
                             <Textarea
@@ -440,6 +465,11 @@ const ProfileSettings: React.FC = () => {
                                 placeholder="Tell us a little about yourself."
                                 error={errors.bio}
                                 fullWidth
+                                variant="glass-frosted-heavy"
+                                showCharacterCount
+                                maxLength={500}
+                                tooltip="A brief description about yourself (max 500 characters)"
+                                tooltipPosition="right"
                             />
                             
                             <Select
@@ -455,6 +485,10 @@ const ProfileSettings: React.FC = () => {
                                 error={errors.timezone}
                                 options={timezones.map(tz => ({ value: tz, label: tz.replace(/_/g, ' ') }))}
                                 fullWidth
+                                leftIcon={<GlobeAltIcon />}
+                                variant="glass-frosted-heavy"
+                                tooltip="Your local timezone for accurate scheduling"
+                                tooltipPosition="right"
                             />
                             
                             <Input
@@ -463,16 +497,20 @@ const ProfileSettings: React.FC = () => {
                                 type="email"
                                 value={user.email}
                                 disabled
-                                leftIcon={<MailIcon className="w-4 h-4" />}
+                                leftIcon={<MailIcon />}
                                 fullWidth
+                                variant="glass-frosted-heavy"
+                                tooltip="Your email address (cannot be changed)"
+                                tooltipPosition="right"
                             />
                             
-                            <div className="flex justify-end gap-3 pt-4">
+                            <div className="settings-profile-form-actions">
                                 <Button 
                                     type="submit" 
                                     disabled={isUpdatingProfile || isUploading}
                                     isLoading={isUpdatingProfile || isUploading}
-                                    leftIcon={<SaveIcon className="w-4 h-4" />}
+                                    leftIcon={<SaveIcon />}
+                                    className="settings-profile-form-submit-btn"
                                 >
                                     {isUploading ? 'Uploading...' : isUpdatingProfile ? 'Saving...' : 'Save Changes'}
                                 </Button>
@@ -480,6 +518,119 @@ const ProfileSettings: React.FC = () => {
                         </form>
                     </CardContent>
                 </Card>
+
+                {/* Personal Information Form - Mobile (Collapsible) */}
+                <div className="settings-profile-form-mobile">
+                  <CollapsibleSection 
+                    title="Personal Information" 
+                    defaultOpen={true}
+                    icon={<IdentificationIcon />}
+                  >
+                    <form onSubmit={handleProfileUpdate} className="settings-profile-form settings-profile-form--mobile">
+                        <Input
+                            label="Full Name"
+                            id="name-mobile"
+                            type="text"
+                            value={name}
+                            onChange={(e) => {
+                              setName(e.target.value);
+                              if (errors.name) {
+                                setErrors((prev) => ({ ...prev, name: undefined }));
+                              }
+                            }}
+                            error={errors.name}
+                            leftIcon={<UsersIcon />}
+                            fullWidth
+                            variant="glass-frosted-heavy"
+                            tooltip="Your full name as it appears on official documents"
+                            showTooltipOnFocus
+                        />
+                        
+                        <Input
+                            label="Job Title"
+                            id="jobTitle-mobile"
+                            type="text"
+                            value={jobTitle}
+                            onChange={(e) => {
+                              setJobTitle(e.target.value);
+                              if (errors.jobTitle) {
+                                setErrors((prev) => ({ ...prev, jobTitle: undefined }));
+                              }
+                            }}
+                            placeholder="e.g. Sales Manager"
+                            error={errors.jobTitle}
+                            leftIcon={<BriefcaseIcon />}
+                            fullWidth
+                            variant="glass-frosted-heavy"
+                            tooltip="Your current position or role"
+                            showTooltipOnFocus
+                        />
+                        
+                        <Textarea
+                            label="Bio"
+                            id="bio-mobile"
+                            value={bio}
+                            onChange={(e) => {
+                              setBio(e.target.value);
+                              if (errors.bio) {
+                                setErrors((prev) => ({ ...prev, bio: undefined }));
+                              }
+                            }}
+                            rows={3}
+                            placeholder="Tell us a little about yourself."
+                            error={errors.bio}
+                            fullWidth
+                            variant="glass-frosted-heavy"
+                            showCharacterCount
+                            maxLength={500}
+                            tooltip="A brief description about yourself (max 500 characters)"
+                            showTooltipOnFocus
+                        />
+                        
+                        <Select
+                            label="Timezone"
+                            id="timezone-mobile"
+                            value={timezone}
+                            onChange={(e) => {
+                              setTimezone(e.target.value);
+                              if (errors.timezone) {
+                                setErrors((prev) => ({ ...prev, timezone: undefined }));
+                              }
+                            }}
+                            error={errors.timezone}
+                            options={timezones.map(tz => ({ value: tz, label: tz.replace(/_/g, ' ') }))}
+                            fullWidth
+                            leftIcon={<GlobeAltIcon />}
+                            variant="glass-frosted-heavy"
+                            tooltip="Your local timezone for accurate scheduling"
+                            showTooltipOnFocus
+                        />
+                        
+                        <Input
+                            label="Email"
+                            id="email-mobile"
+                            type="email"
+                            value={user.email}
+                            disabled
+                            leftIcon={<MailIcon />}
+                            fullWidth
+                            variant="glass-frosted-heavy"
+                            tooltip="Your email address (cannot be changed)"
+                            showTooltipOnFocus
+                        />
+                        
+                        <Button 
+                            type="submit" 
+                            disabled={isUpdatingProfile || isUploading}
+                            isLoading={isUpdatingProfile || isUploading}
+                            leftIcon={<SaveIcon />}
+                            className="settings-profile-form-submit-btn settings-profile-form-submit-btn--mobile"
+                        >
+                            {isUploading ? 'Uploading...' : isUpdatingProfile ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </form>
+                  </CollapsibleSection>
+                </div>
             </div>
         </div>
     </div>

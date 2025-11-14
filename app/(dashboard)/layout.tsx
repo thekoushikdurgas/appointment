@@ -42,16 +42,16 @@ export default function DashboardLayout({
         setCollapsed={setSidebarCollapsed}
       />
       <div className="dashboard-main">
-        <main className="dashboard-content pb-20 md:pb-0">
+        <main className="dashboard-content">
           <Button
             variant="ghost"
             size="sm"
             iconOnly
             onClick={() => setSidebarOpen(true)}
-            className="hidden sm:block lg:hidden mb-4"
+            className="dashboard-sidebar-toggle"
             aria-label="Open sidebar"
           >
-            <MenuIcon className="w-5 h-5" />
+            <MenuIcon className="dashboard-sidebar-toggle-icon" />
           </Button>
           {children}
         </main>

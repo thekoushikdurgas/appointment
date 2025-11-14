@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { cn } from '../../utils/cn';
 import { CheckIcon } from '../icons/IconComponents';
 
 export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
@@ -28,20 +27,19 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     const checkboxId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
     const hasError = !!error;
     
+    const wrapperClassName = `checkbox-wrapper${fullWidth ? ' checkbox-wrapper--full-width' : ''}`;
+    const inputClassName = `checkbox-input${hasError ? ' checkbox-input--error' : ''}${className ? ' ' + className : ''}`;
+    
     return (
-      <div className={cn('checkbox-wrapper', fullWidth && 'w-full')}>
+      <div className={wrapperClassName}>
         <div className="checkbox-container">
-          <div className="relative flex items-center">
+          <div className="checkbox-input-wrapper">
             <input
               ref={ref}
               type="checkbox"
               id={checkboxId}
               checked={checked}
-              className={cn(
-                'checkbox-input',
-                hasError && 'error',
-                className
-              )}
+              className={inputClassName}
               aria-invalid={hasError ? 'true' : 'false'}
               aria-describedby={
                 error ? `${checkboxId}-error` : helperText ? `${checkboxId}-helper` : undefined
@@ -66,7 +64,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         {error && (
           <p
             id={`${checkboxId}-error`}
-            className="form-error-text ml-7"
+            className="form-error-text checkbox-error-text"
             role="alert"
           >
             {error}
@@ -75,7 +73,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         {helperText && !error && (
           <p
             id={`${checkboxId}-helper`}
-            className="form-helper-text ml-7"
+            className="form-helper-text checkbox-helper-text"
           >
             {helperText}
           </p>

@@ -6,6 +6,17 @@
 @import '../styles/responsive.css';
 @import '../styles/layouts.css';
 @import '../styles/pages.css';
+@import '../styles/contacts.css';
+@import '../styles/companies.css';
+
+/* Import New Feature CSS Modules */
+@import '../styles/ui-components.css';
+@import '../styles/feature-companies.css';
+@import '../styles/feature-contacts.css';
+@import '../styles/feature-dashboard.css';
+@import '../styles/feature-auth.css';
+@import '../styles/feature-settings.css';
+@import '../styles/feature-apollo.css';
 
 /* Enhanced CSS Variables - Light Theme */
 :root {
@@ -98,6 +109,62 @@
   
   /* Font Family */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  
+  /* Font Sizes */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Font Weights */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+  
+  /* Glassmorphism Variables - Light Theme (Heavy iOS/macOS Style) */
+  --glass-bg: 0 0% 100% / 0.7;
+  --glass-bg-light: 0 0% 100% / 0.5;
+  --glass-bg-lighter: 0 0% 100% / 0.3;
+  --glass-bg-dark: 0 0% 100% / 0.8;
+  --glass-bg-darker: 0 0% 100% / 0.9;
+  --glass-bg-heavy: 0 0% 100% / 0.4;
+  --glass-bg-ultra: 0 0% 100% / 0.3;
+  --glass-border: 214.3 31.8% 91.4% / 0.5;
+  --glass-border-light: 214.3 31.8% 91.4% / 0.3;
+  --glass-border-strong: 214.3 31.8% 91.4% / 0.7;
+  --glass-border-glow: 221.2 83.2% 53.3% / 0.3;
+  --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.1);
+  --glass-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.15);
+  --glass-shadow-xl: 0 20px 60px 0 rgb(0 0 0 / 0.2);
+  --glass-blur: 12px;
+  --glass-blur-sm: 8px;
+  --glass-blur-lg: 16px;
+  --glass-blur-xl: 24px;
+  --glass-blur-heavy: 30px;
+  --glass-saturate: 180%;
+  --glass-brightness: 100%;
+  
+  /* Transition Durations */
+  --transition-fast: 0.15s;
+  --transition-base: 0.2s;
+  --transition-slow: 0.3s;
+  --transition-slower: 0.5s;
+  
+  /* Z-Index Scale */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
 }
 
 /* Enhanced CSS Variables - Dark Theme */
@@ -171,6 +238,29 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.4);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.5);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.7);
+  
+  /* Glassmorphism Variables - Dark Theme (Heavy iOS/macOS Style) */
+  --glass-bg: 222.2 84% 4.9% / 0.7;
+  --glass-bg-light: 222.2 84% 4.9% / 0.5;
+  --glass-bg-lighter: 222.2 84% 4.9% / 0.3;
+  --glass-bg-dark: 222.2 84% 4.9% / 0.8;
+  --glass-bg-darker: 222.2 84% 4.9% / 0.9;
+  --glass-bg-heavy: 222.2 84% 4.9% / 0.4;
+  --glass-bg-ultra: 222.2 84% 4.9% / 0.3;
+  --glass-border: 217.2 32.6% 17.5% / 0.5;
+  --glass-border-light: 217.2 32.6% 17.5% / 0.3;
+  --glass-border-strong: 217.2 32.6% 17.5% / 0.7;
+  --glass-border-glow: 217.2 91.2% 59.8% / 0.4;
+  --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.3);
+  --glass-shadow-lg: 0 12px 40px 0 rgb(0 0 0 / 0.4);
+  --glass-shadow-xl: 0 20px 60px 0 rgb(0 0 0 / 0.5);
+  --glass-blur: 14px;
+  --glass-blur-sm: 10px;
+  --glass-blur-lg: 18px;
+  --glass-blur-xl: 26px;
+  --glass-blur-heavy: 32px;
+  --glass-saturate: 180%;
+  --glass-brightness: 110%;
 }
 
 /* Screen reader only class for accessibility */
@@ -184,6 +274,79 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+/* Smooth Theme Transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Exclude specific elements from theme transition */
+*:where(:not(.no-transition)) {
+  transition-property: background-color, border-color, color, fill, stroke;
+}
+
+/* Prevent transition on animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Smooth Scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar - Light Theme */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: var(--radius-full);
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Custom Scrollbar - Dark Theme */
+.dark ::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6);
+}
+
+/* Selection Styling */
+::selection {
+  background-color: hsl(var(--primary) / 0.3);
+  color: hsl(var(--foreground));
+}
+
+.dark ::selection {
+  background-color: hsl(var(--primary) / 0.4);
+  color: hsl(var(--foreground));
 }
 
 

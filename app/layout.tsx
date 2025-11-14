@@ -18,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <body className={`${inter.className} bg-background text-foreground`} suppressHydrationWarning>
+      <body className={`${inter.className} root-layout-body`} suppressHydrationWarning>
         <ThemeProvider>
           <AuthProvider>
             {children}

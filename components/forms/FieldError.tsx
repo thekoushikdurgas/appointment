@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { AlertTriangleIcon } from '../icons/IconComponents';
-import { cn } from '../../utils/cn';
 
 interface FieldErrorProps {
   error?: string;
@@ -21,12 +20,9 @@ export const FieldError: React.FC<FieldErrorProps> = ({ error, id, className = '
     <p
       id={id}
       role="alert"
-      className={cn(
-        "form-error-text flex items-center gap-1.5",
-        className
-      )}
+      className={`form-error-text${className ? ' ' + className : ''}`}
     >
-      <AlertTriangleIcon className="w-4 h-4 flex-shrink-0" />
+      <AlertTriangleIcon className="form-error-icon" />
       <span>{error}</span>
     </p>
   );

@@ -15,12 +15,11 @@ import {
 } from '../icons/IconComponents';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
-import { cn } from '../../utils/cn';
 
 interface ContactCardProps {
   contact: Contact;
   searchTerm?: string;
-  onViewDetails: (contact: Contact) => void;
+  onViewDetails?: (contact: Contact) => void;
   onEdit?: (contact: Contact) => void;
   className?: string;
 }
@@ -61,7 +60,7 @@ const Highlight: React.FC<{ text: string | undefined; highlight: string }> = ({ 
     <span>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-primary/20 text-primary rounded px-1 py-0.5">
+          <mark key={i} className="contact-card__highlight">
             {part}
           </mark>
         ) : (
@@ -83,43 +82,45 @@ export const ContactCard: React.FC<ContactCardProps> = ({
     .filter(Boolean)
     .join(', ');
 
+  const handleViewDetails = () => {
+    if (contact.uuid) {
+      // Open in new tab
+      window.open(`/contacts/${contact.uuid}`, '_blank', 'noopener,noreferrer');
+    } else if (onViewDetails) {
+      // Fallback to callback if no UUID
+      onViewDetails(contact);
+    }
+  };
+
   return (
-    <div
-      className={cn(
-        'glass-card rounded-lg p-4 transition-all duration-300',
-        'hover:shadow-lg hover:-translate-y-1',
-        'border border-glass-light',
-        'animate-slide-up-fade',
-        className
-      )}
-    >
+    <div className={`contact-card${className ? ' ' + className : ''}`}>
       {/* Header with Avatar and Basic Info */}
-      <div className="flex items-start gap-3 mb-3">
-        <div className="relative flex-shrink-0">
+      <div className="contact-card__header">
+        <div className="contact-card__avatar-wrapper">
           <Image
             src={contact.avatarUrl}
             alt={contact.name}
             width={56}
             height={56}
-            className="rounded-full ring-2 ring-border"
+            className="contact-card__avatar"
           />
-          <div className="absolute -bottom-1 -right-1">
+          <div className="contact-card__status-badge">
             <StatusBadge status={contact.status} />
           </div>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-foreground truncate mb-1">
+        <div className="contact-card__info">
+          <h3 className="contact-card__name">
             <Highlight text={contact.name} highlight={searchTerm} />
           </h3>
           {contact.title && (
-            <p className="text-sm text-muted-foreground truncate mb-1">
+            <p className="contact-card__title">
               <Highlight text={contact.title} highlight={searchTerm} />
             </p>
           )}
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <BuildingIcon className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">
+          <div className="contact-card__company">
+            <BuildingIcon className="contact-card__company-icon" />
+            <span className="contact-card__company-name">
               <Highlight text={contact.company} highlight={searchTerm} />
             </span>
           </div>
@@ -127,43 +128,43 @@ export const ContactCard: React.FC<ContactCardProps> = ({
       </div>
 
       {/* Contact Information */}
-      <div className="space-y-2 mb-3">
+      <div className="contact-card__contact-info">
         {contact.email && (
-          <div className="flex items-center gap-2 text-sm">
-            <MailIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="truncate text-foreground">{contact.email}</span>
+          <div className="contact-card__contact-item">
+            <MailIcon className="contact-card__contact-icon" />
+            <span className="contact-card__contact-text">{contact.email}</span>
             {contact.emailStatus && <EmailStatusBadge status={contact.emailStatus} />}
           </div>
         )}
         
         {contact.phone && (
-          <div className="flex items-center gap-2 text-sm">
-            <PhoneIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="text-foreground">{contact.phone}</span>
+          <div className="contact-card__contact-item">
+            <PhoneIcon className="contact-card__contact-icon" />
+            <span className="contact-card__contact-text">{contact.phone}</span>
           </div>
         )}
 
         {location && (
-          <div className="flex items-center gap-2 text-sm">
-            <MapPinIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-            <span className="truncate text-muted-foreground">{location}</span>
+          <div className="contact-card__contact-item">
+            <MapPinIcon className="contact-card__contact-icon" />
+            <span className="contact-card__contact-text contact-card__contact-text--muted">{location}</span>
           </div>
         )}
       </div>
 
       {/* Social Links */}
       {(contact.personLinkedinUrl || contact.website) && (
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-border">
+        <div className="contact-card__social-links">
           {contact.personLinkedinUrl && (
             <Tooltip content="LinkedIn Profile">
               <a
                 href={contact.personLinkedinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-secondary transition-colors icon-hover-scale"
+                className="contact-card__social-link icon-hover-scale"
                 aria-label="LinkedIn Profile"
               >
-                <LinkedInIcon className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                <LinkedInIcon className="contact-card__social-icon" />
               </a>
             </Tooltip>
           )}
@@ -173,10 +174,10 @@ export const ContactCard: React.FC<ContactCardProps> = ({
                 href={contact.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg hover:bg-secondary transition-colors icon-hover-scale"
+                className="contact-card__social-link icon-hover-scale"
                 aria-label="Website"
               >
-                <GlobeAltIcon className="w-4 h-4 text-muted-foreground hover:text-primary" />
+                <GlobeAltIcon className="contact-card__social-icon" />
               </a>
             </Tooltip>
           )}
@@ -184,14 +185,14 @@ export const ContactCard: React.FC<ContactCardProps> = ({
       )}
 
       {/* Action Buttons */}
-      <div className="flex gap-2">
-        <Tooltip content="View full details">
+      <div className="contact-card__actions">
+        <Tooltip content="View full details in new tab">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onViewDetails(contact)}
-            className="flex-1"
-            leftIcon={<EyeIcon className="w-4 h-4" />}
+            onClick={handleViewDetails}
+            className="contact-card__action-button"
+            leftIcon={<EyeIcon className="contact-card__action-icon" />}
           >
             View
           </Button>
@@ -203,9 +204,9 @@ export const ContactCard: React.FC<ContactCardProps> = ({
               size="sm"
               onClick={() => onEdit(contact)}
               iconOnly
-              className="flex-shrink-0"
+              className="contact-card__action-button contact-card__action-button--icon-only"
             >
-              <EditIcon className="w-4 h-4" />
+              <EditIcon className="contact-card__action-icon" />
             </Button>
           </Tooltip>
         )}

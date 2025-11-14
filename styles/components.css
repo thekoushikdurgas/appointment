@@ -131,9 +131,62 @@
   height: 3rem;
 }
 
+.button-loading-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+/* Button Icon Sizing */
+.btn > span > svg,
+.btn > svg,
+.btn [class*="Icon"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.btn-sm > span > svg,
+.btn-sm > svg,
+.btn-sm [class*="Icon"] {
+  width: 1rem;
+  height: 1rem;
+}
+
+.btn-lg > span > svg,
+.btn-lg > svg,
+.btn-lg [class*="Icon"] {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 /* Button Full Width */
 .btn-full-width {
   width: 100%;
+}
+
+/* Button Icon and Content Containers */
+.button-icon-container {
+  flex-shrink: 0;
+}
+
+.button-icon-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-content-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+.button-animate-hover {
+  transition: transform 0.2s ease;
+}
+
+.button-animate-hover:hover {
+  transform: scale(1.05);
 }
 
 /* Input Base Styles */
@@ -243,6 +296,19 @@
   border-radius: var(--radius-lg);
   border: 1px solid hsl(var(--border));
   transition: all 0.2s ease;
+}
+
+.card-rounded-xl {
+  border-radius: var(--radius-xl);
+}
+
+.card-transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover-glow-primary:hover {
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  transition: box-shadow 0.3s ease;
 }
 
 .card-elevated {
@@ -944,6 +1010,7 @@
   box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.15),
               0 0 0 1px rgba(0, 0, 0, 0.05);
   transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  z-index: 9999;
 }
 
 .dark .user-menu-popup {

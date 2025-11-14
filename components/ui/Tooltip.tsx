@@ -1,33 +1,39 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
-import { cn } from '../../utils/cn';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface TooltipProps {
   content: string | React.ReactNode;
-  children: React.ReactElement;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  children: React.ReactNode;
+  side?: 'top' | 'bottom' | 'left' | 'right';
   delay?: number;
   className?: string;
+  disabled?: boolean;
+  shortcut?: string;
 }
 
 export const Tooltip: React.FC<TooltipProps> = ({
   content,
   children,
-  position = 'top',
+  side = 'top',
   delay = 300,
-  className
+  className,
+  disabled = false,
+  shortcut,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState(position);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   const showTooltip = () => {
+    if (disabled) return;
+    
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
-      adjustPosition();
+      updatePosition();
     }, delay);
   };
 
@@ -38,31 +44,42 @@ export const Tooltip: React.FC<TooltipProps> = ({
     setIsVisible(false);
   };
 
-  const adjustPosition = () => {
+  const updatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
 
     const triggerRect = triggerRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    const viewport = {
-      width: window.innerWidth,
-      height: window.innerHeight
-    };
+    const gap = 8;
 
-    let newPosition = position;
+    let x = 0;
+    let y = 0;
 
-    // Check if tooltip fits in the desired position
-    if (position === 'top' && triggerRect.top - tooltipRect.height < 0) {
-      newPosition = 'bottom';
-    } else if (position === 'bottom' && triggerRect.bottom + tooltipRect.height > viewport.height) {
-      newPosition = 'top';
-    } else if (position === 'left' && triggerRect.left - tooltipRect.width < 0) {
-      newPosition = 'right';
-    } else if (position === 'right' && triggerRect.right + tooltipRect.width > viewport.width) {
-      newPosition = 'left';
+    switch (side) {
+      case 'top':
+        x = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+        y = triggerRect.top - tooltipRect.height - gap;
+        break;
+      case 'bottom':
+        x = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+        y = triggerRect.bottom + gap;
+        break;
+      case 'left':
+        x = triggerRect.left - tooltipRect.width - gap;
+        y = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
+        break;
+      case 'right':
+        x = triggerRect.right + gap;
+        y = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
+        break;
     }
 
-    setTooltipPosition(newPosition);
-  };
+    // Keep tooltip within viewport
+    const padding = 8;
+    x = Math.max(padding, Math.min(x, window.innerWidth - tooltipRect.width - padding));
+    y = Math.max(padding, Math.min(y, window.innerHeight - tooltipRect.height - padding));
+
+    setPosition({ x, y });
+  }, [side]);
 
   useEffect(() => {
     return () => {
@@ -72,81 +89,69 @@ export const Tooltip: React.FC<TooltipProps> = ({
     };
   }, []);
 
-  const getPositionClasses = () => {
-    const baseClasses = 'absolute z-50 pointer-events-none';
-    
-    switch (tooltipPosition) {
-      case 'top':
-        return `${baseClasses} bottom-full left-1/2 -translate-x-1/2 mb-2`;
-      case 'bottom':
-        return `${baseClasses} top-full left-1/2 -translate-x-1/2 mt-2`;
-      case 'left':
-        return `${baseClasses} right-full top-1/2 -translate-y-1/2 mr-2`;
-      case 'right':
-        return `${baseClasses} left-full top-1/2 -translate-y-1/2 ml-2`;
-      default:
-        return `${baseClasses} bottom-full left-1/2 -translate-x-1/2 mb-2`;
+  useEffect(() => {
+    if (isVisible) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
     }
-  };
+  }, [isVisible, updatePosition]);
 
-  const getArrowClasses = () => {
-    switch (tooltipPosition) {
-      case 'top':
-        return 'top-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent';
-      case 'bottom':
-        return 'bottom-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-t-transparent';
-      case 'left':
-        return 'left-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-r-transparent';
-      case 'right':
-        return 'right-full top-1/2 -translate-y-1/2 border-t-transparent border-b-transparent border-l-transparent';
-      default:
-        return 'top-full left-1/2 -translate-x-1/2 border-l-transparent border-r-transparent border-b-transparent';
-    }
+  const sideVariants = {
+    top: { y: 5, opacity: 0 },
+    bottom: { y: -5, opacity: 0 },
+    left: { x: 5, opacity: 0 },
+    right: { x: -5, opacity: 0 },
   };
 
   return (
-    <div
-      ref={triggerRef}
-      className="relative inline-block"
-      onMouseEnter={showTooltip}
-      onMouseLeave={hideTooltip}
-      onFocus={showTooltip}
-      onBlur={hideTooltip}
-    >
-      {children}
-      {isVisible && (
-        <div
-          ref={tooltipRef}
-          className={cn(
-            getPositionClasses(),
-            'tooltip-enter',
-            className
-          )}
-          role="tooltip"
-        >
-          <div className={cn(
-            'tooltip-content',
-            'glass-frosted',
-            'px-3 py-2 rounded-lg shadow-xl',
-            'text-sm text-foreground whitespace-nowrap',
-            'max-w-xs'
-          )}>
-            {content}
-            {/* Arrow */}
-            <div
-              className={cn(
-                'absolute w-0 h-0',
-                'border-4 border-solid',
-                'border-card/60',
-                getArrowClasses()
+    <>
+      <div
+        ref={triggerRef}
+        onMouseEnter={showTooltip}
+        onMouseLeave={hideTooltip}
+        onFocus={showTooltip}
+        onBlur={hideTooltip}
+        className="tooltip-trigger"
+      >
+        {children}
+      </div>
+
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            ref={tooltipRef}
+            initial={sideVariants[side]}
+            animate={{ x: 0, y: 0, opacity: 1 }}
+            exit={sideVariants[side]}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            style={{
+              position: 'fixed',
+              left: position.x,
+              top: position.y,
+              zIndex: 9999,
+            }}
+            className={`tooltip-content${className ? ' ' + className : ''}`}
+            role="tooltip"
+          >
+            <div className="tooltip-content__inner">
+              <span>{content}</span>
+              {shortcut && (
+                <kbd className="tooltip-content__shortcut">
+                  {shortcut}
+                </kbd>
               )}
-            />
-          </div>
-        </div>
-      )}
-    </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
-Tooltip.displayName = 'Tooltip';
-
+export default Tooltip;

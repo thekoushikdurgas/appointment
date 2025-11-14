@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { cn } from '../../utils/cn';
 import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '../icons/IconComponents';
 
 export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
@@ -10,13 +9,11 @@ export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
 
 export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, responsive = true, children, ...props }, ref) => {
+    const tableClassName = `table${!responsive && className ? ' ' + className : ''}`;
     const table = (
       <table
         ref={ref}
-        className={cn(
-          'table w-full',
-          !responsive && className
-        )}
+        className={tableClassName}
         {...props}
       >
         {children}
@@ -25,7 +22,7 @@ export const Table = React.forwardRef<HTMLTableElement, TableProps>(
     
     if (responsive) {
       return (
-        <div className={cn("table-responsive", className)}>
+        <div className={`table-responsive${className ? ' ' + className : ''}`}>
           {table}
         </div>
       );
@@ -73,10 +70,7 @@ export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   ({ className, hover = true, ...props }, ref) => (
     <tr
       ref={ref}
-      className={cn(
-        hover && 'table-row-hover',
-        className
-      )}
+      className={`${hover ? 'table-row-hover' : ''}${className ? ' ' + className : ''}`}
       {...props}
     />
   )
@@ -91,32 +85,32 @@ export interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElem
 }
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
-  ({ className, sortable, sortDirection, onSort, children, ...props }, ref) => (
-    <th
-      ref={ref}
-      className={cn(
-        sortable && 'table-sortable',
-        className
-      )}
-      onClick={sortable ? onSort : undefined}
-      {...props}
-    >
-      <div className="table-sort-icon flex items-center gap-2">
-        {children}
-        {sortable && (
-          <span className="flex-shrink-0">
-            {sortDirection === 'asc' ? (
-              <ChevronUpIcon className="w-4 h-4" />
-            ) : sortDirection === 'desc' ? (
-              <ChevronDownIcon className="w-4 h-4" />
-            ) : (
-              <ChevronUpDownIcon className="w-4 h-4 opacity-50" />
-            )}
-          </span>
-        )}
-      </div>
-    </th>
-  )
+  ({ className, sortable, sortDirection, onSort, children, ...props }, ref) => {
+    const thClassName = `${sortable ? 'table-sortable' : ''}${className ? ' ' + className : ''}`;
+    return (
+      <th
+        ref={ref}
+        className={thClassName}
+        onClick={sortable ? onSort : undefined}
+        {...props}
+      >
+        <div className="table-sort-icon">
+          {children}
+          {sortable && (
+            <span className="table-sort-icon__indicator">
+              {sortDirection === 'asc' ? (
+                <ChevronUpIcon />
+              ) : sortDirection === 'desc' ? (
+                <ChevronDownIcon />
+              ) : (
+                <ChevronUpDownIcon />
+              )}
+            </span>
+          )}
+        </div>
+      </th>
+    );
+  }
 );
 
 TableHead.displayName = 'TableHead';
@@ -127,7 +121,7 @@ export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
   ({ className, ...props }, ref) => (
     <td
       ref={ref}
-      className={cn('text-sm text-foreground', className)}
+      className={`table-cell${className ? ' ' + className : ''}`}
       {...props}
     />
   )

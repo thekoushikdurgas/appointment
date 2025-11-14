@@ -150,16 +150,21 @@ read all flows in my codebase and then thick about this app create in django pyt
 
 
 
+Read my codebase and properly implement api from @user.md, and then modify my codebase. Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks
 
 
+now create my company page, properly Now my company page components, buttons, input boxes, and text and popup  in dark-light ui, more icons and a more user-friendly modern style and also will be fully responsive on all screen sizes and also company page also Glassmorphism with blur effects and transparency (default) and swipe gestures and  Smooth transitions and hover effects and Rich animations with tooltips and highlights , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks .
 
 
+now modify my codebase in ui , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks
 
 
+when i click every rows in the contact table , now popup opens with contact details , but now create pages /contact/uuid and open in new tab where you contact full details , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks
 
 
+now remove all svgs and use icons , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks
 
-
+now remove all svgs and use icons , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks
 
 
 

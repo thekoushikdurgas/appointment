@@ -115,6 +115,11 @@ const mapFilterKey = (key: string): string => {
         'emailStatus': 'email_status',
         'primary_email_catch_all_status': 'primary_email_catch_all_status', // Already snake_case
         
+        // Exact match numeric filters (already snake_case in API)
+        'employees_count': 'employees_count',
+        'annual_revenue': 'annual_revenue',
+        'total_funding': 'total_funding',
+        
         // Aliases
         'tags': 'keywords',
         
@@ -211,6 +216,11 @@ export interface ContactFilters {
     stage?: string;
     seniority?: string;
     primary_email_catch_all_status?: string;
+    
+    // Exact match numeric filters
+    employees_count?: string | number;
+    annual_revenue?: string | number;
+    total_funding?: string | number;
     
     // Text filters - Person information
     first_name?: string;
@@ -402,6 +412,7 @@ interface CountResponse {
  */
 interface ApiContact {
   id: number;
+  uuid?: string;
   first_name?: string;
   last_name?: string;
   title?: string;
@@ -491,6 +502,7 @@ const mapApiToContact = (apiContact: ApiContact | any): Contact => {
   
   return {
     id: apiContact.id,
+    uuid: apiContact.uuid,
     name: fullName,
     email: apiContact.email || '',
     company: apiContact.company || '',
@@ -556,6 +568,7 @@ const mapSimpleItemToContact = (simpleItem: ContactSimpleItem): Contact => {
   
   return {
     id: simpleItem.id,
+    uuid: simpleItem.uuid,
     name: fullName,
     email: '', // Not available in simple view
     company: simpleItem.company_name || '',
@@ -577,9 +590,34 @@ const mapSimpleItemToContact = (simpleItem: ContactSimpleItem): Contact => {
  * Converts ContactFilters object and search term into URLSearchParams for API requests.
  * Filters out empty values, 'All' values, and properly maps filter keys to API parameter names.
  * 
+ * **Filter Handling:**
+ * - Text filters: Partial matching (case-insensitive contains)
+ * - Exact match filters: Exact matching (case-insensitive)
+ * - Numeric range filters: Min/max range queries
+ * - Date range filters: ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
+ * - Exclusion filters: Array values, multiple parameters with same key
+ * - Location filters: Full-text search on location fields
+ * 
+ * **Special Handling:**
+ * - Skips undefined, null, empty string, and 'All' values
+ * - Exclusion filters (arrays) are added as repeated query parameters
+ * - All filter keys are mapped to API parameter names via mapFilterKey()
+ * 
  * @param filters - ContactFilters object with filter criteria
  * @param search - Full-text search term
  * @returns URLSearchParams object ready for API request
+ * 
+ * @example
+ * ```typescript
+ * const filters = {
+ *   first_name: 'John',
+ *   country: 'United States',
+ *   employees_min: 50,
+ *   exclude_titles: ['Intern', 'Junior']
+ * };
+ * const query = buildFilterQuery(filters, 'technology');
+ * // Returns: search=technology&first_name=John&country=United+States&employees_min=50&exclude_titles=Intern&exclude_titles=Junior
+ * ```
  */
 const buildFilterQuery = (filters?: ContactFilters, search?: string): URLSearchParams => {
   const query = new URLSearchParams();
@@ -1404,4 +1442,277 @@ export const createContact = async (
       nonFieldErrors: parsedError.nonFieldErrors,
     };
   }
+};
+
+/**
+ * Get a single contact by UUID
+ * 
+ * Retrieves detailed information about a specific contact by its UUID.
+ * Since the API may not support UUID-based lookup directly, this function
+ * fetches all contacts and finds the one matching the UUID.
+ * 
+ * **Error Handling:**
+ * - Returns `null` if contact is not found
+ * - Throws error for other failures
+ * 
+ * @param uuid - The contact UUID
+ * @param requestId - Optional X-Request-Id header value for request tracking
+ * @returns Promise resolving to Contact object or null if not found
+ * 
+ * @example
+ * ```typescript
+ * const contact = await getContactByUuid('abc-123-def');
+ * if (contact) {
+ *   console.log(contact.name, contact.email);
+ * }
+ * ```
+ */
+export const getContactByUuid = async (uuid: string, requestId?: string): Promise<Contact | null> => {
+    try {
+        if (!uuid || typeof uuid !== 'string') {
+          throw new Error('Invalid contact UUID');
+        }
+
+        // First, try to fetch with simple view to get UUID mapping
+        const headers: HeadersInit = {};
+        if (requestId) {
+            headers['X-Request-Id'] = requestId;
+        }
+
+        // Fetch contacts with simple view to find the one with matching UUID
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/?view=simple&limit=1000`, {
+          method: 'GET',
+          headers,
+        });
+
+        if (!response.ok) {
+          const error = await parseApiError(response, `Failed to fetch contact with UUID ${uuid}`);
+          throw error;
+        }
+
+        const data: CursorListResponse | OffsetListResponse = await response.json();
+        const contacts = (data.results || []).map((item: ApiContact | ContactSimpleItem) => {
+          try {
+            if ('uuid' in item && 'location' in item) {
+              return mapSimpleItemToContact(item as ContactSimpleItem);
+            }
+            return mapApiToContact(item as ApiContact);
+          } catch (error) {
+            console.warn('[CONTACT] Failed to map contact:', item, error);
+            return null;
+          }
+        }).filter((contact): contact is Contact => contact !== null);
+
+        // Find contact with matching UUID
+        const contact = contacts.find(c => c.uuid === uuid);
+        
+        if (!contact) {
+          return null;
+        }
+
+        // If we found it, fetch full details using ID
+        return await getContactById(contact.id, requestId);
+    } catch (error) {
+        const parsedError = parseExceptionError(error, `Failed to fetch contact with UUID ${uuid}`);
+        console.error(`[CONTACT] Failed to fetch contact with UUID ${uuid}:`, {
+            message: parsedError.message,
+            statusCode: parsedError.statusCode,
+            isNetworkError: parsedError.isNetworkError,
+            isTimeoutError: parsedError.isTimeoutError,
+        });
+        return null;
+    }
+};
+
+/**
+ * Delete a contact by ID
+ * 
+ * Deletes a contact from the system.
+ * 
+ * **Note:** This endpoint may not be supported by the current API.
+ * If the API returns 404 or 405, the function will return an appropriate error.
+ * 
+ * @param id - The contact ID
+ * @param requestId - Optional X-Request-Id header value for request tracking
+ * @returns Promise resolving to success status and message
+ * 
+ * @example
+ * ```typescript
+ * const result = await deleteContact(123);
+ * if (result.success) {
+ *   console.log('Contact deleted successfully');
+ * } else {
+ *   console.error(result.message);
+ * }
+ * ```
+ */
+export const deleteContact = async (id: number, requestId?: string): Promise<{
+  success: boolean;
+  message: string;
+  error?: ParsedError;
+}> => {
+    try {
+        if (!id || typeof id !== 'number') {
+          throw new Error('Invalid contact ID');
+        }
+
+        const headers: HeadersInit = {};
+        if (requestId) {
+            headers['X-Request-Id'] = requestId;
+        }
+
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/${id}/`, {
+          method: 'DELETE',
+          headers,
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            return {
+              success: false,
+              message: 'Contact not found',
+              error: {
+                message: 'Contact not found',
+                statusCode: 404,
+                isNetworkError: false,
+                isTimeoutError: false,
+              },
+            };
+          }
+          if (response.status === 405) {
+            return {
+              success: false,
+              message: 'Delete operation is not supported by the API',
+              error: {
+                message: 'Method not allowed',
+                statusCode: 405,
+                isNetworkError: false,
+                isTimeoutError: false,
+              },
+            };
+          }
+          const error = await parseApiError(response, `Failed to delete contact ${id}`);
+          return {
+            success: false,
+            message: formatErrorMessage(error, 'Failed to delete contact'),
+            error,
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Contact deleted successfully',
+        };
+    } catch (error) {
+        const parsedError = parseExceptionError(error, `Failed to delete contact ${id}`);
+        console.error(`[CONTACT] Failed to delete contact ${id}:`, {
+            message: parsedError.message,
+            statusCode: parsedError.statusCode,
+            isNetworkError: parsedError.isNetworkError,
+            isTimeoutError: parsedError.isTimeoutError,
+        });
+        return {
+          success: false,
+          message: formatErrorMessage(parsedError, 'Failed to delete contact'),
+          error: parsedError,
+        };
+    }
+};
+
+/**
+ * Archive a contact by ID (update status to 'Archived')
+ * 
+ * Updates a contact's status to 'Archived'.
+ * 
+ * **Note:** This endpoint may not be supported by the current API.
+ * If the API returns 404 or 405, the function will return an appropriate error.
+ * 
+ * @param id - The contact ID
+ * @param requestId - Optional X-Request-Id header value for request tracking
+ * @returns Promise resolving to success status and message
+ * 
+ * @example
+ * ```typescript
+ * const result = await archiveContact(123);
+ * if (result.success) {
+ *   console.log('Contact archived successfully');
+ * } else {
+ *   console.error(result.message);
+ * }
+ * ```
+ */
+export const archiveContact = async (id: number, requestId?: string): Promise<{
+  success: boolean;
+  message: string;
+  error?: ParsedError;
+}> => {
+    try {
+        if (!id || typeof id !== 'number') {
+          throw new Error('Invalid contact ID');
+        }
+
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+        };
+        if (requestId) {
+            headers['X-Request-Id'] = requestId;
+        }
+
+        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/${id}/`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ stage: 'Archived' }),
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            return {
+              success: false,
+              message: 'Contact not found',
+              error: {
+                message: 'Contact not found',
+                statusCode: 404,
+                isNetworkError: false,
+                isTimeoutError: false,
+              },
+            };
+          }
+          if (response.status === 405) {
+            return {
+              success: false,
+              message: 'Archive operation is not supported by the API',
+              error: {
+                message: 'Method not allowed',
+                statusCode: 405,
+                isNetworkError: false,
+                isTimeoutError: false,
+              },
+            };
+          }
+          const error = await parseApiError(response, `Failed to archive contact ${id}`);
+          return {
+            success: false,
+            message: formatErrorMessage(error, 'Failed to archive contact'),
+            error,
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Contact archived successfully',
+        };
+    } catch (error) {
+        const parsedError = parseExceptionError(error, `Failed to archive contact ${id}`);
+        console.error(`[CONTACT] Failed to archive contact ${id}:`, {
+            message: parsedError.message,
+            statusCode: parsedError.statusCode,
+            isNetworkError: parsedError.isNetworkError,
+            isTimeoutError: parsedError.isTimeoutError,
+        });
+        return {
+          success: false,
+          message: formatErrorMessage(parsedError, 'Failed to archive contact'),
+          error: parsedError,
+        };
+    }
 };

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { cn } from '../../utils/cn';
+import { Loader2 } from 'lucide-react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'glass' | 'glass-primary' | 'glass-success' | 'glass-heavy' | 'glass-ultra';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -13,6 +13,9 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   fullWidth?: boolean;
   asChild?: boolean;
   disableRipple?: boolean;
+  glow?: boolean;
+  animate?: boolean;
+  magnetic?: boolean;
 }
 
 interface RippleEffect {
@@ -36,6 +39,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       asChild = false,
       disableRipple = false,
+      glow = false,
+      animate = false,
+      magnetic = false,
       children,
       onClick,
       ...props
@@ -43,8 +49,28 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const [ripples, setRipples] = useState<RippleEffect[]>([]);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
     const rippleKeyRef = useRef(0);
+    const buttonRef = useRef<HTMLButtonElement>(null);
     
+    const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (magnetic && buttonRef.current) {
+        const button = buttonRef.current;
+        const rect = button.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const deltaX = (e.clientX - centerX) * 0.15;
+        const deltaY = (e.clientY - centerY) * 0.15;
+        setMousePosition({ x: deltaX, y: deltaY });
+      }
+    };
+
+    const handleMouseLeave = () => {
+      if (magnetic) {
+        setMousePosition({ x: 0, y: 0 });
+      }
+    };
+
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (!disableRipple && !disabled && !isLoading) {
         const button = e.currentTarget;
@@ -72,49 +98,57 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       }
     };
     
-    const baseClasses = 'btn inline-flex items-center justify-center gap-2 font-medium rounded-md transition-all relative overflow-hidden';
+    const variantClass = variant === 'glass' ? 'btn bg-glass border-glass text-foreground backdrop-blur-lg' :
+                         variant === 'glass-primary' ? 'btn bg-glass-primary border-glass-glow text-primary backdrop-blur-lg' :
+                         variant === 'glass-success' ? 'btn bg-glass-success border-glass-glow-success text-success backdrop-blur-lg' :
+                         variant === 'glass-heavy' ? 'btn glass-heavy text-foreground' :
+                         variant === 'glass-ultra' ? 'btn glass-ultra text-foreground' :
+                         variant === 'secondary' ? 'btn btn-secondary' :
+                         variant === 'outline' ? 'btn btn-outline' :
+                         variant === 'ghost' ? 'btn btn-ghost' :
+                         variant === 'destructive' ? 'btn btn-destructive' :
+                         'btn btn-primary';
     
-    const variantClasses = {
-      primary: 'btn-primary',
-      secondary: 'btn-secondary',
-      outline: 'btn-outline',
-      ghost: 'btn-ghost',
-      destructive: 'btn-destructive',
-    };
+    const sizeClass = iconOnly ? (size === 'sm' ? 'btn-sm btn-icon-only' : size === 'lg' ? 'btn-lg btn-icon-only' : 'btn-md btn-icon-only') :
+                     (size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : 'btn-md');
     
-    const sizeClasses = {
-      sm: iconOnly ? 'btn-sm btn-icon-only' : 'btn-sm',
-      md: iconOnly ? 'btn-md btn-icon-only' : 'btn-md',
-      lg: iconOnly ? 'btn-lg btn-icon-only' : 'btn-lg',
-    };
-    
-    const widthClass = fullWidth ? 'btn-full-width' : '';
+    let buttonClassName = `${variantClass} ${sizeClass}`;
+    if (fullWidth) buttonClassName += ' btn-full-width';
+    if (glow) buttonClassName += ' glass-glow-animated';
+    if (animate) buttonClassName += ' button-animate-hover';
+    if (magnetic) buttonClassName += ' magnetic-hover';
+    if (className) buttonClassName += ' ' + className;
     
     if (asChild && React.isValidElement(children)) {
       return React.cloneElement(children as React.ReactElement<any>, {
-        className: cn(
-          baseClasses,
-          variantClasses[variant],
-          sizeClasses[size],
-          widthClass,
-          className
-        ),
+        className: buttonClassName,
         ...props,
       });
     }
     
     return (
       <button
-        ref={ref}
-        className={cn(
-          baseClasses,
-          variantClasses[variant],
-          sizeClasses[size],
-          widthClass,
-          className
-        )}
+        ref={(node) => {
+          buttonRef.current = node;
+          if (typeof ref === 'function') {
+            ref(node);
+          } else if (ref) {
+            ref.current = node;
+          }
+        }}
+        className={buttonClassName}
+        style={
+          magnetic
+            ? {
+                transform: `translate(${mousePosition.x}px, ${mousePosition.y}px)`,
+                transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }
+            : undefined
+        }
         disabled={disabled || isLoading}
         onClick={handleClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         {...props}
       >
         {/* Ripple effects */}
@@ -133,37 +167,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         
         {isLoading ? (
           <>
-            <svg
-              className="animate-spin h-4 w-4"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
+            <Loader2 className="button-loading-icon animate-spin" />
             {!iconOnly && <span>Loading...</span>}
           </>
         ) : (
           <>
-            {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
+            {leftIcon && <span className="button-icon-container">{leftIcon}</span>}
             {iconOnly ? (
-              <span className="flex-shrink-0 flex-center">{children}</span>
+              <span className="button-icon-container button-icon-center">{children}</span>
             ) : (
-              children && <span className="relative z-10">{children}</span>
+              children && <span className="button-content-wrapper">{children}</span>
             )}
-            {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
+            {rightIcon && <span className="button-icon-container">{rightIcon}</span>}
           </>
         )}
       </button>

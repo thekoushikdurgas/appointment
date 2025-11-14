@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import Image from 'next/image';
-import { DashboardIcon, ContactsIcon, UsersIcon, PlansIcon, LogoIcon, SearchIcon, SettingsIcon, MoonIcon, SunIcon, LogoutIcon, ChevronLeftIcon, ChevronRightIcon, HistoryIcon, OrdersIcon, SparklesIcon, HomeIcon, IdentificationIcon, GridIcon, LayersIcon, FolderIcon, StatusOnlineIcon } from '../icons/IconComponents';
+import { DashboardIcon, ContactsIcon, UsersIcon, PlansIcon, LogoIcon, SearchIcon, SettingsIcon, MoonIcon, SunIcon, LogoutIcon, ChevronLeftIcon, ChevronRightIcon, HistoryIcon, OrdersIcon, SparklesIcon, HomeIcon, IdentificationIcon, GridIcon, LayersIcon, FolderIcon, StatusOnlineIcon, BuildingIcon, GlobeAltIcon } from '../icons/IconComponents';
 import { useAuth } from '../../hooks/useAuth';
 import { useTheme } from '../../hooks/useTheme';
 import Link from 'next/link';
@@ -11,7 +11,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { Tooltip } from '../ui/Tooltip';
-import { cn } from '../../utils/cn';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -41,22 +40,22 @@ const NavItem: React.FC<{
   isHovering: boolean;
 }> = ({ icon, label, path, isActive, isCollapsed, isHovering }) => {
   const showText = !isCollapsed || isHovering;
+  const linkClassName = `sidebar-nav-link icon-hover-scale${isActive ? ' sidebar-nav-link-active nav-active-pulse' : ''}${isCollapsed && !isHovering ? ' sidebar-nav-link-collapsed' : ''}`;
+  const iconClassName = `sidebar-nav-icon${isActive ? ' sidebar-nav-icon--active' : ''}`;
+  const textClassName = `sidebar-nav-text${!showText ? ' sidebar-nav-text-collapsed' : ''}`;
+  
   const linkContent = (
     <Link
       href={path}
-      className={cn(
-        'sidebar-nav-link icon-hover-scale',
-        isActive && 'sidebar-nav-link-active nav-active-pulse',
-        isCollapsed && !isHovering && 'sidebar-nav-link-collapsed'
-      )}
+      className={linkClassName}
     >
       {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-foreground rounded-r-full"></span>
+        <span className="sidebar-nav-active-indicator"></span>
       )}
-      <span className="flex-shrink-0">
-        {React.cloneElement(icon, { className: cn('w-5 h-5 flex-shrink-0', isActive && 'text-primary-foreground') })}
+      <span className="sidebar-nav-icon-wrapper">
+        {React.cloneElement(icon, { className: iconClassName })}
       </span>
-      <span className={cn('sidebar-nav-text font-medium whitespace-nowrap transition-all', !showText && 'sidebar-nav-text-collapsed')}>
+      <span className={textClassName}>
         {label}
       </span>
     </Link>
@@ -65,7 +64,7 @@ const NavItem: React.FC<{
   return (
     <li className="sidebar-nav-item stagger-item">
       {isCollapsed && !isHovering ? (
-        <Tooltip content={label} position="right" delay={200}>
+        <Tooltip content={label} side="right" delay={200}>
           {linkContent}
         </Tooltip>
       ) : (
@@ -87,16 +86,16 @@ const NavSection: React.FC<{
   return (
     <div className="nav-section">
       {showText && (
-        <div className="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          <span className="flex-shrink-0">
-            {React.cloneElement(icon, { className: 'w-4 h-4' })}
+        <div className="nav-section-header">
+          <span className="nav-section-header-icon">
+            {React.cloneElement(icon, { className: 'nav-section-icon' })}
           </span>
           <span>{title}</span>
         </div>
       )}
       {!showText && (
-        <div className="flex justify-center py-2">
-          <div className="w-8 h-px bg-border"></div>
+        <div className="nav-section-divider">
+          <div className="nav-section-divider-line"></div>
         </div>
       )}
       <ul className="sidebar-nav-list">
@@ -148,6 +147,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setOpen, isCollapsed, setColl
             icon: <LayersIcon />,
             items: [
                 { path: '/contacts', icon: <ContactsIcon />, label: 'Contacts' },
+                { path: '/companies', icon: <BuildingIcon />, label: 'Companies' },
+                { path: '/apollo', icon: <GlobeAltIcon />, label: 'Apollo Tools' },
                 { path: '/orders', icon: <OrdersIcon />, label: 'Orders' },
                 { path: '/history', icon: <HistoryIcon />, label: 'History' },
             ]
@@ -156,7 +157,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setOpen, isCollapsed, setColl
             title: 'Settings',
             icon: <FolderIcon />,
             items: [
-                { path: '/plans', icon: <PlansIcon />, label: 'Plans' },
                 { path: '/settings', icon: <SettingsIcon />, label: 'Settings' },
             ]
         },
@@ -358,18 +358,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setOpen, isCollapsed, setColl
     <>
       {/* Overlay for mobile */}
       <div 
-        className={cn('sidebar-overlay md:hidden transition-opacity', isOpen ? 'sidebar-overlay-visible' : 'sidebar-overlay-hidden')}
+        className={`sidebar-overlay${isOpen ? ' sidebar-overlay-visible' : ' sidebar-overlay-hidden'}`}
         onClick={() => setOpen(false)}
       ></div>
 
       <aside 
         ref={sidebarRef}
-        className={cn(
-          'sidebar',
-          isOpen && 'sidebar-open',
-          isCollapsed && 'sidebar-collapsed',
-          isCollapsed && isTemporarilyExpanded && 'sidebar-hover-expanded'
-        )}
+        className={`sidebar${isOpen ? ' sidebar-open' : ''}${isCollapsed ? ' sidebar-collapsed' : ''}${isCollapsed && isTemporarilyExpanded ? ' sidebar-hover-expanded' : ''}`}
         onClick={handleSidebarClick}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -391,16 +386,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setOpen, isCollapsed, setColl
           </h1>
         </div> */}
         
-        <div className={cn('sidebar-search', isCollapsed && !isTemporarilyExpanded && 'sidebar-search-collapsed')}>
+        <div className={`sidebar-search${isCollapsed && !isTemporarilyExpanded ? ' sidebar-search-collapsed' : ''}`}>
             <Input
               type="text"
               placeholder="Search..."
-              leftIcon={<SearchIcon className="w-4 h-4" />}
-              className={cn('transition-all', isCollapsed && !isTemporarilyExpanded && 'md:hidden')}
+              leftIcon={<SearchIcon />}
+              className={isCollapsed && !isTemporarilyExpanded ? 'sidebar-search-input-collapsed' : ''}
             />
         </div>
 
-        <nav className={cn('sidebar-nav', isCollapsed && !isTemporarilyExpanded && 'sidebar-nav-collapsed')}>
+        <nav className={`sidebar-nav${isCollapsed && !isTemporarilyExpanded ? ' sidebar-nav-collapsed' : ''}`}>
           {navSections.map((section, index) => (
             <NavSection
               key={section.title}
@@ -414,23 +409,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setOpen, isCollapsed, setColl
           ))}
         </nav>
 
-        <div className={cn('sidebar-footer', isCollapsed && !isTemporarilyExpanded && 'sidebar-footer-collapsed')}>
+        <div className={`sidebar-footer${isCollapsed && !isTemporarilyExpanded ? ' sidebar-footer-collapsed' : ''}`}>
             <div 
                 ref={userAvatarRef}
-                className={cn('sidebar-user hover:bg-muted/40 transition-all cursor-pointer', isCollapsed && !isTemporarilyExpanded && 'sidebar-user-collapsed')}
+                className={`sidebar-user${isCollapsed && !isTemporarilyExpanded ? ' sidebar-user-collapsed' : ''}`}
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
             >
                 <div className="sidebar-user-avatar">
                   <Image
                       src={user?.avatarUrl || "https://picsum.photos/seed/user1/40/40"}
                       alt="User avatar"
-                      className="w-10 h-10 rounded-full flex-shrink-0 ring-2 ring-border"
+                      className="sidebar-user-avatar-img"
                       width={40}
                       height={40}
                   />
                   <span className="sidebar-user-status animate-badge-pulse"></span>
                 </div>
-                <div className={cn('sidebar-user-info', isCollapsed && !isTemporarilyExpanded && 'sidebar-user-info-collapsed')}>
+                <div className={`sidebar-user-info${isCollapsed && !isTemporarilyExpanded ? ' sidebar-user-info-collapsed' : ''}`}>
                     <p className="sidebar-user-name">{user?.name || 'User'}</p>
                     <p className="sidebar-user-email">{user?.email || ''}</p>
                 </div>
@@ -442,44 +437,44 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setOpen, isCollapsed, setColl
       {userMenuOpen && typeof window !== 'undefined' && ReactDOM.createPortal(
         <div 
           ref={popupRef}
-          className="user-menu-popup glass-frosted rounded-xl shadow-2xl border border-glass-light p-2 glass-panel-enter z-[9999]"
+          className="user-menu-popup"
           style={popupStyle}
         >
             {/* Status section */}
-            <div className="px-3 py-2 mb-1">
-              <p className="text-xs font-semibold text-muted-foreground mb-2">Status</p>
-              <div className="flex items-center gap-2">
-                <StatusOnlineIcon className="w-3 h-3" />
-                <span className="text-sm text-foreground">Online</span>
+            <div className="user-menu-section">
+              <p className="user-menu-section-title">Status</p>
+              <div className="user-menu-status">
+                <StatusOnlineIcon className="user-menu-status-icon" />
+                <span className="user-menu-status-text">Online</span>
               </div>
             </div>
-            <hr className="my-1 border-glass-light" />
+            <hr className="user-menu-divider" />
             <Link 
               href="/settings/profile" 
-              className="block w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-foreground hover:bg-muted/60 hover:backdrop-blur-sm transition-all icon-hover-scale"
+              className="user-menu-item icon-hover-scale"
               onClick={() => setUserMenuOpen(false)}
             >
-                <IdentificationIcon className="w-4 h-4"/> Profile
+                <IdentificationIcon className="user-menu-item-icon"/> Profile
             </Link>
             <button 
               onClick={() => {
                 toggleTheme();
                 setUserMenuOpen(false);
               }} 
-              className="w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-foreground hover:bg-muted/60 hover:backdrop-blur-sm transition-all icon-hover-scale"
+              className="user-menu-item icon-hover-scale"
             >
-              {theme === 'dark' ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
+              {theme === 'dark' ? <SunIcon className="user-menu-item-icon" /> : <MoonIcon className="user-menu-item-icon" />}
               {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
             </button>
-            <hr className="my-1 border-glass-light" />
+            <hr className="user-menu-divider" />
             <button 
               onClick={() => {
                 handleLogout();
                 setUserMenuOpen(false);
               }} 
-              className="w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 hover:backdrop-blur-sm transition-all icon-hover-scale"
+              className="user-menu-item user-menu-item--destructive icon-hover-scale"
             >
-                <LogoutIcon className="w-4 h-4"/> Sign Out
+                <LogoutIcon className="user-menu-item-icon"/> Sign Out
             </button>
         </div>,
         document.body

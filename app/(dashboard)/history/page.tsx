@@ -7,21 +7,17 @@ import { Card, CardContent } from '../../../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
 import { Button } from '../../../components/ui/Button';
 import { HistoryIcon, TableIcon, CalendarIcon, DownloadIcon, CheckIcon, ClockIcon, ErrorIcon } from '../../../components/icons/IconComponents';
-import { cn } from '../../../utils/cn';
 
 const StatusBadge: React.FC<{ status: ExportHistory['status'] }> = ({ status }) => {
   const statusConfig = {
     Completed: {
-      className: "bg-success/20 text-success border-success/30",
-      icon: <CheckIcon className="w-3 h-3" />,
+      icon: <CheckIcon />,
     },
     Processing: {
-      className: "bg-info/20 text-info border-info/30",
-      icon: <ClockIcon className="w-3 h-3" />,
+      icon: <ClockIcon />,
     },
     Failed: {
-      className: "bg-error/20 text-error border-error/30",
-      icon: <ErrorIcon className="w-3 h-3" />,
+      icon: <ErrorIcon />,
     },
   };
   
@@ -34,7 +30,7 @@ const StatusBadge: React.FC<{ status: ExportHistory['status'] }> = ({ status }) 
   };
   
   return (
-    <span className={cn("badge inline-flex items-center gap-1.5 border", badgeClasses[status])}>
+    <span className={`badge ${badgeClasses[status]}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem', border: '1px solid' }}>
       {config.icon}
       {status}
     </span>
@@ -87,14 +83,14 @@ const HistoryPage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 w-full max-w-full">
-            <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                    <HistoryIcon className="w-6 h-6 text-primary" />
+        <div className="history-page">
+            <div className="history-page-header">
+                <div className="history-page-icon-wrapper">
+                    <HistoryIcon className="history-page-icon" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground">Export History</h1>
-                    <p className="text-sm text-muted-foreground mt-1">View and download your exported files</p>
+                    <h1 className="history-page-title">Export History</h1>
+                    <p className="history-page-description">View and download your exported files</p>
                 </div>
             </div>
 
@@ -108,8 +104,8 @@ const HistoryPage: React.FC = () => {
                                     sortDirection={sortField === 'fileName' ? sortDirection : null}
                                     onSort={() => handleSort('fileName')}
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <TableIcon className="w-4 h-4" />
+                                    <div className="history-table-header-content">
+                                        <TableIcon className="history-table-header-icon" />
                                         File Name
                                     </div>
                                 </TableHead>
@@ -117,10 +113,10 @@ const HistoryPage: React.FC = () => {
                                     sortable 
                                     sortDirection={sortField === 'exportDate' ? sortDirection : null}
                                     onSort={() => handleSort('exportDate')}
-                                    className="hidden md:table-cell"
+                                    className="history-table-head--hidden-md"
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <CalendarIcon className="w-4 h-4" />
+                                    <div className="history-table-head-content">
+                                        <CalendarIcon />
                                         Export Date
                                     </div>
                                 </TableHead>
@@ -128,10 +124,10 @@ const HistoryPage: React.FC = () => {
                                     sortable 
                                     sortDirection={sortField === 'records' ? sortDirection : null}
                                     onSort={() => handleSort('records')}
-                                    className="hidden sm:table-cell"
+                                    className="history-table-head--hidden-sm"
                                 >
-                                    <div className="flex items-center gap-2">
-                                        <TableIcon className="w-4 h-4" />
+                                    <div className="history-table-head-content">
+                                        <TableIcon />
                                         Records
                                     </div>
                                 </TableHead>
@@ -142,7 +138,7 @@ const HistoryPage: React.FC = () => {
                                 >
                                     Status
                                 </TableHead>
-                                <TableHead className="text-right">Action</TableHead>
+                                <TableHead className="history-table-head--action">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -150,29 +146,29 @@ const HistoryPage: React.FC = () => {
                                 sortedHistory.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <TableIcon className="w-4 h-4 text-muted-foreground" />
-                                                <span className="font-medium">{item.fileName}</span>
+                                            <div className="history-table-cell-content">
+                                                <TableIcon className="history-table-cell-icon" />
+                                                <span className="history-table-cell-text">{item.fileName}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="hidden md:table-cell">
-                                            <div className="flex items-center gap-2">
-                                                <CalendarIcon className="w-4 h-4 text-muted-foreground" />
-                                                <span className="text-muted-foreground">{item.exportDate}</span>
+                                        <TableCell className="history-table-cell--hidden-md">
+                                            <div className="history-table-cell-content">
+                                                <CalendarIcon className="history-table-cell-icon" />
+                                                <span className="history-table-cell-text history-table-cell-text--muted">{item.exportDate}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="hidden sm:table-cell">
-                                            <span className="font-semibold">{item.records.toLocaleString()}</span>
+                                        <TableCell className="history-table-cell--hidden-sm">
+                                            <span className="history-table-cell-text history-table-cell-text--bold">{item.records.toLocaleString()}</span>
                                         </TableCell>
                                         <TableCell>
                                             <StatusBadge status={item.status} />
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="history-table-cell--action">
                                             {item.status === 'Completed' && (
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    leftIcon={<DownloadIcon className="w-4 h-4" />}
+                                                    leftIcon={<DownloadIcon />}
                                                     onClick={() => handleDownload(item.fileName, item.downloadUrl)}
                                                 >
                                                     Download
@@ -183,11 +179,11 @@ const HistoryPage: React.FC = () => {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12">
-                                        <div className="flex flex-col items-center gap-3">
-                                            <HistoryIcon className="w-12 h-12 text-muted-foreground/50" />
-                                            <p className="text-muted-foreground font-medium">No export history found</p>
-                                            <p className="text-sm text-muted-foreground/80">Your export history will appear here</p>
+                                    <TableCell colSpan={5} className="history-table-empty">
+                                        <div className="history-empty-state">
+                                            <HistoryIcon className="history-empty-icon" />
+                                            <p className="history-empty-title">No export history found</p>
+                                            <p className="history-empty-description">Your export history will appear here</p>
                                         </div>
                                     </TableCell>
                                 </TableRow>

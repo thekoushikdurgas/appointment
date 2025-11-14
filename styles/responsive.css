@@ -603,3 +603,640 @@
   }
 }
 
+/* ============================================
+   MOBILE TOUCH INTERACTIONS & GESTURES
+   ============================================ */
+
+/* Swipe-able Cards on Mobile */
+@media (max-width: 767px) {
+  .swipe-card {
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  
+  .swipe-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 1rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .swipe-card.swiping .swipe-actions {
+    transform: translateX(0);
+  }
+  
+  /* Pull to Refresh Indicator */
+  .pull-to-refresh {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+  }
+  
+  .pull-to-refresh.pulling {
+    transform: translateY(0);
+  }
+  
+  /* Bottom Sheet Modal for Mobile */
+  .modal-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 90vh;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .modal-mobile.open {
+    transform: translateY(0);
+  }
+  
+  /* Floating Action Button */
+  .fab {
+    position: fixed;
+    bottom: 80px; /* Above bottom nav */
+    right: 1rem;
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-full);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 40;
+  }
+  
+  /* Horizontal Scroll Container */
+  .scroll-container-mobile {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .scroll-container-mobile::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scroll-container-mobile > * {
+    scroll-snap-align: start;
+  }
+  
+  /* Mobile-optimized Tables */
+  .table-scroll-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table-scroll-mobile table {
+    min-width: 600px;
+  }
+  
+  /* Sticky Header on Mobile */
+  .sticky-header-mobile {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  /* Mobile Navigation Gestures */
+  .nav-swipeable {
+    touch-action: pan-y;
+  }
+  
+  /* Collapsible Sections on Mobile */
+  .collapsible-mobile {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease-out;
+  }
+  
+  .collapsible-mobile.expanded {
+    max-height: 1000px;
+  }
+  
+  /* Mobile-friendly Dropdown */
+  .dropdown-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  }
+  
+  /* Safe Area Insets for Notched Devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Tablet Touch Optimizations */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Two-column layout for better tablet experience */
+  .tablet-two-col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  /* Tablet-optimized modals */
+  .modal-tablet {
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+  
+  /* Better spacing for tablet */
+  .tablet-spacing {
+    padding: 1.5rem;
+  }
+}
+
+/* Landscape Orientation Optimizations */
+@media (max-height: 600px) and (orientation: landscape) {
+  /* Reduce vertical padding in landscape */
+  .landscape-compact {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  
+  /* Compact header in landscape */
+  .header-landscape {
+    min-height: 48px;
+  }
+  
+  /* Hide less important elements in landscape */
+  .landscape-hide {
+    display: none;
+  }
+}
+
+/* iOS Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS Safari bottom bar */
+  .ios-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  }
+  
+  /* Prevent iOS zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+  
+  /* Fix iOS momentum scrolling */
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Android Specific Optimizations */
+@media screen and (-webkit-min-device-pixel-ratio: 0) and (min-resolution: .001dpcm) {
+  /* Android-specific styles if needed */
+  .android-optimize {
+    /* Add Android-specific optimizations here */
+  }
+}
+
+/* ============================================
+   SETTINGS PAGE RESPONSIVE UTILITIES
+   ============================================ */
+
+/* Mobile-First Collapsible Utilities */
+@media (max-width: 767px) {
+  .settings-collapsible-mobile {
+    display: block;
+  }
+  
+  .settings-full-mobile {
+    display: none;
+  }
+  
+  /* Touch-Friendly Spacing */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .touch-padding {
+    padding: 1rem;
+  }
+  
+  .touch-gap {
+    gap: 1rem;
+  }
+  
+  /* Mobile Settings Cards */
+  .settings-card-mobile {
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+  
+  /* Mobile Form Spacing */
+  .settings-form-mobile .form-field {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Mobile Modal Full Screen */
+  .modal-mobile-full {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    max-width: 100%;
+    max-height: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .settings-collapsible-mobile {
+    display: none;
+  }
+  
+  .settings-full-mobile {
+    display: block;
+  }
+}
+
+/* Bottom Sheet Responsive Classes */
+.bottom-sheet-mobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bottom-sheet-mobile {
+    display: block;
+  }
+  
+  .fullscreen-overlay-desktop {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .bottom-sheet-mobile {
+    display: none;
+  }
+  
+  .fullscreen-overlay-desktop {
+    display: block;
+  }
+}
+
+/* Responsive Glass Blur Intensities */
+@media (max-width: 767px) {
+  /* Lighter blur on mobile for better performance */
+  .glass-frosted-heavy {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  }
+  
+  .glass-frosted-xl {
+    backdrop-filter: blur(20px) saturate(200%);
+    -webkit-backdrop-filter: blur(20px) saturate(200%);
+  }
+  
+  .glass-frosted-2xl {
+    backdrop-filter: blur(24px) saturate(220%);
+    -webkit-backdrop-filter: blur(24px) saturate(220%);
+  }
+}
+
+/* Mobile-Specific Animation Speeds */
+@media (max-width: 767px) {
+  .transition-balanced,
+  .transition-smooth,
+  .glass-transition-smooth {
+    transition-duration: 0.2s;
+  }
+  
+  .animate-balanced-fade-slide-up,
+  .animate-balanced-fade-slide-down,
+  .animate-balanced-slide-in-left,
+  .animate-balanced-slide-in-right {
+    animation-duration: 0.25s;
+  }
+}
+
+/* Touch-Friendly Button Sizing */
+@media (max-width: 767px) {
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    height: 2.5rem;
+    font-size: var(--font-size-base);
+  }
+  
+  .btn-md {
+    padding: 0.625rem 1.25rem;
+    height: 3rem;
+  }
+  
+  .btn-lg {
+    padding: 0.875rem 1.75rem;
+    height: 3.5rem;
+  }
+}
+
+/* Responsive Settings Layout */
+@media (max-width: 639px) {
+  .settings-layout {
+    padding: 0.75rem;
+  }
+  
+  .settings-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .settings-title {
+    font-size: 1.5rem;
+  }
+  
+  .settings-description {
+    font-size: 0.875rem;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .settings-layout {
+    padding: 1.5rem;
+  }
+  
+  .settings-header {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .settings-layout {
+    padding: 2rem;
+  }
+  
+  .settings-header {
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+}
+
+/* Responsive Table for Settings */
+@media (max-width: 767px) {
+  .settings-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .settings-table thead {
+    display: none;
+  }
+  
+  .settings-table tbody {
+    display: block;
+  }
+  
+  .settings-table tr {
+    display: block;
+    margin-bottom: 1rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: hsl(var(--card));
+  }
+  
+  .settings-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border: none;
+  }
+  
+  .settings-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+  }
+}
+
+/* Scrollbar Hide for Mobile */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe Area Insets for Notched Devices */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(1rem, env(safe-area-inset-top));
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-left {
+    padding-left: max(1rem, env(safe-area-inset-left));
+  }
+  
+  .safe-area-right {
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Landscape Mode Adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+  .settings-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .settings-title {
+    font-size: 1.25rem;
+  }
+  
+  .settings-description {
+    display: none;
+  }
+  
+  .modal-mobile-full {
+    overflow-y: auto;
+  }
+}
+
+/* High DPI Displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Optimize glass effects for retina displays */
+  .glass-frosted-heavy,
+  .glass-frosted-xl,
+  .glass-frosted-2xl,
+  .glass-heavy,
+  .glass-ultra {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}
+
+/* Auth Pages Responsive Enhancements */
+@media (max-width: 640px) {
+  .auth-container {
+    max-width: 100%;
+    padding: 0 1rem;
+  }
+
+  .auth-title {
+    font-size: 1.875rem;
+  }
+
+  .auth-description {
+    font-size: 0.875rem;
+  }
+
+  /* Optimize glass blur for mobile performance */
+  .glass-heavy,
+  .glass-ultra {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* Reduce animation complexity on mobile */
+  .form-field-cascade {
+    animation-duration: 0.3s;
+  }
+
+  .float-gentle,
+  .float-gentle-delayed {
+    animation-duration: 4s;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablet optimizations */
+  .auth-container {
+    max-width: 32rem;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  /* Desktop enhancements */
+  .glass-heavy:hover,
+  .glass-ultra:hover {
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+  }
+
+  /* Enable magnetic hover only on desktop */
+  .magnetic-hover {
+    cursor: pointer;
+  }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Disable hover effects on touch devices */
+  .glass-hover-lift:hover {
+    transform: none;
+  }
+
+  .magnetic-hover {
+    pointer-events: auto;
+  }
+
+  /* Optimize button interactions for touch */
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Increase touch targets */
+  .input {
+    min-height: 44px;
+  }
+
+  /* Simplify animations for better performance */
+  .particle {
+    animation-duration: 0.6s;
+  }
+}
+
+/* Landscape Mobile Optimization */
+@media (max-width: 896px) and (orientation: landscape) {
+  .auth-page {
+    padding: 0.5rem;
+  }
+
+  .auth-header {
+    margin-bottom: 1rem;
+  }
+
+  .auth-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .landing-hero {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .glass-heavy,
+  .glass-ultra,
+  .glass-frosted {
+    background: white !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .animate-fade-in,
+  .animate-scale-in,
+  .float-gentle,
+  .breathe {
+    animation: none !important;
+  }
+
+  .auth-page::before,
+  .landing-background {
+    display: none !important;
+  }
+}
+

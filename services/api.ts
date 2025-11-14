@@ -7,7 +7,7 @@ import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } f
  * Backend must support CORS for browser requests to work.
  */
 const getApiBaseUrl = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.88.182.69:8000';
   // Remove trailing slash if present to avoid double slashes
   return backendUrl.replace(/\/$/, '');
 };

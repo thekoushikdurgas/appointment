@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "4e5fd9cf-5bdf-4450-aac7-78ee5fecc18d",
 		"name": "Appointment360 API",
-		"description": "Postman collection for the Appointment360 FastAPI backend. Includes v1 endpoints (Contacts, Imports) and v2 endpoints (Authentication, Users, AI Chat). All endpoints require Bearer token authentication. Sample parameters align with docs/apis.md, docs/api/user.md, and docs/api/ai_chat.md.",
+		"description": "Postman collection for the Appointment360 FastAPI backend. Includes v1 endpoints (Contacts, Imports) and v2 endpoints (Authentication, Users, AI Chat, Apollo). All endpoints require Bearer token authentication. Sample parameters align with docs/apis.md, docs/api/user.md, docs/api/ai_chat.md, and docs/api/apollo.md.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "20572666",
 		"_collection_link": "https://prbal5-1003.postman.co/workspace/prbal~38626842-f3c9-4a6f-a7bc-0367cd9a6824/collection/20572666-4e5fd9cf-5bdf-4450-aac7-78ee5fecc18d?action=share&source=collection_link&creator=20572666"
@@ -25,7 +25,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -55,7 +55,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -86,7 +86,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -127,7 +127,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -183,7 +183,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -239,7 +239,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -276,7 +276,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -337,7 +337,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -384,7 +384,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -426,7 +426,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -467,7 +467,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -515,7 +515,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -558,7 +558,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -619,7 +619,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -673,7 +673,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -715,7 +715,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -756,7 +756,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -776,6 +776,128 @@
 				}
 			],
 			"description": "AI chat conversation endpoints for listing, creating, retrieving, updating, and deleting chat conversations. All endpoints require JWT authentication and verify ownership before allowing access."
+		},
+		{
+			"name": "Apollo",
+			"item": [
+				{
+					"name": "Analyze Apollo URL",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": "Expected response content type."
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": "Request body content type. Required for POST/PUT requests with JSON bodies."
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"description": "JWT Bearer token for authentication. Obtained from login or register endpoints."
+							},
+							{
+								"key": "Origin",
+								"value": "http://localhost:3000",
+								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://app.apollo.io/#/people?contactEmailStatusV2[]=verified&personLocations[]=california&personTitles[]=CEO&organizationNumEmployeesRanges[]=11,50&page=1&sortByField=recommendations_score&sortAscending=false\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrlV2}}/apollo/analyze",
+							"host": [
+								"{{baseUrlV2}}"
+							],
+							"path": [
+								"apollo",
+								"analyze"
+							]
+						},
+						"description": "Analyze an Apollo.io URL and return structured parameter breakdown.\n\nThis endpoint parses Apollo.io search URLs (typically from the People Search page) and extracts all query parameters, categorizing them into logical groups such as:\n- Pagination (page numbers)\n- Sorting (sort field and direction)\n- Person Filters (titles, locations, seniorities, departments)\n- Organization Filters (employee ranges, locations, industries, revenue)\n- Email Filters (verification status, catch-all exclusion)\n- Keyword Filters (organization keywords, search fields)\n- And more...\n\nThe analysis includes:\n- URL structure breakdown (base URL, hash path, query string)\n- Categorized parameters with descriptions\n- Parameter values (URL-decoded)\n- Statistics about the search criteria\n\n**Field Requirements:**\n- url (string, required): Apollo.io URL to analyze (must be from apollo.io domain)\n\n**Response Codes:**\n- 200 OK: URL analyzed successfully\n- 400 Bad Request: Invalid URL, not from Apollo.io domain, or missing URL field\n- 401 Unauthorized: Authentication required\n- 500 Internal Server Error: Error occurred while analyzing the URL"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Contacts from Apollo URL",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": "Expected response content type."
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": "Request body content type. Required for POST/PUT requests with JSON bodies."
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"description": "JWT Bearer token for authentication. Obtained from login or register endpoints."
+							},
+							{
+								"key": "Origin",
+								"value": "http://localhost:3000",
+								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"url\": \"https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California&organizationNumEmployeesRanges[]=11,50&contactEmailStatusV2[]=verified&page=1&sortByField=employees&sortAscending=false\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrlV2}}/apollo/contacts?limit=25&offset=0",
+							"host": [
+								"{{baseUrlV2}}"
+							],
+							"path": [
+								"apollo",
+								"contacts"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "25",
+									"description": "Maximum number of results per page (>=1)",
+									"disabled": true
+								},
+								{
+									"key": "offset",
+									"value": "0",
+									"description": "Starting offset for results (default: 0, >=0)",
+									"disabled": true
+								},
+								{
+									"key": "cursor",
+									"value": "",
+									"description": "Opaque cursor token for pagination",
+									"disabled": true
+								},
+								{
+									"key": "view",
+									"value": "simple",
+									"description": "When set to 'simple', returns ContactSimpleItem. Omit for full ContactListItem.",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Search contacts using Apollo.io URL parameters. This endpoint converts an Apollo.io People Search URL into contact filter parameters and returns matching contacts from your database.\n\n**Response Format:**\nThe endpoint returns an enhanced response that includes:\n- Contact results (paginated list of ContactListItem or ContactSimpleItem)\n- mapping_summary: Statistics about parameter mapping (total, mapped, unmapped counts)\n- unmapped_categories: Detailed information about parameters that were not mapped, grouped by category with reasons\n\nThis transparency helps you understand which Apollo filters were applied and which were skipped.\n\n**Parameter Mappings:**\n- page → page\n- sortByField + sortAscending → ordering (with '-' prefix for descending)\n- personTitles[] → title (comma-separated for OR logic)\n- personNotTitles[] → exclude_titles\n- personSeniorities[] → seniority (comma-separated)\n- personDepartmentOrSubdepartments[] → department (comma-separated)\n- personLocations[] → contact_location (comma-separated)\n- personNotLocations[] → exclude_contact_locations\n- organizationNumEmployeesRanges[] → employees_min, employees_max\n- organizationLocations[] → company_location (comma-separated)\n- organizationNotLocations[] → exclude_company_locations\n- revenueRange[min/max] → annual_revenue_min, annual_revenue_max\n- contactEmailStatusV2[] → email_status (comma-separated)\n- qOrganizationKeywordTags[] → keywords (comma-separated)\n- qNotOrganizationKeywordTags[] → exclude_keywords\n- qKeywords → search\n\n**Unmapped Parameter Reasons:**\n- ID-based filter (no name mapping available): Industry tags, technology UIDs\n- Apollo-specific feature: Search lists, personas, intent, lookalike, market segments\n- Unmapped filter: Job postings, trading status, email catch-all exclusion\n- Keyword field control: Fields to search for keywords (not applicable)\n- UI flag or advanced filter: tour, uniqueUrlId, includeSimilarTitles, etc.\n\n**Request Body:**\n- url (string, required): Apollo.io URL to convert and search\n\n**Query Parameters:**\n- limit (integer, optional, >=1): Maximum number of results per page\n- offset (integer, optional, >=0): Starting offset for results (default: 0)\n- cursor (string, optional): Opaque cursor token for pagination\n- view (string, optional): When 'simple', returns ContactSimpleItem, otherwise ContactListItem\n\n**Response Codes:**\n- 200 OK: Contacts retrieved successfully with mapping metadata\n- 400 Bad Request: Invalid URL, not from Apollo.io domain, or invalid filter parameters\n- 401 Unauthorized: Authentication required\n- 500 Internal Server Error: Error occurred while searching contacts\n\n**Use Cases:**\n1. Apollo to Database Migration: Convert Apollo searches to database queries seamlessly\n2. Search Replication: Replicate Apollo.io searches in your own system with transparency\n3. Workflow Integration: Integrate Apollo URLs with full visibility into parameter mapping\n4. Parameter Analysis: Understand which Apollo filters are applicable to your database"
+					},
+					"response": []
+				}
+			],
+			"description": "Apollo.io integration endpoints for parsing Apollo search URLs and searching contacts using Apollo URL parameters. Includes URL analysis for parameter breakdown and contact search for converting Apollo searches to database queries."
 		},
 		{
 			"name": "Contacts",
@@ -800,7 +922,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1262,7 +1384,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1443,7 +1565,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1487,7 +1609,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"body": {
@@ -1530,7 +1652,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1597,7 +1719,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1664,7 +1786,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1736,7 +1858,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1808,7 +1930,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -1880,7 +2002,7 @@
 										"key": "Origin",
 										"value": "http://localhost:3000",
 										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-										"disabled": false
+										"disabled": true
 									}
 								],
 								"url": {
@@ -2364,6 +2486,1433 @@
 			"description": "Contact list, detail, creation, and attribute lookup endpoints."
 		},
 		{
+			"name": "Companies",
+			"item": [
+				{
+					"name": "Core",
+					"item": [
+						{
+							"name": "List Companies (All Filters)",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										""
+									],
+									"query": [
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Number of companies per page (>=1).",
+											"disabled": true
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Zero-based offset into the result set (>=0).",
+											"disabled": true
+										},
+										{
+											"key": "cursor",
+											"value": "",
+											"description": "Opaque cursor token for pagination (base64 encoding of offset).",
+											"disabled": true
+										},
+										{
+											"key": "page",
+											"value": "1",
+											"description": "Optional 1-indexed page number (>=1). Converts to offset when provided.",
+											"disabled": true
+										},
+										{
+											"key": "page_size",
+											"value": "25",
+											"description": "Explicit page size override (>=1, bounded by MAX_PAGE_SIZE).",
+											"disabled": true
+										},
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return distinct companies based on primary key (boolean).",
+											"disabled": true
+										},
+										{
+											"key": "ordering",
+											"value": "-employees_count",
+											"description": "Sort results by field. Prepend '-' for descending. Valid fields: created_at, updated_at, name, employees_count, annual_revenue, total_funding.",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "technology",
+											"description": "General-purpose search term applied across company text columns (case-insensitive).",
+											"disabled": true
+										},
+										{
+											"key": "name",
+											"value": "{{sampleCompanyName}}",
+											"description": "Case-insensitive substring match against Company.name.",
+											"disabled": true
+										},
+										{
+											"key": "employees_count",
+											"value": "250",
+											"description": "Exact match against Company.employees_count (integer, >=0).",
+											"disabled": true
+										},
+										{
+											"key": "employees_min",
+											"value": "100",
+											"description": "Lower-bound filter applied to Company.employees_count (integer, >=0).",
+											"disabled": true
+										},
+										{
+											"key": "employees_max",
+											"value": "500",
+											"description": "Upper-bound filter applied to Company.employees_count (integer, >=0).",
+											"disabled": true
+										},
+										{
+											"key": "annual_revenue",
+											"value": "50000000",
+											"description": "Exact match against Company.annual_revenue stored as integer dollars (>=0).",
+											"disabled": true
+										},
+										{
+											"key": "annual_revenue_min",
+											"value": "10000000",
+											"description": "Lower-bound filter applied to Company.annual_revenue in integer dollars (>=0).",
+											"disabled": true
+										},
+										{
+											"key": "annual_revenue_max",
+											"value": "100000000",
+											"description": "Upper-bound filter applied to Company.annual_revenue in integer dollars (>=0).",
+											"disabled": true
+										},
+										{
+											"key": "total_funding",
+											"value": "25000000",
+											"description": "Exact match against Company.total_funding (integer, >=0).",
+											"disabled": true
+										},
+										{
+											"key": "total_funding_min",
+											"value": "5000000",
+											"description": "Lower-bound filter applied to Company.total_funding (integer, >=0).",
+											"disabled": true
+										},
+										{
+											"key": "total_funding_max",
+											"value": "50000000",
+											"description": "Upper-bound filter applied to Company.total_funding (integer, >=0).",
+											"disabled": true
+										},
+										{
+											"key": "industries",
+											"value": "Technology,Software",
+											"description": "Substring match within Company.industries array (stored as text array). Comma-separated for OR logic.",
+											"disabled": true
+										},
+										{
+											"key": "exclude_industries",
+											"value": "Retail,Healthcare",
+											"description": "Exclude companies whose industries include any provided value (case-insensitive). Accepts comma-separated values or repeated parameters.",
+											"disabled": true
+										},
+										{
+											"key": "keywords",
+											"value": "enterprise,saas",
+											"description": "Substring match within Company.keywords array (stored as text array). Comma-separated for OR logic.",
+											"disabled": true
+										},
+										{
+											"key": "exclude_keywords",
+											"value": "retail,consumer",
+											"description": "Exclude companies whose keywords include any provided value (case-insensitive). Accepts comma-separated values or repeated parameters.",
+											"disabled": true
+										},
+										{
+											"key": "technologies",
+											"value": "Python,AWS",
+											"description": "Substring match within Company.technologies array (stored as text array). Comma-separated for OR logic.",
+											"disabled": true
+										},
+										{
+											"key": "exclude_technologies",
+											"value": "PHP,WordPress",
+											"description": "Exclude companies whose technologies include any provided value (case-insensitive). Accepts comma-separated values or repeated parameters.",
+											"disabled": true
+										},
+										{
+											"key": "company_location",
+											"value": "San Francisco California United States",
+											"description": "Company text-search filter. Matches Company.text_search covering address, city, state, and country.",
+											"disabled": true
+										},
+										{
+											"key": "city",
+											"value": "San Francisco",
+											"description": "Substring match against CompanyMetadata.city.",
+											"disabled": true
+										},
+										{
+											"key": "state",
+											"value": "California",
+											"description": "Substring match against CompanyMetadata.state.",
+											"disabled": true
+										},
+										{
+											"key": "country",
+											"value": "United States",
+											"description": "Substring match against CompanyMetadata.country.",
+											"disabled": true
+										},
+										{
+											"key": "address",
+											"value": "Main St",
+											"description": "Substring match against Company.address.",
+											"disabled": true
+										},
+										{
+											"key": "phone_number",
+											"value": "+1-415-555",
+											"description": "Substring match against CompanyMetadata.phone_number.",
+											"disabled": true
+										},
+										{
+											"key": "website",
+											"value": "acme.com",
+											"description": "Substring match against CompanyMetadata.website.",
+											"disabled": true
+										},
+										{
+											"key": "linkedin_url",
+											"value": "linkedin.com/company/acme",
+											"description": "Substring match against CompanyMetadata.linkedin_url.",
+											"disabled": true
+										},
+										{
+											"key": "facebook_url",
+											"value": "facebook.com/acme",
+											"description": "Substring match against CompanyMetadata.facebook_url.",
+											"disabled": true
+										},
+										{
+											"key": "twitter_url",
+											"value": "twitter.com/acme",
+											"description": "Substring match against CompanyMetadata.twitter_url.",
+											"disabled": true
+										},
+										{
+											"key": "created_at_after",
+											"value": "2024-01-01T00:00:00",
+											"description": "Filter companies created after the provided ISO 8601 timestamp (inclusive). Format: YYYY-MM-DDTHH:MM:SS or YYYY-MM-DDTHH:MM:SSZ.",
+											"disabled": true
+										},
+										{
+											"key": "created_at_before",
+											"value": "2024-12-31T23:59:59",
+											"description": "Filter companies created before the provided ISO 8601 timestamp (inclusive). Format: YYYY-MM-DDTHH:MM:SS or YYYY-MM-DDTHH:MM:SSZ.",
+											"disabled": true
+										},
+										{
+											"key": "updated_at_after",
+											"value": "2024-06-01T00:00:00",
+											"description": "Filter companies updated after the provided ISO 8601 timestamp (inclusive). Format: YYYY-MM-DDTHH:MM:SS or YYYY-MM-DDTHH:MM:SSZ.",
+											"disabled": true
+										},
+										{
+											"key": "updated_at_before",
+											"value": "2024-10-01T00:00:00",
+											"description": "Filter companies updated before the provided ISO 8601 timestamp (inclusive). Format: YYYY-MM-DDTHH:MM:SS or YYYY-MM-DDTHH:MM:SSZ.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Retrieve a paginated set of companies using every supported filter parameter."
+							},
+							"response": []
+						},
+						{
+							"name": "Count Companies",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/count/?industries=Technology&employees_min=100",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"count",
+										""
+									],
+									"query": [
+										{
+											"key": "industries",
+											"value": "Technology",
+											"description": "Substring match within Company.industries array."
+										},
+										{
+											"key": "employees_min",
+											"value": "100",
+											"description": "Lower-bound filter for Company.employees_count (>=0)."
+										},
+										{
+											"key": "name",
+											"value": "{{sampleCompanyName}}",
+											"description": "Case-insensitive substring match against Company.name.",
+											"disabled": true
+										},
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Request distinct companies based on primary key (boolean).",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "technology",
+											"description": "General-purpose search term applied across company text columns (case-insensitive).",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return the total number of companies that satisfy the provided filters. Supports all CompanyFilterParams."
+							},
+							"response": []
+						},
+						{
+							"name": "Retrieve Company",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/{{sampleCompanyId}}/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"{{sampleCompanyId}}",
+										""
+									]
+								},
+								"description": "Fetch details for a single company by primary key."
+							},
+							"response": []
+						},
+						{
+							"name": "Create Company",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "X-Companies-Write-Key",
+										"value": "{{companiesWriteKey}}",
+										"description": "Required header for write operations. Must match the configured COMPANIES_WRITE_KEY value. Used to authorize company creation, updates, and deletions."
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"uuid\": \"f4b8c3f5-2222-4f9b-bbbb-234567890def\",\n  \"name\": \"Acme Corporation\",\n  \"employees_count\": 250,\n  \"industries\": [\n    \"Technology\",\n    \"Software\"\n  ],\n  \"keywords\": [\n    \"enterprise\",\n    \"saas\",\n    \"cloud\"\n  ],\n  \"address\": \"123 Main St\",\n  \"annual_revenue\": 50000000,\n  \"total_funding\": 25000000,\n  \"technologies\": [\n    \"Python\",\n    \"AWS\",\n    \"PostgreSQL\"\n  ],\n  \"text_search\": \"San Francisco California United States\",\n  \"metadata\": {\n    \"city\": \"San Francisco\",\n    \"state\": \"California\",\n    \"country\": \"United States\",\n    \"phone_number\": \"+1-415-555-0100\",\n    \"website\": \"https://acme.com\",\n    \"linkedin_url\": \"https://linkedin.com/company/acme\",\n    \"facebook_url\": \"https://facebook.com/acme\",\n    \"twitter_url\": \"https://twitter.com/acme\"\n  }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/companies/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										""
+									]
+								},
+								"description": "Create a new company record using the CompanyCreate schema. All body fields are optional:\n- uuid (string, optional): Company UUID. If not provided, one will be generated.\n- name (string, optional): Company name.\n- employees_count (integer, optional): Number of employees.\n- industries (array[string], optional): List of industries.\n- keywords (array[string], optional): List of keywords.\n- address (string, optional): Company address.\n- annual_revenue (integer, optional): Annual revenue in dollars.\n- total_funding (integer, optional): Total funding in dollars.\n- technologies (array[string], optional): List of technologies.\n- text_search (string, optional): Free-form search text, e.g., location information.\n- metadata (object, optional): Company metadata including city, state, country, phone, website, social URLs.\n\nRequires admin authentication and X-Companies-Write-Key header."
+							},
+							"response": []
+						},
+						{
+							"name": "Update Company",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "X-Companies-Write-Key",
+										"value": "{{companiesWriteKey}}",
+										"description": "Required header for write operations. Must match the configured COMPANIES_WRITE_KEY value."
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Acme Corporation Updated\",\n  \"employees_count\": 300,\n  \"annual_revenue\": 60000000,\n  \"industries\": [\n    \"Technology\",\n    \"Software\",\n    \"AI\"\n  ],\n  \"metadata\": {\n    \"city\": \"San Francisco\",\n    \"state\": \"California\",\n    \"phone_number\": \"+1-415-555-0200\"\n  }\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/companies/{{sampleCompanyId}}/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"{{sampleCompanyId}}",
+										""
+									]
+								},
+								"description": "Update an existing company record. All fields are optional (partial update). Requires admin authentication and X-Companies-Write-Key header."
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Company",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "X-Companies-Write-Key",
+										"value": "{{companiesWriteKey}}",
+										"description": "Required header for write operations. Must match the configured COMPANIES_WRITE_KEY value."
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/{{sampleCompanyId}}/",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"{{sampleCompanyId}}",
+										""
+									]
+								},
+								"description": "Delete a company record. Requires admin authentication and X-Companies-Write-Key header."
+							},
+							"response": []
+						}
+					],
+					"description": "Core company CRUD operations."
+				},
+				{
+					"name": "Attribute Lookups",
+					"item": [
+						{
+							"name": "List Company Names",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/name/?distinct=true&limit=25&offset=0&ordering=value&search=acme",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"name",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "value",
+											"description": "Sort alphabetically."
+										},
+										{
+											"key": "search",
+											"value": "acme",
+											"description": "Optional case-insensitive search term."
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/name/ using AttributeListParams."
+							},
+							"response": []
+						},
+						{
+							"name": "List Industries",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/industry/?distinct=true&limit=25&offset=0&ordering=-count&separated=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"industry",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "-count",
+											"description": "Sort by count descending."
+										},
+										{
+											"key": "separated",
+											"value": "true",
+											"description": "Split array columns into unique tokens."
+										},
+										{
+											"key": "search",
+											"value": "technology",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/industry/ using AttributeListParams. The separated parameter (true/false) controls whether array columns are split into unique tokens. When separated=true, each industry value in the array is returned as a separate item. When separated=false (default), arrays are collapsed into comma-separated strings."
+							},
+							"response": []
+						},
+						{
+							"name": "List Keywords",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/keywords/?distinct=true&limit=25&offset=0&ordering=-count&separated=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"keywords",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "-count",
+											"description": "Sort by count descending."
+										},
+										{
+											"key": "separated",
+											"value": "true",
+											"description": "Split array columns into unique tokens."
+										},
+										{
+											"key": "search",
+											"value": "saas",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/keywords/ using AttributeListParams. The separated parameter (true/false) controls whether array columns are split into unique tokens."
+							},
+							"response": []
+						},
+						{
+							"name": "List Technologies",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/technologies/?distinct=true&limit=25&offset=0&ordering=-count&separated=true",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"technologies",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "-count",
+											"description": "Sort by count descending."
+										},
+										{
+											"key": "separated",
+											"value": "true",
+											"description": "Split array columns into unique tokens."
+										},
+										{
+											"key": "search",
+											"value": "python",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/technologies/ using AttributeListParams. The separated parameter (true/false) controls whether array columns are split into unique tokens."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Cities",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/city/?distinct=true&limit=25&offset=0&ordering=-count",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"city",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "-count",
+											"description": "Sort by count descending."
+										},
+										{
+											"key": "search",
+											"value": "san",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/city/ using AttributeListParams."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company States",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/state/?distinct=true&limit=25&offset=0&ordering=-count",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"state",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "-count",
+											"description": "Sort by count descending."
+										},
+										{
+											"key": "search",
+											"value": "california",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/state/ using AttributeListParams."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Countries",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/country/?distinct=true&limit=25&offset=0&ordering=-count",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"country",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "-count",
+											"description": "Sort by count descending."
+										},
+										{
+											"key": "search",
+											"value": "united",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/country/ using AttributeListParams."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Addresses",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									},
+									{
+										"key": "Origin",
+										"value": "http://localhost:3000",
+										"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
+										"disabled": true
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/address/?distinct=true&limit=25&offset=0&ordering=value",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"address",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values."
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results."
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Offset applied before fetching values."
+										},
+										{
+											"key": "ordering",
+											"value": "value",
+											"description": "Sort alphabetically."
+										},
+										{
+											"key": "search",
+											"value": "main",
+											"description": "Optional case-insensitive search term.",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return distinct values for /companies/address/ using AttributeListParams. Returns Company.text_search covering address fields."
+							},
+							"response": []
+						}
+					],
+					"description": "Distinct value lookups for company attributes."
+				},
+				{
+					"name": "Company Contacts",
+					"item": [
+						{
+							"name": "List Company Contacts",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/?title=engineer&seniority=senior&limit=25&offset=0",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										""
+									],
+									"query": [
+										{
+											"key": "title",
+											"value": "engineer",
+											"description": "Filter by job title"
+										},
+										{
+											"key": "seniority",
+											"value": "senior",
+											"description": "Filter by seniority level"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Number of items per page"
+										},
+										{
+											"key": "offset",
+											"value": "0",
+											"description": "Zero-based offset"
+										},
+										{
+											"key": "first_name",
+											"value": "John",
+											"description": "Filter by first name",
+											"disabled": true
+										},
+										{
+											"key": "last_name",
+											"value": "Doe",
+											"description": "Filter by last name",
+											"disabled": true
+										},
+										{
+											"key": "email",
+											"value": "example@company.com",
+											"description": "Filter by email",
+											"disabled": true
+										},
+										{
+											"key": "department",
+											"value": "Engineering",
+											"description": "Filter by department",
+											"disabled": true
+										},
+										{
+											"key": "search",
+											"value": "developer",
+											"description": "General search term",
+											"disabled": true
+										}
+									]
+								},
+								"description": "Return a paginated list of contacts for a specific company with optional filtering."
+							},
+							"response": []
+						},
+						{
+							"name": "Count Company Contacts",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/count/?title=engineer",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"count",
+										""
+									],
+									"query": [
+										{
+											"key": "title",
+											"value": "engineer",
+											"description": "Filter by job title"
+										}
+									]
+								},
+								"description": "Return the total count of contacts for a specific company matching filters."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Contact First Names",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/first_name/?distinct=true&limit=25",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"first_name",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results"
+										}
+									]
+								},
+								"description": "Return distinct first name values for contacts in a specific company."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Contact Last Names",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/last_name/?distinct=true&limit=25",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"last_name",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results"
+										}
+									]
+								},
+								"description": "Return distinct last name values for contacts in a specific company."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Contact Titles",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/title/?distinct=true&limit=25",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"title",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results"
+										}
+									]
+								},
+								"description": "Return distinct title values for contacts in a specific company."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Contact Seniorities",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/seniority/?distinct=true&limit=25",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"seniority",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results"
+										}
+									]
+								},
+								"description": "Return distinct seniority values for contacts in a specific company."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Contact Departments",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/department/?distinct=true&limit=25",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"department",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results"
+										}
+									]
+								},
+								"description": "Return distinct department values for contacts in a specific company."
+							},
+							"response": []
+						},
+						{
+							"name": "List Company Contact Email Statuses",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{accessToken}}"
+									}
+								],
+								"url": {
+									"raw": "{{baseUrl}}/companies/company/{{sampleCompanyUuid}}/contacts/email_status/?distinct=true&limit=25",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"companies",
+										"company",
+										"{{sampleCompanyUuid}}",
+										"contacts",
+										"email_status",
+										""
+									],
+									"query": [
+										{
+											"key": "distinct",
+											"value": "true",
+											"description": "Return unique values"
+										},
+										{
+											"key": "limit",
+											"value": "25",
+											"description": "Maximum number of results"
+										}
+									]
+								},
+								"description": "Return distinct email status values for contacts in a specific company."
+							},
+							"response": []
+						}
+					],
+					"description": "Endpoints for listing and filtering contacts within a specific company."
+				}
+			],
+			"description": "Company list, detail, CRUD operations, and attribute lookup endpoints."
+		},
+		{
 			"name": "Imports",
 			"item": [
 				{
@@ -2385,7 +3934,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -2422,7 +3971,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"body": {
@@ -2470,7 +4019,7 @@
 								"key": "Origin",
 								"value": "http://localhost:3000",
 								"description": "Optional: Origin header for CORS testing. Enable this header to verify CORS response headers (Access-Control-Allow-Origin, etc.). Disabled by default since Postman doesn't enforce CORS.",
-								"disabled": false
+								"disabled": true
 							}
 						],
 						"url": {
@@ -2599,7 +4148,7 @@
 	"variable": [
 		{
 			"key": "baseHost",
-			"value": "http://127.0.0.1:8000",
+			"value": "http://54.88.182.69:8000",
 			"description": "Default FastAPI server origin."
 		},
 		{
@@ -2671,6 +4220,31 @@
 			"key": "sampleChatId",
 			"value": "",
 			"description": "Chat UUID identifier. Automatically set by the Create Chat endpoint test script."
+		},
+		{
+			"key": "companiesWriteKey",
+			"value": "demo-write-key",
+			"description": "Sample value for the X-Companies-Write-Key header. Must match the configured COMPANIES_WRITE_KEY value in the backend. Required for company write operations (create, update, delete)."
+		},
+		{
+			"key": "sampleCompanyId",
+			"value": "1",
+			"description": "Example company identifier for detail routes."
+		},
+		{
+			"key": "sampleCompanyUuid",
+			"value": "abc-123-company-uuid",
+			"description": "Example company UUID for company contacts routes."
+		},
+		{
+			"key": "sampleCompanyName",
+			"value": "Acme Corporation",
+			"description": "Sample company name for filtering."
+		},
+		{
+			"key": "sampleCompanyUuid",
+			"value": "398cce44-233d-5f7c-aea1-e4a6a79df10c",
+			"description": "Sample company UUID for filtering and exclusions."
 		}
 	]
 }

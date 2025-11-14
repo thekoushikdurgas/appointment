@@ -1,17 +1,24 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, Chat, Content } from '@google/genai';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { useAuth } from '../../../hooks/useAuth';
 import { Contact } from '../../../types/index';
-import { LogoIcon, SparklesIcon, PlusIcon, ChatBubbleIcon, MenuIcon, SendIcon, UsersIcon, DeleteIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, SuccessIcon, ChevronUpDownIcon, XMarkIcon } from '../../../components/icons/IconComponents';
+import { 
+  LogoIcon, SparklesIcon, PlusIcon, ChatBubbleIcon, MenuIcon, SendIcon, UsersIcon, 
+  DeleteIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, SuccessIcon, 
+  ChevronUpDownIcon, XMarkIcon, CopyIcon, RegenerateIcon, EditIcon, AttachIcon,
+  EmojiIcon, MicrophoneIcon, SettingsIcon, ExportIcon, ClearIcon
+} from '../../../components/icons/IconComponents';
 import { fetchContacts } from '../../../services/contact';
 import { getChatHistory, getChat, createChat, updateChat, deleteChat, Message, ChatHistoryItem, PaginationMetadata } from '../../../services/aiChat';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Select } from '../../../components/ui/Select';
-import { cn } from '../../../utils/cn';
+import { Tooltip } from '../../../components/ui/Tooltip';
+import { useSwipeable } from '../../../hooks/useSwipeable';
 
 // Type definition for searchContacts function arguments
 interface SearchContactsArgs {
@@ -77,6 +84,7 @@ const AIAssistantPage: React.FC = () => {
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mainChatRef = useRef<HTMLDivElement>(null);
   
   // Error and success messages
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -97,6 +105,15 @@ const AIAssistantPage: React.FC = () => {
   // Delete confirmation
   const [chatToDelete, setChatToDelete] = useState<string | null>(null);
   
+  // Swipe state for chat history items
+  const [swipedChatId, setSwipedChatId] = useState<string | null>(null);
+  
+  // Settings menu state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  // Hover state for message actions
+  const [hoveredMessageIndex, setHoveredMessageIndex] = useState<number | null>(null);
+
   const suggestionPrompts = [
     "Who are my most recent leads?",
     "Find contacts in California in the software industry",
@@ -137,7 +154,6 @@ const AIAssistantPage: React.FC = () => {
   const initializeChatSession = async (history: Content[] = []) => {
     if (!user) return;
     try {
-      // Use NEXT_PUBLIC_ prefix for client-side access in Next.js
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
       if (!apiKey) {
         throw new Error('Gemini API key not configured');
@@ -237,7 +253,7 @@ const AIAssistantPage: React.FC = () => {
       setMessages(loadedMessages);
 
       const history: Content[] = loadedMessages
-        .slice(1) // Remove initial welcome message from history
+        .slice(1)
         .map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'model',
           parts: [{ text: msg.text }]
@@ -253,6 +269,31 @@ const AIAssistantPage: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  // Navigate between chats with swipe
+  const handleNavigateChat = useCallback((direction: 'left' | 'right') => {
+    if (!activeChatId || chatHistory.length === 0) return;
+    
+    const currentIndex = chatHistory.findIndex(c => c.id === activeChatId);
+    if (currentIndex === -1) return;
+    
+    const nextIndex = direction === 'left' ? currentIndex + 1 : currentIndex - 1;
+    if (nextIndex >= 0 && nextIndex < chatHistory.length) {
+      handleSelectChat(chatHistory[nextIndex].id);
+    }
+  }, [activeChatId, chatHistory]);
+
+  // Main chat swipe handlers
+  const mainChatSwipeHandlers = useSwipeable({
+    onSwipeLeft: () => handleNavigateChat('left'),
+    onSwipeRight: () => {
+      if (window.innerWidth < 1024) {
+        setIsSidebarOpen(true);
+      } else {
+        handleNavigateChat('right');
+      }
+    },
+  }, { threshold: 80 });
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading || !chat) return;
@@ -275,7 +316,6 @@ const AIAssistantPage: React.FC = () => {
         let functionResponse;
 
         if (functionCall.name === 'searchContacts') {
-          // Type assert the args to our defined interface
           const args = functionCall.args as SearchContactsArgs;
           const { contacts, count } = await fetchContacts({
               search: args.query,
@@ -301,7 +341,6 @@ const AIAssistantPage: React.FC = () => {
         }
       }
 
-      // Ensure aiResponseText is always a string
       const finalAiResponseText: string = aiResponseText || 'I apologize, but I could not generate a response.';
       const aiMessage: Message = { sender: 'ai', text: finalAiResponseText, contacts: contactsForDisplay };
       const finalMessages = [...currentMessages, aiMessage];
@@ -321,7 +360,6 @@ const AIAssistantPage: React.FC = () => {
             currentChatId = result.data.id!;
             setActiveChatId(currentChatId);
             setSuccessMessage('Chat saved successfully');
-            // Refresh history to get updated list with pagination
             await fetchHistory(currentPage, sortOrder);
           } else {
             const errorMsg = result.message || 'Failed to save chat';
@@ -334,7 +372,6 @@ const AIAssistantPage: React.FC = () => {
           
           if (result.success) {
             setSuccessMessage('Chat updated successfully');
-            // Refresh history to update the chat in the list
             await fetchHistory(currentPage, sortOrder);
           } else {
             const errorMsg = result.message || 'Failed to update chat';
@@ -367,13 +404,12 @@ const AIAssistantPage: React.FC = () => {
       if (result.success) {
         setSuccessMessage('Chat deleted successfully');
         setChatToDelete(null);
+        setSwipedChatId(null);
         
-        // If deleted chat was active, clear it
         if (activeChatId === chatId) {
           handleNewChat();
         }
         
-        // Refresh history
         await fetchHistory(currentPage, sortOrder);
       } else {
         const errorMsg = result.message || 'Failed to delete chat';
@@ -393,27 +429,143 @@ const AIAssistantPage: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const renderMessageContent = (message: Message) => (
-    <div className="max-w-none">
-        <p className="text-foreground whitespace-pre-wrap">{message.text}</p>
-        {message.contacts && message.contacts.length > 0 && (
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {message.contacts.map(contact => (
-                    <Card key={contact.id} variant="outlined" padding="md" className="hover-lift">
-                        <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex-center">
-                                <UsersIcon className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="font-semibold text-foreground text-truncate">{contact.name}</p>
-                                <p className="text-xs text-muted-foreground text-truncate">{contact.title || 'No title'}</p>
-                                <p className="text-xs text-muted-foreground text-truncate">{contact.company}</p>
-                            </div>
-                        </div>
-                    </Card>
-                ))}
-            </div>
-        )}
+  // Copy message to clipboard
+  const handleCopyMessage = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setSuccessMessage('Message copied to clipboard');
+    } catch (error) {
+      setErrorMessage('Failed to copy message');
+    }
+  };
+
+  // Regenerate AI response
+  const handleRegenerateResponse = async (messageIndex: number) => {
+    if (messageIndex < 1 || !chat) return;
+    
+    const userMessage = messages[messageIndex - 1];
+    if (userMessage.sender !== 'user') return;
+    
+    setIsLoading(true);
+    const newMessages = messages.slice(0, messageIndex);
+    setMessages(newMessages);
+    
+    try {
+      const result = await chat.sendMessage({ message: userMessage.text });
+      const aiResponseText: string = result.text ?? 'I apologize, but I could not generate a response.';
+      const aiMessage: Message = { sender: 'ai', text: aiResponseText };
+      setMessages([...newMessages, aiMessage]);
+    } catch (error) {
+      setErrorMessage('Failed to regenerate response');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Export chat
+  const handleExportChat = () => {
+    if (messages.length === 0) return;
+    
+    const chatText = messages.map(msg => `${msg.sender.toUpperCase()}: ${msg.text}`).join('\n\n');
+    const blob = new Blob([chatText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-${activeChatId || 'new'}-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setSuccessMessage('Chat exported successfully');
+  };
+
+  // Clear conversation
+  const handleClearConversation = () => {
+    handleNewChat();
+    setSuccessMessage('Conversation cleared');
+  };
+
+  const renderMessageContent = (message: Message, index: number) => (
+    <div 
+      className="ai-assistant-message-content-wrapper"
+      onMouseEnter={() => setHoveredMessageIndex(index)}
+      onMouseLeave={() => setHoveredMessageIndex(null)}
+    >
+      <div className="ai-assistant-message-content-header">
+        <p className="ai-assistant-message-text">{message.text}</p>
+        
+        {/* Message Actions */}
+        <div className={`ai-assistant-message-actions ${hoveredMessageIndex === index ? 'ai-assistant-message-actions--visible' : ''}`}>
+          <Tooltip content="Copy message">
+            <button
+              onClick={() => handleCopyMessage(message.text)}
+              className="ai-assistant-message-action-btn"
+              aria-label="Copy message"
+            >
+              <CopyIcon className="ai-assistant-message-action-icon" />
+            </button>
+          </Tooltip>
+          
+          {message.sender === 'ai' && index > 0 && (
+            <Tooltip content="Regenerate response">
+              <button
+                onClick={() => handleRegenerateResponse(index)}
+                className="ai-assistant-message-action-btn"
+                aria-label="Regenerate response"
+                disabled={isLoading}
+              >
+                <RegenerateIcon className="ai-assistant-message-action-icon" />
+              </button>
+            </Tooltip>
+          )}
+          
+          {message.sender === 'user' && (
+            <Tooltip content="Edit message">
+              <button
+                className="ai-assistant-message-action-btn"
+                aria-label="Edit message"
+              >
+                <EditIcon className="ai-assistant-message-action-icon" />
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+      
+      {message.contacts && message.contacts.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="ai-assistant-message-contacts"
+        >
+          {message.contacts.map((contact, idx) => (
+            <motion.div
+              key={contact.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 * idx }}
+            >
+              <Card 
+                variant="outlined" 
+                padding="md" 
+                className="ai-assistant-message-contact-card"
+              >
+                <div className="ai-assistant-message-contact-content">
+                  <div className="ai-assistant-message-contact-avatar">
+                    <UsersIcon className="ai-assistant-message-contact-avatar-icon" />
+                  </div>
+                  <div className="ai-assistant-message-contact-info">
+                    <p className="ai-assistant-message-contact-name">{contact.name}</p>
+                    <p className="ai-assistant-message-contact-title">{contact.title || 'No title'}</p>
+                    <p className="ai-assistant-message-contact-company">{contact.company}</p>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
+      )}
     </div>
   );
 
@@ -422,348 +574,522 @@ const AIAssistantPage: React.FC = () => {
   const endItem = pagination ? Math.min(currentPage * chatsPerPage, pagination.count) : 0;
 
   return (
-    <div className="flex flex-col lg:flex-row w-full max-w-full h-full bg-card rounded-lg shadow-lg border border-border overflow-hidden">
-        {/* Overlay for mobile */}
+    <div className="ai-assistant-page">
+      {/* Overlay for mobile */}
+      <AnimatePresence>
         {isSidebarOpen && (
-            <div 
-                className="fixed inset-0 bg-backdrop z-20 lg:hidden animate-fade-in"
-                onClick={() => setIsSidebarOpen(false)}
-            ></div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="ai-assistant-overlay"
+            onClick={() => setIsSidebarOpen(false)}
+          />
         )}
+      </AnimatePresence>
 
-        {/* Error and Success Messages */}
+      {/* Error and Success Messages */}
+      <AnimatePresence>
         {(errorMessage || successMessage) && (
-          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="ai-assistant-messages-container"
+          >
             {errorMessage && (
-              <Card className="border-error/20 bg-error/5 animate-slide-up-fade mb-2">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
-                  <p className="text-sm text-error flex-1">{errorMessage}</p>
+              <Card className="ai-assistant-message-card ai-assistant-message-card--error">
+                <CardContent className="ai-assistant-message-content">
+                  <AlertTriangleIcon className="ai-assistant-message-icon" />
+                  <p className="ai-assistant-message-text ai-assistant-message-text--error">{errorMessage}</p>
                   <button
                     onClick={() => setErrorMessage(null)}
-                    className="text-error hover:text-error/80"
+                    className="ai-assistant-message-dismiss ai-assistant-message-dismiss--error"
                     aria-label="Dismiss error"
                   >
-                    <XMarkIcon className="w-4 h-4" />
+                    <XMarkIcon />
                   </button>
                 </CardContent>
               </Card>
             )}
             {successMessage && (
-              <Card className="border-success/20 bg-success/5 animate-slide-up-fade">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <SuccessIcon className="w-5 h-5 text-success flex-shrink-0" />
-                  <p className="text-sm text-success flex-1">{successMessage}</p>
+              <Card className="ai-assistant-message-card ai-assistant-message-card--success">
+                <CardContent className="ai-assistant-message-content">
+                  <SuccessIcon className="ai-assistant-message-icon" />
+                  <p className="ai-assistant-message-text ai-assistant-message-text--success">{successMessage}</p>
                   <button
                     onClick={() => setSuccessMessage(null)}
-                    className="text-success hover:text-success/80"
+                    className="ai-assistant-message-dismiss ai-assistant-message-dismiss--success"
                     aria-label="Dismiss success"
                   >
-                    <XMarkIcon className="w-4 h-4" />
+                    <XMarkIcon />
                   </button>
                 </CardContent>
               </Card>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Chat History Sidebar */}
+      <motion.div 
+        initial={false}
+        animate={{ x: isSidebarOpen ? 0 : '-100%' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="ai-assistant-sidebar"
+      >
+        <div className="ai-assistant-sidebar-header">
+          <Button
+            onClick={handleNewChat}
+            variant="glass-primary"
+            size="md"
+            fullWidth
+            leftIcon={<PlusIcon />}
+            className="ai-assistant-new-chat-btn"
+          >
+            New Chat
+          </Button>
+          
+          {/* Sort Dropdown */}
+          <div className="ai-assistant-sort-wrapper">
+            <label htmlFor="sort-select" className="ai-assistant-sort-label">
+              Sort:
+            </label>
+            <Select
+              id="sort-select"
+              value={sortOrder}
+              onChange={(e) => handleSortChange(e.target.value as SortOption)}
+              className="ai-assistant-sort-select"
+              options={[
+                { value: '-created_at', label: 'Newest First' },
+                { value: 'created_at', label: 'Oldest First' },
+                { value: '-updated_at', label: 'Recently Updated' },
+                { value: 'updated_at', label: 'Least Recently Updated' },
+              ]}
+            />
           </div>
-        )}
-
-        {/* Chat History Sidebar */}
-        <div className={cn(
-          'fixed lg:relative inset-y-0 left-0 z-30 w-full max-w-xs lg:max-w-sm bg-card border-r border-border flex flex-col transform transition-transform duration-300 ease-in-out shadow-xl lg:shadow-none lg:h-full',
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-        )}>
-            <div className="p-4 border-b border-border space-y-3">
-                <Button
-                    onClick={handleNewChat}
-                    variant="primary"
-                    size="md"
-                    fullWidth
-                    leftIcon={<PlusIcon className="w-5 h-5" />}
-                >
-                    New Chat
-                </Button>
-                
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-2">
-                  <label htmlFor="sort-select" className="text-xs text-muted-foreground whitespace-nowrap">
-                    Sort:
-                  </label>
-                  <Select
-                    id="sort-select"
-                    value={sortOrder}
-                    onChange={(e) => handleSortChange(e.target.value as SortOption)}
-                    className="flex-1 text-sm"
-                    options={[
-                      { value: '-created_at', label: 'Newest First' },
-                      { value: 'created_at', label: 'Oldest First' },
-                      { value: '-updated_at', label: 'Recently Updated' },
-                      { value: 'updated_at', label: 'Least Recently Updated' },
-                    ]}
-                  />
-                </div>
+        </div>
+        
+        <nav className="ai-assistant-sidebar-nav">
+          {isLoadingHistory ? (
+            <div className="ai-assistant-sidebar-loading">
+              <div className="ai-assistant-sidebar-loading-dots">
+                <span className="ai-assistant-sidebar-loading-dot" style={{ animationDelay: '-0.3s' }}></span>
+                <span className="ai-assistant-sidebar-loading-dot" style={{ animationDelay: '-0.15s' }}></span>
+                <span className="ai-assistant-sidebar-loading-dot"></span>
+              </div>
+              <p className="ai-assistant-sidebar-loading-text">Loading chat history...</p>
             </div>
-            <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-                {isLoadingHistory ? (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
-                        <div className="flex items-center justify-center gap-2">
-                            <span className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                            <span className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                            <span className="h-2 w-2 bg-primary rounded-full animate-bounce"></span>
+          ) : chatHistory.length === 0 ? (
+            <div className="ai-assistant-sidebar-empty">
+              <ChatBubbleIcon className="ai-assistant-sidebar-empty-icon" />
+              <p className="ai-assistant-sidebar-empty-title">No chat history yet</p>
+              <p className="ai-assistant-sidebar-empty-description">Start a new conversation</p>
+            </div>
+          ) : (
+            <>
+              <ul className="ai-assistant-chat-list">
+                {chatHistory.map((item, idx) => {
+                  const isActive = activeChatId === item.id;
+                  const isSwiped = swipedChatId === item.id;
+                  
+                  return (
+                    <motion.li 
+                      key={item.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                    >
+                      <motion.div
+                        drag="x"
+                        dragConstraints={{ left: -80, right: 0 }}
+                        dragElastic={0.2}
+                        onDragEnd={(e, info: PanInfo) => {
+                          if (info.offset.x < -60) {
+                            setSwipedChatId(item.id);
+                          } else {
+                            setSwipedChatId(null);
+                          }
+                        }}
+                        className="ai-assistant-chat-item-wrapper"
+                      >
+                        {/* Delete button revealed on swipe */}
+                        <div className="ai-assistant-chat-item-delete">
+                          <DeleteIcon className="ai-assistant-chat-item-delete-icon" />
                         </div>
-                        <p className="mt-3">Loading chat history...</p>
-                    </div>
-                ) : chatHistory.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
-                        <ChatBubbleIcon className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                        <p>No chat history yet</p>
-                        <p className="text-xs mt-1">Start a new conversation</p>
-                    </div>
-                ) : (
-                    <>
-                        <ul className="space-y-1">
-                            {chatHistory.map(item => (
-                                <li key={item.id}>
-                                    <div className={cn(
-                                      'group flex items-center gap-2 p-1 rounded-lg',
-                                      activeChatId === item.id && 'bg-primary/10'
-                                    )}>
-                                        <button 
-                                            onClick={() => handleSelectChat(item.id)} 
-                                            className={cn(
-                                              'flex-1 flex items-center gap-3 p-2 rounded-lg text-left transition-all',
-                                              activeChatId === item.id 
-                                                ? 'bg-primary text-primary-foreground shadow-md' 
-                                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                            )}
-                                            aria-label={`Select chat: ${item.title}`}
-                                            title={item.title}
-                                        >
-                                            <ChatBubbleIcon className={cn('w-5 h-5 flex-shrink-0', activeChatId === item.id && 'text-primary-foreground')}/>
-                                            <div className="flex-1 overflow-hidden min-w-0">
-                                                <p className="text-truncate font-medium text-sm">{item.title || 'Untitled Chat'}</p>
-                                                <p className={cn('text-xs text-truncate', activeChatId === item.id ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
-                                                    {item.updated_at ? `Updated ${timeAgo(item.updated_at)}` : `Created ${timeAgo(item.created_at)}`}
-                                                </p>
-                                            </div>
-                                        </button>
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setChatToDelete(item.id);
-                                            }}
-                                            className={cn(
-                                              'p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100',
-                                              'text-muted-foreground hover:text-error hover:bg-error/10',
-                                              activeChatId === item.id && 'opacity-100'
-                                            )}
-                                            aria-label={`Delete chat: ${item.title}`}
-                                            title="Delete chat"
-                                            disabled={isDeletingChat === item.id}
-                                        >
-                                            {isDeletingChat === item.id ? (
-                                                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                                            ) : (
-                                                <DeleteIcon className="w-4 h-4" />
-                                            )}
-                                        </button>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
                         
-                        {/* Pagination Controls */}
-                        {pagination && pagination.count > chatsPerPage && (
-                            <div className="mt-4 pt-4 border-t border-border space-y-2">
-                                <div className="text-xs text-muted-foreground text-center">
-                                    Showing <strong className="text-foreground">{startItem}</strong> to <strong className="text-foreground">{endItem}</strong> of <strong className="text-foreground">{pagination.count}</strong> chats
-                                </div>
-                                <div className="flex items-center justify-between gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => fetchHistory(currentPage - 1, sortOrder)}
-                                        disabled={!pagination.previous || isLoadingHistory}
-                                        iconOnly
-                                        aria-label="Previous page"
-                                    >
-                                        <ChevronLeftIcon className="w-4 h-4" />
-                                    </Button>
-                                    <span className="text-xs text-muted-foreground">
-                                        Page {currentPage} of {totalPages}
-                                    </span>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => fetchHistory(currentPage + 1, sortOrder)}
-                                        disabled={!pagination.next || isLoadingHistory}
-                                        iconOnly
-                                        aria-label="Next page"
-                                    >
-                                        <ChevronRightIcon className="w-4 h-4" />
-                                    </Button>
-                                </div>
+                        <div className={`ai-assistant-chat-item ${isActive ? 'ai-assistant-chat-item--active' : ''}`}>
+                          <button 
+                            onClick={() => handleSelectChat(item.id)} 
+                            className={`ai-assistant-chat-item-button ${isActive ? 'ai-assistant-chat-item-button--active' : ''}`}
+                            aria-label={`Select chat: ${item.title}`}
+                            title={item.title}
+                          >
+                            <ChatBubbleIcon className={`ai-assistant-chat-item-icon ${isActive ? 'ai-assistant-chat-item-icon--active' : ''}`} />
+                            <div className="ai-assistant-chat-item-content">
+                              <p className="ai-assistant-chat-item-title">{item.title || 'Untitled Chat'}</p>
+                              <p className={`ai-assistant-chat-item-meta ${isActive ? 'ai-assistant-chat-item-meta--active' : ''}`}>
+                                {item.updated_at ? `Updated ${timeAgo(item.updated_at)}` : `Created ${timeAgo(item.created_at)}`}
+                              </p>
                             </div>
-                        )}
-                    </>
-                )}
-            </nav>
-        </div>
-
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-            <header className="p-4 sm:p-6 border-b border-border flex items-center gap-3 bg-card/50 backdrop-blur-sm flex-shrink-0">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="lg:hidden"
-                    aria-label="Open chat history"
-                    title="Open chat history"
+                          </button>
+                          
+                          <Tooltip content="Delete chat">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setChatToDelete(item.id);
+                              }}
+                              className={`ai-assistant-chat-item-delete-btn ${isActive ? 'ai-assistant-chat-item-delete-btn--visible' : ''}`}
+                              aria-label={`Delete chat: ${item.title}`}
+                              disabled={isDeletingChat === item.id}
+                            >
+                              {isDeletingChat === item.id ? (
+                                <div className="ai-assistant-chat-item-delete-spinner"></div>
+                              ) : (
+                                <DeleteIcon />
+                              )}
+                            </button>
+                          </Tooltip>
+                        </div>
+                      </motion.div>
+                    </motion.li>
+                  );
+                })}
+              </ul>
+              
+              {/* Pagination Controls */}
+              {pagination && pagination.count > chatsPerPage && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="ai-assistant-sidebar-pagination"
                 >
-                    <MenuIcon className="w-6 h-6"/>
-                </Button>
-                <div className="p-2 bg-primary/10 rounded-lg">
-                    <SparklesIcon className="w-6 h-6 text-primary"/>
-                </div>
-                <h1 className="text-lg sm:text-xl font-bold text-foreground truncate">
-                    {activeChatId ? chatHistory.find(c => c.id === activeChatId)?.title : 'AI Assistant'}
-                </h1>
-            </header>
+                  <div className="ai-assistant-sidebar-pagination-info">
+                    Showing <strong className="ai-assistant-sidebar-pagination-strong">{startItem}</strong> to <strong className="ai-assistant-sidebar-pagination-strong">{endItem}</strong> of <strong className="ai-assistant-sidebar-pagination-strong">{pagination.count}</strong> chats
+                  </div>
+                  <div className="ai-assistant-sidebar-pagination-controls">
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => fetchHistory(currentPage - 1, sortOrder)}
+                      disabled={!pagination.previous || isLoadingHistory}
+                      iconOnly
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeftIcon />
+                    </Button>
+                    <span className="ai-assistant-sidebar-pagination-page">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => fetchHistory(currentPage + 1, sortOrder)}
+                      disabled={!pagination.next || isLoadingHistory}
+                      iconOnly
+                      aria-label="Next page"
+                    >
+                      <ChevronRightIcon />
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </>
+          )}
+        </nav>
+      </motion.div>
+
+      {/* Main Chat Area */}
+      <div 
+        ref={mainChatRef}
+        {...mainChatSwipeHandlers}
+        className="ai-assistant-main"
+      >
+        <header className="ai-assistant-header">
+          <Tooltip content="Toggle sidebar">
+            <Button
+              variant="glass"
+              size="sm"
+              iconOnly
+              onClick={() => setIsSidebarOpen(true)}
+              className="ai-assistant-header-menu-btn"
+              aria-label="Open chat history"
+            >
+              <MenuIcon />
+            </Button>
+          </Tooltip>
+          
+          <div className="ai-assistant-header-icon-wrapper">
+            <SparklesIcon className="ai-assistant-header-icon" />
+          </div>
+          
+          <h1 className="ai-assistant-header-title">
+            {activeChatId ? chatHistory.find(c => c.id === activeChatId)?.title : 'AI Assistant'}
+          </h1>
+          
+          {/* Settings Menu */}
+          <div className="ai-assistant-header-settings">
+            <Tooltip content="Chat settings">
+              <Button
+                variant="glass"
+                size="sm"
+                iconOnly
+                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                className="ai-assistant-header-settings-btn"
+                aria-label="Chat settings"
+              >
+                <SettingsIcon />
+              </Button>
+            </Tooltip>
             
-            <main className="flex-1 p-4 sm:p-6 overflow-y-auto overflow-x-hidden space-y-6 min-h-0">
-                {messages.length === 0 && !isLoading && (
-                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-                        <div className="p-4 bg-primary/10 rounded-2xl">
-                            <SparklesIcon className="w-12 h-12 text-primary" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-foreground">AI Assistant</h2>
-                        <p className="text-muted-foreground max-w-md">
-                            Ask me anything about your contacts. I can help you search, filter, and analyze your contact database.
-                        </p>
-                    </div>
-                )}
-                {messages.map((msg, index) => (
-                    <div key={index} className={`flex items-start gap-3 ${msg.sender === 'user' ? 'justify-end' : ''} animate-slide-up-fade`}>
-                        {msg.sender === 'ai' && (
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 ring-2 ring-primary/20">
-                                <LogoIcon className="w-5 h-5 text-primary" />
-                            </div>
-                        )}
-                        <div className={cn(
-                          'p-4 rounded-2xl max-w-2xl shadow-sm',
-                          msg.sender === 'ai' 
-                            ? 'bg-muted rounded-tl-none' 
-                            : 'bg-primary text-primary-foreground rounded-br-none'
-                        )}>
-                            {renderMessageContent(msg)}
-                        </div>
-                        {msg.sender === 'user' && (
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 ring-2 ring-primary/20">
-                                <UsersIcon className="w-5 h-5 text-primary" />
-                            </div>
-                        )}
-                    </div>
-                ))}
-                {isLoading && (
-                    <div className="flex items-start gap-3 animate-fade-in">
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 ring-2 ring-primary/20">
-                            <LogoIcon className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="p-4 rounded-2xl bg-muted rounded-tl-none shadow-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                                <span className="h-2 w-2 bg-primary rounded-full animate-bounce"></span>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                <div ref={messagesEndRef} />
-            </main>
-
-            <footer className="p-4 sm:p-6 border-t border-border bg-card/50 backdrop-blur-sm space-y-4 flex-shrink-0">
-                {!activeChatId && !isLoading && messages.length <= 1 && (
-                    <div className="flex items-center justify-start gap-2 flex-wrap">
-                        {suggestionPrompts.map(prompt => (
-                            <Button
-                                key={prompt}
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setInput(prompt)}
-                                className="text-xs sm:text-sm"
-                            >
-                                {prompt}
-                            </Button>
-                        ))}
-                    </div>
-                )}
-                <div className="flex items-center gap-2">
-                    <Input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
-                        placeholder="Ask about your contacts..."
-                        disabled={isLoading || !chat}
-                        rightIcon={
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                onClick={handleSendMessage}
-                                disabled={isLoading || !input.trim() || !chat}
-                                aria-label="Send message"
-                            >
-                                <SendIcon className="w-5 h-5" />
-                            </Button>
-                        }
-                        fullWidth
-                    />
+            <AnimatePresence>
+              {isSettingsOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  className="ai-assistant-header-settings-menu"
+                >
+                  <div className="ai-assistant-header-settings-menu-content">
+                    <button
+                      onClick={() => {
+                        handleExportChat();
+                        setIsSettingsOpen(false);
+                      }}
+                      className="ai-assistant-header-settings-menu-item"
+                    >
+                      <ExportIcon />
+                      <span className="ai-assistant-header-settings-menu-item-text">Export Chat</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleClearConversation();
+                        setIsSettingsOpen(false);
+                      }}
+                      className="ai-assistant-header-settings-menu-item"
+                    >
+                      <ClearIcon />
+                      <span className="ai-assistant-header-settings-menu-item-text">Clear Conversation</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </header>
+        
+        <main className="ai-assistant-main-content">
+          {messages.length === 0 && !isLoading && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="ai-assistant-empty-state"
+            >
+              <div className="ai-assistant-empty-state-icon-wrapper">
+                <SparklesIcon className="ai-assistant-empty-state-icon" />
+              </div>
+              <h2 className="ai-assistant-empty-state-title">AI Assistant</h2>
+              <p className="ai-assistant-empty-state-description">
+                Ask me anything about your contacts. I can help you search, filter, and analyze your contact database.
+              </p>
+            </motion.div>
+          )}
+          
+          {messages.map((msg, index) => (
+            <motion.div 
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className={`ai-assistant-message ${msg.sender === 'user' ? 'ai-assistant-message--user' : ''}`}
+            >
+              {msg.sender === 'ai' && (
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="ai-assistant-message-avatar ai-assistant-message-avatar--ai"
+                >
+                  <LogoIcon className="ai-assistant-message-avatar-icon" />
+                </motion.div>
+              )}
+              
+              <div className={`ai-assistant-message-bubble ${msg.sender === 'ai' ? 'ai-assistant-message-bubble--ai' : 'ai-assistant-message-bubble--user'}`}>
+                {renderMessageContent(msg, index)}
+              </div>
+              
+              {msg.sender === 'user' && (
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="ai-assistant-message-avatar ai-assistant-message-avatar--user"
+                >
+                  <UsersIcon className="ai-assistant-message-avatar-icon" />
+                </motion.div>
+              )}
+            </motion.div>
+          ))}
+          
+          {isLoading && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="ai-assistant-message ai-assistant-message--loading"
+            >
+              <div className="ai-assistant-message-avatar ai-assistant-message-avatar--ai">
+                <LogoIcon className="ai-assistant-message-avatar-icon" />
+              </div>
+              <div className="ai-assistant-message-bubble ai-assistant-message-bubble--ai">
+                <div className="ai-assistant-message-loading-dots">
+                  <span className="ai-assistant-message-loading-dot" style={{ animationDelay: '-0.3s' }}></span>
+                  <span className="ai-assistant-message-loading-dot" style={{ animationDelay: '-0.15s' }}></span>
+                  <span className="ai-assistant-message-loading-dot"></span>
                 </div>
-            </footer>
-        </div>
+              </div>
+            </motion.div>
+          )}
+          <div ref={messagesEndRef} />
+        </main>
 
-        {/* Delete Confirmation Dialog */}
-        {chatToDelete && (
-            <div className="fixed inset-0 bg-backdrop z-50 flex items-center justify-center p-4">
-                <Card className="w-full max-w-md animate-fade-in">
-                    <CardContent className="p-6 space-y-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-error/10 rounded-lg">
-                                <AlertTriangleIcon className="w-6 h-6 text-error" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground">Delete Chat?</h3>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            Are you sure you want to delete this chat? This action cannot be undone.
-                        </p>
-                        <div className="flex items-center justify-end gap-2">
-                            <Button
-                                variant="outline"
-                                size="md"
-                                onClick={() => setChatToDelete(null)}
-                                disabled={isDeletingChat === chatToDelete}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                variant="primary"
-                                size="md"
-                                onClick={() => handleDeleteChat(chatToDelete)}
-                                disabled={isDeletingChat === chatToDelete}
-                                leftIcon={isDeletingChat === chatToDelete ? undefined : <DeleteIcon className="w-4 h-4" />}
-                            >
-                                {isDeletingChat === chatToDelete ? 'Deleting...' : 'Delete'}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+        <footer className="ai-assistant-footer">
+          {!activeChatId && !isLoading && messages.length <= 1 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="ai-assistant-suggestions"
+            >
+              {suggestionPrompts.map((prompt, idx) => (
+                <motion.div
+                  key={prompt}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.1 }}
+                >
+                  <Button
+                    variant="glass"
+                    size="sm"
+                    onClick={() => setInput(prompt)}
+                    className="ai-assistant-suggestion-btn"
+                  >
+                    {prompt}
+                  </Button>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+          
+          <div className="ai-assistant-input-wrapper">
+            {/* Input Toolbar */}
+            <div className="ai-assistant-input-toolbar">
+              <Tooltip content="Attach file">
+                <button
+                  className="ai-assistant-input-toolbar-btn"
+                  aria-label="Attach file"
+                >
+                  <AttachIcon className="ai-assistant-input-toolbar-icon" />
+                </button>
+              </Tooltip>
+              
+              <Tooltip content="Add emoji">
+                <button
+                  className="ai-assistant-input-toolbar-btn"
+                  aria-label="Add emoji"
+                >
+                  <EmojiIcon className="ai-assistant-input-toolbar-icon" />
+                </button>
+              </Tooltip>
+              
+              <Tooltip content="Voice input">
+                <button
+                  className="ai-assistant-input-toolbar-btn"
+                  aria-label="Voice input"
+                >
+                  <MicrophoneIcon className="ai-assistant-input-toolbar-icon" />
+                </button>
+              </Tooltip>
             </div>
+            
+            <Input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+              placeholder="Ask about your contacts..."
+              disabled={isLoading || !chat}
+              variant="glass-frosted"
+              rightIcon={
+                <Button
+                  variant="glass-primary"
+                  size="sm"
+                  iconOnly
+                  onClick={handleSendMessage}
+                  disabled={isLoading || !input.trim() || !chat}
+                  aria-label="Send message"
+                  className="ai-assistant-send-btn"
+                >
+                  <SendIcon />
+                </Button>
+              }
+              fullWidth
+              className="ai-assistant-input"
+            />
+          </div>
+        </footer>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AnimatePresence>
+        {chatToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="ai-assistant-delete-dialog-overlay"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <Card className="ai-assistant-delete-dialog">
+                <CardContent className="ai-assistant-delete-dialog-content">
+                  <div className="ai-assistant-delete-dialog-header">
+                    <div className="ai-assistant-delete-dialog-icon-wrapper">
+                      <AlertTriangleIcon className="ai-assistant-delete-dialog-icon" />
+                    </div>
+                    <h3 className="ai-assistant-delete-dialog-title">Delete Chat?</h3>
+                  </div>
+                  <p className="ai-assistant-delete-dialog-message">
+                    Are you sure you want to delete this chat? This action cannot be undone.
+                  </p>
+                  <div className="ai-assistant-delete-dialog-actions">
+                    <Button
+                      variant="glass"
+                      size="md"
+                      onClick={() => setChatToDelete(null)}
+                      disabled={isDeletingChat === chatToDelete}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="glass-primary"
+                      size="md"
+                      onClick={() => handleDeleteChat(chatToDelete)}
+                      disabled={isDeletingChat === chatToDelete}
+                      leftIcon={isDeletingChat === chatToDelete ? undefined : <DeleteIcon />}
+                      className="ai-assistant-delete-dialog-delete-btn"
+                    >
+                      {isDeletingChat === chatToDelete ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </motion.div>
         )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default AIAssistantPage;
-

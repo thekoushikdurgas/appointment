@@ -3,8 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DashboardIcon, ContactsIcon, SparklesIcon, PlansIcon, SettingsIcon } from '../icons/IconComponents';
-import { cn } from '../../utils/cn';
+import { DashboardIcon, ContactsIcon, BuildingIcon, SparklesIcon, PlansIcon, SettingsIcon } from '../icons/IconComponents';
 
 interface NavItem {
   path: string;
@@ -18,8 +17,8 @@ const BottomNav: React.FC = () => {
   const navItems: NavItem[] = [
     { path: '/dashboard', icon: <DashboardIcon />, label: 'Home' },
     { path: '/contacts', icon: <ContactsIcon />, label: 'Contacts' },
+    { path: '/companies', icon: <BuildingIcon />, label: 'Companies' },
     { path: '/ai-assistant', icon: <SparklesIcon />, label: 'AI' },
-    { path: '/plans', icon: <PlansIcon />, label: 'Plans' },
     { path: '/settings', icon: <SettingsIcon />, label: 'Settings' },
   ];
 
@@ -31,31 +30,27 @@ const BottomNav: React.FC = () => {
   };
 
   return (
-    <nav className="bottom-nav md:hidden">
+    <nav className="bottom-nav">
       <div className="bottom-nav-content">
         {navItems.map((item) => {
           const active = isActive(item.path);
+          const itemClassName = `bottom-nav-item${active ? ' bottom-nav-item-active' : ''}`;
+          const iconClassName = `bottom-nav-icon${active ? ' bottom-nav-icon-active' : ''}`;
+          const labelClassName = `bottom-nav-label${active ? ' bottom-nav-label-active' : ''}`;
+          const iconElementClassName = active ? 'bottom-nav-icon-element--active' : 'bottom-nav-icon-element';
+          
           return (
             <Link
               key={item.path}
               href={item.path}
-              className={cn(
-                'bottom-nav-item',
-                active && 'bottom-nav-item-active'
-              )}
+              className={itemClassName}
             >
-              <span className={cn(
-                'bottom-nav-icon',
-                active && 'bottom-nav-icon-active'
-              )}>
+              <span className={iconClassName}>
                 {React.cloneElement(item.icon, { 
-                  className: cn('w-6 h-6', active && 'text-primary') 
+                  className: iconElementClassName
                 })}
               </span>
-              <span className={cn(
-                'bottom-nav-label',
-                active && 'bottom-nav-label-active'
-              )}>
+              <span className={labelClassName}>
                 {item.label}
               </span>
               {active && (

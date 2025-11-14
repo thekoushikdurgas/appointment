@@ -1,10 +1,16 @@
-
-export type View = 'Dashboard' | 'Contacts' | 'Plans' | 'Settings' | 'History' | 'Orders' | 'AI Assistant';
+export type View = 'Dashboard' | 'Contacts' | 'Companies' | 'Plans' | 'Settings' | 'History' | 'Orders' | 'AI Assistant';
 export type AuthView = 'welcome' | 'login' | 'register';
 export type SettingsTab = 'Profile' | 'Appearance' | 'Billing' | 'Team' | 'Security' | 'Notifications';
 
+// Export company types
+export * from './company';
+
+// Export apollo types
+export * from './apollo';
+
 export interface Contact {
   id: number;
+  uuid?: string;
   name: string;
   email: string;
   company: string;

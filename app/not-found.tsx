@@ -8,25 +8,26 @@ import { Card } from '../components/ui/Card';
 export default function NotFound() {
   return (
     <div className="not-found-page">
-      <Card variant="elevated" padding="lg" className="max-w-md w-full text-center flex flex-col gap-6">
-        <div className="flex-center">
-          <div className="p-4 bg-primary/10 rounded-full">
-            <LogoIcon className="w-16 h-16 sm:w-20 sm:h-20 text-primary" />
+      <Card variant="elevated" padding="lg" className="not-found-card">
+        <div className="not-found-icon-wrapper">
+          <div className="not-found-icon-bg">
+            <LogoIcon className="not-found-icon" />
           </div>
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="not-found-content">
           <h1 className="not-found-title">404</h1>
-          <h2 className="text-xl sm:text-2xl font-semibold text-muted-foreground">Page Not Found</h2>
+          <h2 className="not-found-subtitle">Page Not Found</h2>
           <p className="not-found-description">
             The page you are looking for does not exist or has been moved.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <div className="not-found-actions">
           <Button
             asChild
             variant="primary"
             size="lg"
-            leftIcon={<HomeIcon className="w-5 h-5" />}
+            leftIcon={<HomeIcon className="not-found-action-icon" />}
+            className="not-found-action-btn"
           >
             <Link href="/">Return Home</Link>
           </Button>
@@ -34,8 +35,9 @@ export default function NotFound() {
             asChild
             variant="outline"
             size="lg"
-            leftIcon={<ArrowLeftIcon className="w-5 h-5" />}
+            leftIcon={<ArrowLeftIcon className="not-found-action-icon" />}
             onClick={() => window.history.back()}
+            className="not-found-action-btn"
           >
             <Link href="#" onClick={(e) => { e.preventDefault(); window.history.back(); }}>Go Back</Link>
           </Button>

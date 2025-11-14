@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { EditIcon, TrashIcon, ArchiveIcon, CheckCircleIcon } from '../icons/IconComponents';
 import { Tooltip } from '../ui/Tooltip';
-import { cn } from '../../utils/cn';
 
 interface SwipeAction {
   icon: React.ReactNode;
@@ -120,27 +119,27 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
   const getActionColor = (color?: string) => {
     switch (color) {
       case 'primary':
-        return 'bg-primary hover:bg-primary/90 text-primary-foreground';
+        return 'swipeable-row__action-btn--primary';
       case 'success':
-        return 'bg-success hover:bg-success/90 text-success-foreground';
+        return 'swipeable-row__action-btn--success';
       case 'warning':
-        return 'bg-warning hover:bg-warning/90 text-warning-foreground';
+        return 'swipeable-row__action-btn--warning';
       case 'destructive':
-        return 'bg-destructive hover:bg-destructive/90 text-destructive-foreground';
+        return 'swipeable-row__action-btn--destructive';
       default:
-        return 'bg-secondary hover:bg-secondary/80 text-foreground';
+        return 'swipeable-row__action-btn--default';
     }
   };
 
   return (
     <div
       ref={containerRef}
-      className={cn('relative overflow-hidden', className)}
+      className={`swipeable-row${className ? ' ' + className : ''}`}
     >
       {/* Left Actions */}
       {leftActions.length > 0 && (
         <div
-          className="absolute inset-y-0 left-0 flex items-center"
+          className="swipeable-row__left-actions"
           style={{
             width: maxSwipeDistance,
             transform: `translateX(${Math.min(0, offset - maxSwipeDistance)}px)`,
@@ -153,12 +152,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
                   action.onClick();
                   resetPosition();
                 }}
-                className={cn(
-                  'h-full px-4 flex items-center justify-center transition-colors',
-                  'icon-hover-scale',
-                  getActionColor(action.color),
-                  action.className
-                )}
+                className={`swipeable-row__action-btn ${getActionColor(action.color)}${action.className ? ' ' + action.className : ''}`}
                 aria-label={action.label}
               >
                 {action.icon}
@@ -171,7 +165,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
       {/* Right Actions */}
       {rightActions.length > 0 && (
         <div
-          className="absolute inset-y-0 right-0 flex items-center"
+          className="swipeable-row__right-actions"
           style={{
             width: maxSwipeDistance,
             transform: `translateX(${Math.max(0, offset + maxSwipeDistance)}px)`,
@@ -184,12 +178,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
                   action.onClick();
                   resetPosition();
                 }}
-                className={cn(
-                  'h-full px-4 flex items-center justify-center transition-colors',
-                  'icon-hover-scale',
-                  getActionColor(action.color),
-                  action.className
-                )}
+                className={`swipeable-row__action-btn ${getActionColor(action.color)}${action.className ? ' ' + action.className : ''}`}
                 aria-label={action.label}
               >
                 {action.icon}
@@ -203,7 +192,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
       <div
         ref={contentRef}
         {...(disabled ? {} : handlers)}
-        className="relative bg-card transition-transform duration-200 ease-out"
+        className="swipeable-row__content"
         style={{
           transform: `translateX(${offset}px)`,
           touchAction: 'pan-y', // Allow vertical scrolling
@@ -217,28 +206,28 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
 
 // Pre-configured action components for common use cases
 export const EditAction: SwipeAction = {
-  icon: <EditIcon className="w-5 h-5" />,
+  icon: <EditIcon className="swipeable-row__action-icon" />,
   label: 'Edit',
   onClick: () => {},
   color: 'primary',
 };
 
 export const DeleteAction: SwipeAction = {
-  icon: <TrashIcon className="w-5 h-5" />,
+  icon: <TrashIcon className="swipeable-row__action-icon" />,
   label: 'Delete',
   onClick: () => {},
   color: 'destructive',
 };
 
 export const ArchiveAction: SwipeAction = {
-  icon: <ArchiveIcon className="w-5 h-5" />,
+  icon: <ArchiveIcon className="swipeable-row__action-icon" />,
   label: 'Archive',
   onClick: () => {},
   color: 'warning',
 };
 
 export const CompleteAction: SwipeAction = {
-  icon: <CheckCircleIcon className="w-5 h-5" />,
+  icon: <CheckCircleIcon className="swipeable-row__action-icon" />,
   label: 'Mark as Complete',
   onClick: () => {},
   color: 'success',

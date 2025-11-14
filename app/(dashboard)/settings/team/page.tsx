@@ -13,31 +13,10 @@ import { Input } from '../../../../components/ui/Input';
 import { Select } from '../../../../components/ui/Select';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../../components/ui/Table';
 import { UsersIcon, MailIcon, CheckIcon, XIcon, PlusIcon, XMarkIcon, AlertTriangleIcon, SuccessIcon, ClockIcon } from '../../../../components/icons/IconComponents';
-import { cn } from '../../../../utils/cn';
 
 const RoleBadge: React.FC<{ role: User['role'] }> = ({ role }) => {
-  const roleConfig = {
-    Admin: {
-      className: "bg-error/20 text-error border-error/30",
-    },
-    Manager: {
-      className: "bg-warning/20 text-warning border-warning/30",
-    },
-    Member: {
-      className: "bg-info/20 text-info border-info/30",
-    },
-  };
-  
-  const config = roleConfig[role];
-  
-  const badgeClasses = {
-    Admin: "badge badge-error",
-    Manager: "badge badge-warning",
-    Member: "badge badge-primary",
-  };
-  
   return (
-    <span className={cn("badge inline-block border", badgeClasses[role])}>
+    <span className={`settings-team-role-badge settings-team-role-badge--${role.toLowerCase()}`}>
       {role}
     </span>
   );
@@ -221,21 +200,22 @@ const TeamSettings: React.FC = () => {
     const canManage = currentUser?.role === 'Admin' || currentUser?.role === 'Manager';
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-                <UsersIcon className="w-6 h-6 text-primary" />
+    <div className="settings-team-page">
+      <div className="settings-team-header">
+        <div className="settings-team-header-content">
+            <div className="settings-team-header-icon-wrapper">
+                <UsersIcon className="settings-team-header-icon" />
             </div>
             <div>
-                <h2 className="text-3xl font-bold text-foreground">Team Management</h2>
-                <p className="text-sm text-muted-foreground mt-1">Manage your team members and their account permissions</p>
+                <h2 className="settings-team-title">Team Management</h2>
+                <p className="settings-team-description">Manage your team members and their account permissions</p>
             </div>
         </div>
         {canManage && (
             <Button 
                 onClick={() => setShowInviteModal(true)}
-                leftIcon={<PlusIcon className="w-4 h-4" />}
+                leftIcon={<PlusIcon className="settings-team-invite-btn-icon" />}
+                className="settings-team-invite-btn"
             >
                 Invite User
             </Button>
@@ -243,38 +223,38 @@ const TeamSettings: React.FC = () => {
       </div>
 
       {errorMessage && (
-        <Card className="border-error/20 bg-error/5">
-            <CardContent className="flex items-center gap-3 p-4">
-                <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
-                <p className="text-sm text-error">{errorMessage}</p>
+        <Card className="settings-team-error-card">
+            <CardContent className="settings-team-error-card-content">
+                <AlertTriangleIcon className="settings-team-error-card-icon" />
+                <p className="settings-team-error-card-message">{errorMessage}</p>
             </CardContent>
         </Card>
       )}
       
       {successMessage && (
-        <Card className="border-success/20 bg-success/5">
-            <CardContent className="flex items-center gap-3 p-4">
-                <SuccessIcon className="w-5 h-5 text-success flex-shrink-0" />
-                <p className="text-sm text-success">{successMessage}</p>
+        <Card className="settings-team-success-card">
+            <CardContent className="settings-team-success-card-content">
+                <SuccessIcon className="settings-team-success-card-icon" />
+                <p className="settings-team-success-card-message">{successMessage}</p>
             </CardContent>
         </Card>
       )}
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="settings-team-table-content">
             {isLoading ? (
-                <div className="text-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                        <p className="text-muted-foreground">Loading users...</p>
+                <div className="settings-team-loading">
+                    <div className="settings-team-loading-content">
+                        <div className="settings-team-loading-spinner"></div>
+                        <p className="settings-team-loading-text">Loading users...</p>
                     </div>
                 </div>
             ) : users.length === 0 ? (
-                <div className="text-center py-12">
-                    <div className="flex flex-col items-center gap-3">
-                        <UsersIcon className="w-12 h-12 text-muted-foreground/50" />
-                        <p className="text-muted-foreground font-medium">No users found</p>
-                        <p className="text-sm text-muted-foreground/80">Team management may require admin access</p>
+                <div className="settings-team-empty">
+                    <div className="settings-team-empty-content">
+                        <UsersIcon className="settings-team-empty-icon" />
+                        <p className="settings-team-empty-title">No users found</p>
+                        <p className="settings-team-empty-description">Team management may require admin access</p>
                     </div>
                 </div>
             ) : (
@@ -282,15 +262,15 @@ const TeamSettings: React.FC = () => {
                     <TableHeader>
                         <TableRow>
                             <TableHead>
-                                <div className="flex items-center gap-2">
-                                    <UsersIcon className="w-4 h-4" />
+                                <div className="settings-team-table-head-content">
+                                    <UsersIcon className="settings-team-table-head-icon" />
                                     User
                                 </div>
                             </TableHead>
                             <TableHead>Role</TableHead>
-                            <TableHead className="hidden md:table-cell">
-                                <div className="flex items-center gap-2">
-                                    <ClockIcon className="w-4 h-4" />
+                            <TableHead className="settings-team-table-head--hidden-md">
+                                <div className="settings-team-table-head-content">
+                                    <ClockIcon className="settings-team-table-head-icon" />
                                     Last Login
                                 </div>
                             </TableHead>
@@ -302,19 +282,19 @@ const TeamSettings: React.FC = () => {
                         {users.map(user => (
                             <TableRow key={user.id}>
                                 <TableCell>
-                                    <div className="flex items-center gap-3">
+                                    <div className="settings-team-table-user">
                                         <Image 
                                             src={user.avatarUrl} 
                                             alt={user.name} 
-                                            className="w-10 h-10 rounded-full border-2 border-border" 
+                                            className="settings-team-table-user-avatar" 
                                             width={40}
                                             height={40}
                                         />
                                         <div>
-                                            <p className="font-semibold text-foreground">{user.name}</p>
-                                            <div className="flex items-center gap-1 mt-0.5">
-                                                <MailIcon className="w-3 h-3 text-muted-foreground" />
-                                                <p className="text-sm text-muted-foreground break-all">{user.email}</p>
+                                            <p className="settings-team-table-user-name">{user.name}</p>
+                                            <div className="settings-team-table-user-email">
+                                                <MailIcon className="settings-team-table-user-email-icon" />
+                                                <p className="settings-team-table-user-email-text">{user.email}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -322,27 +302,22 @@ const TeamSettings: React.FC = () => {
                                 <TableCell>
                                     <RoleBadge role={user.role} />
                                 </TableCell>
-                                <TableCell className="hidden md:table-cell">
-                                    <div className="flex items-center gap-2">
-                                        <ClockIcon className="w-4 h-4 text-muted-foreground" />
-                                        <span className="text-muted-foreground">{user.lastLogin}</span>
+                                <TableCell className="settings-team-table-cell--hidden-md">
+                                    <div className="settings-team-table-last-login">
+                                        <ClockIcon className="settings-team-table-last-login-icon" />
+                                        <span className="settings-team-table-last-login-text">{user.lastLogin}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <span className={cn(
-                                        "px-3 py-1 text-xs font-medium rounded-full inline-flex items-center gap-1.5 border",
-                                        user.isActive 
-                                            ? 'bg-success/20 text-success border-success/30' 
-                                            : 'bg-muted text-muted-foreground border-border'
-                                    )}>
+                                    <span className={`settings-team-table-status ${user.isActive ? 'settings-team-table-status--active' : 'settings-team-table-status--inactive'}`}>
                                         {user.isActive ? (
                                             <>
-                                                <CheckIcon className="w-3 h-3" />
+                                                <CheckIcon className="settings-team-table-status-icon" />
                                                 Active
                                             </>
                                         ) : (
                                             <>
-                                                <XIcon className="w-3 h-3" />
+                                                <XIcon className="settings-team-table-status-icon" />
                                                 Inactive
                                             </>
                                         )}
@@ -350,7 +325,7 @@ const TeamSettings: React.FC = () => {
                                 </TableCell>
                                 <TableCell>
                                     {canManage ? (
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                        <div className="settings-team-table-actions">
                                             <Select
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user.id, e.target.value as User['role'])}
@@ -359,22 +334,19 @@ const TeamSettings: React.FC = () => {
                                                     { value: 'Manager', label: 'Manager' },
                                                     { value: 'Member', label: 'Member' },
                                                 ]}
-                                                className="w-full sm:w-auto"
+                                                className="settings-team-table-role-select"
                                             />
                                             <Button
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleStatusToggle(user.id)}
-                                                className={cn(
-                                                    "whitespace-nowrap",
-                                                    user.isActive ? 'text-warning hover:text-warning' : 'text-success hover:text-success'
-                                                )}
+                                                className={`settings-team-table-action-btn ${user.isActive ? 'settings-team-table-action-btn--deactivate' : 'settings-team-table-action-btn--activate'}`}
                                             >
                                                 {user.isActive ? 'Deactivate' : 'Activate'}
                                             </Button>
                                         </div>
                                     ) : (
-                                        <span className='text-sm text-muted-foreground'>No actions</span>
+                                        <span className="settings-team-table-no-actions">No actions</span>
                                     )}
                                 </TableCell>
                             </TableRow>
@@ -386,10 +358,10 @@ const TeamSettings: React.FC = () => {
       </Card>
 
       {showInviteModal && (
-        <div className="fixed inset-0 bg-backdrop z-50 flex items-center justify-center p-4 animate-fade-in">
-          <Card className="w-full max-w-md animate-scale-in">
+        <div className="settings-team-invite-modal-overlay">
+          <Card className="settings-team-invite-modal">
             <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="settings-team-invite-modal-header">
                     <CardTitle>Invite New User</CardTitle>
                     <button
                         onClick={() => {
@@ -397,10 +369,10 @@ const TeamSettings: React.FC = () => {
                             setInviteEmail('');
                             setInviteErrors({});
                         }}
-                        className="p-1 rounded-md hover:bg-muted transition-colors"
+                        className="settings-team-invite-modal-close"
                         aria-label="Close"
                     >
-                        <XMarkIcon className="w-5 h-5 text-muted-foreground" />
+                        <XMarkIcon className="settings-team-invite-modal-close-icon" />
                     </button>
                 </div>
                 <CardDescription>
@@ -409,10 +381,10 @@ const TeamSettings: React.FC = () => {
             </CardHeader>
             <CardContent>
                 {inviteErrors.general && (
-                    <Card className="border-error/20 bg-error/5 mb-4">
-                        <CardContent className="flex items-center gap-3 p-3">
-                            <AlertTriangleIcon className="w-4 h-4 text-error flex-shrink-0" />
-                            <p className="text-sm text-error">{inviteErrors.general}</p>
+                    <Card className="settings-team-invite-error-card">
+                        <CardContent className="settings-team-invite-error-card-content">
+                            <AlertTriangleIcon className="settings-team-invite-error-card-icon" />
+                            <p className="settings-team-invite-error-card-message">{inviteErrors.general}</p>
                         </CardContent>
                     </Card>
                 )}
@@ -430,11 +402,11 @@ const TeamSettings: React.FC = () => {
                     }}
                     placeholder="user@example.com"
                     error={inviteErrors.email}
-                    leftIcon={<MailIcon className="w-4 h-4" />}
+                    leftIcon={<MailIcon className="settings-team-invite-input-icon" />}
                     fullWidth
                 />
             </CardContent>
-            <div className="px-6 pb-6 flex justify-end gap-3">
+            <div className="settings-team-invite-modal-footer">
                 <Button
                     variant="outline"
                     onClick={() => {
@@ -442,6 +414,7 @@ const TeamSettings: React.FC = () => {
                         setInviteEmail('');
                         setInviteErrors({});
                     }}
+                    className="settings-team-invite-modal-cancel-btn"
                 >
                     Cancel
                 </Button>
@@ -449,7 +422,8 @@ const TeamSettings: React.FC = () => {
                     onClick={handleInvite}
                     disabled={isInviting}
                     isLoading={isInviting}
-                    leftIcon={<MailIcon className="w-4 h-4" />}
+                    leftIcon={<MailIcon className="settings-team-invite-modal-send-icon" />}
+                    className="settings-team-invite-modal-send-btn"
                 >
                     Send Invite
                 </Button>

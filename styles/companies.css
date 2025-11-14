@@ -1,0 +1,871 @@
+/* Companies Page Specific Styles */
+/* Comprehensive stylesheet with glassmorphism, animations, and modern design patterns */
+
+/* ============================================
+   PAGE CONTAINER & BACKGROUND
+   ============================================ */
+
+.companies-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--muted) / 0.3) 50%,
+    hsl(var(--background)) 100%
+  );
+  position: relative;
+}
+
+.companies-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 0%,
+    hsl(var(--primary) / 0.1) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* ============================================
+   HEADER SECTION
+   ============================================ */
+
+.companies-header-glass {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.companies-header-glass:hover {
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.12);
+  border-color: hsl(var(--border) / 0.5);
+}
+
+.page-header {
+  position: relative;
+  z-index: 1;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: hsl(var(--foreground));
+  margin: 0;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--foreground)) 0%,
+    hsl(var(--primary)) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: 2rem;
+  }
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+  margin-top: 0.5rem;
+}
+
+/* ============================================
+   SEARCH BAR & FILTERS
+   ============================================ */
+
+.companies-search-bar-glass {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.75) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-md);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.companies-search-bar-glass:hover {
+  border-color: hsl(var(--border) / 0.5);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+}
+
+.companies-search-bar-glass:focus-within {
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+}
+
+.companies-filter-panel-glass {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.75) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   STATS CARDS
+   ============================================ */
+
+.companies-stats-card-glass {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.companies-stats-card-glass::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary) / 0.5) 100%
+  );
+}
+
+.companies-stats-card-glass:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.1);
+  border-color: hsl(var(--border) / 0.5);
+}
+
+/* ============================================
+   COMPANY CARDS (Mobile/Grid View)
+   ============================================ */
+
+.company-card-glass {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.company-card-hover {
+  cursor: pointer;
+}
+
+.company-card-hover:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.12);
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+.company-card-glow:hover {
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.12),
+    0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.company-card-border-gradient {
+  position: relative;
+}
+
+.company-card-border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-lg);
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.5) 0%,
+    hsl(var(--primary) / 0.1) 50%,
+    hsl(var(--primary) / 0.5) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.company-card-border-gradient:hover::before {
+  opacity: 1;
+}
+
+/* ============================================
+   TABLE STYLES
+   ============================================ */
+
+.companies-table-glass {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+}
+
+.companies-table-header-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.95) 0%,
+    hsl(var(--card) / 0.9) 100%
+  );
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 1px solid hsl(var(--border) / 0.3);
+}
+
+.companies-table-row-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.companies-table-row-hover:hover {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted) / 0.5) 0%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+  transform: translateX(2px);
+}
+
+.companies-table-cell-highlight {
+  position: relative;
+}
+
+.companies-table-cell-highlight::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary) / 0.5) 100%
+  );
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.companies-table-row-hover:hover .companies-table-cell-highlight::after {
+  width: 100%;
+}
+
+/* ============================================
+   BADGE STYLES
+   ============================================ */
+
+.company-industry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(37, 99, 235, 0.1) 100%
+  );
+  color: rgb(59, 130, 246);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  transition: all 0.2s ease;
+}
+
+.company-industry-badge:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.2) 0%,
+    rgba(37, 99, 235, 0.2) 100%
+  );
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
+}
+
+.company-tech-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(124, 58, 237, 0.1) 100%
+  );
+  color: rgb(139, 92, 246);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  transition: all 0.2s ease;
+}
+
+.company-tech-badge:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.2) 0%,
+    rgba(124, 58, 237, 0.2) 100%
+  );
+  border-color: rgba(139, 92, 246, 0.3);
+  transform: scale(1.05);
+}
+
+.company-size-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.1) 0%,
+    rgba(217, 119, 6, 0.1) 100%
+  );
+  color: rgb(245, 158, 11);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  transition: all 0.2s ease;
+}
+
+.company-funding-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.1) 0%,
+    rgba(5, 150, 105, 0.1) 100%
+  );
+  color: rgb(16, 185, 129);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  transition: all 0.2s ease;
+}
+
+.company-funding-badge:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.2) 0%,
+    rgba(5, 150, 105, 0.2) 100%
+  );
+  border-color: rgba(16, 185, 129, 0.3);
+  transform: scale(1.05);
+}
+
+/* ============================================
+   METRIC DISPLAYS
+   ============================================ */
+
+.company-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--muted) / 0.5) 0%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--border) / 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.company-metric-card:hover {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--muted) / 0.6) 0%,
+    hsl(var(--muted) / 0.4) 100%
+  );
+  border-color: hsl(var(--border) / 0.5);
+  transform: translateY(-2px);
+}
+
+.company-metric-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.2) 0%,
+    hsl(var(--primary) / 0.1) 100%
+  );
+  color: hsl(var(--primary));
+  transition: all 0.3s ease;
+}
+
+.company-metric-card:hover .company-metric-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.company-metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: hsl(var(--foreground));
+  line-height: 1;
+}
+
+.company-metric-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.company-metric-trend.positive {
+  color: rgb(16, 185, 129);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.company-metric-trend.negative {
+  color: rgb(239, 68, 68);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes company-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.company-fade-in-up {
+  animation: company-fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes company-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.company-slide-in-right {
+  animation: company-slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.company-scale-hover {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.company-scale-hover:hover {
+  transform: scale(1.05);
+}
+
+@keyframes company-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+  }
+}
+
+.company-glow-pulse {
+  animation: company-glow-pulse 2s ease-in-out infinite;
+}
+
+@keyframes company-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.company-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted) / 0.3) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+  background-size: 1000px 100%;
+  animation: company-shimmer 2s infinite linear;
+}
+
+/* Staggered animation delays */
+.company-fade-in-up:nth-child(1) { animation-delay: 0ms; }
+.company-fade-in-up:nth-child(2) { animation-delay: 50ms; }
+.company-fade-in-up:nth-child(3) { animation-delay: 100ms; }
+.company-fade-in-up:nth-child(4) { animation-delay: 150ms; }
+.company-fade-in-up:nth-child(5) { animation-delay: 200ms; }
+.company-fade-in-up:nth-child(6) { animation-delay: 250ms; }
+.company-fade-in-up:nth-child(7) { animation-delay: 300ms; }
+.company-fade-in-up:nth-child(8) { animation-delay: 350ms; }
+
+/* ============================================
+   LOADING SKELETON
+   ============================================ */
+
+.company-skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted) / 0.3) 0%,
+    hsl(var(--muted) / 0.5) 50%,
+    hsl(var(--muted) / 0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: company-shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+.company-skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.company-skeleton-title {
+  height: 1.5rem;
+  width: 60%;
+  margin-bottom: 0.75rem;
+}
+
+.company-skeleton-avatar {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+}
+
+/* ============================================
+   EMPTY STATE
+   ============================================ */
+
+.company-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.5) 0%,
+    hsl(var(--card) / 0.3) 100%
+  );
+  border-radius: var(--radius-lg);
+  border: 2px dashed hsl(var(--border) / 0.3);
+}
+
+.company-empty-state-icon {
+  width: 5rem;
+  height: 5rem;
+  margin-bottom: 1.5rem;
+  color: hsl(var(--muted-foreground));
+  opacity: 0.5;
+}
+
+.company-empty-state-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  margin-bottom: 0.5rem;
+}
+
+.company-empty-state-description {
+  font-size: 1rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1.5rem;
+  max-width: 32rem;
+}
+
+/* ============================================
+   TOAST NOTIFICATIONS
+   ============================================ */
+
+.company-toast {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.95) 0%,
+    hsl(var(--card) / 0.9) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.12);
+  padding: 1rem 1.5rem;
+  min-width: 300px;
+  animation: company-slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.company-toast.success {
+  border-left: 3px solid rgb(16, 185, 129);
+}
+
+.company-toast.error {
+  border-left: 3px solid rgb(239, 68, 68);
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 768px) {
+  .companies-header-glass {
+    padding: 1.5rem;
+  }
+  
+  .company-metric-value {
+    font-size: 1.5rem;
+  }
+  
+  .companies-stats-card-glass {
+    padding: 1rem;
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .company-fade-in-up,
+  .company-slide-in-right,
+  .company-scale-hover,
+  .company-glow-pulse,
+  .company-shimmer,
+  .company-card-hover,
+  .companies-table-row-hover {
+    animation: none;
+    transition: none;
+  }
+  
+  .company-card-hover:hover,
+  .companies-table-row-hover:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .companies-header-glass,
+  .companies-search-bar-glass,
+  .companies-filter-panel-glass,
+  .companies-stats-card-glass,
+  .company-card-glass,
+  .companies-table-glass {
+    border-width: 2px;
+    border-color: hsl(var(--border));
+  }
+}
+
+/* ============================================
+   DARK MODE OPTIMIZATIONS
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .companies-page::before {
+    background: radial-gradient(
+      ellipse 80% 50% at 50% 0%,
+      hsl(var(--primary) / 0.15) 0%,
+      transparent 100%
+    );
+  }
+  
+  .company-card-glow:hover {
+    box-shadow: 
+      0 12px 40px 0 rgba(0, 0, 0, 0.3),
+      0 0 30px rgba(59, 130, 246, 0.4);
+  }
+}
+
+/* ============================================
+   COMPANY DETAIL PAGE STYLES
+   ============================================ */
+
+.company-detail-page {
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--muted) / 0.3) 50%,
+    hsl(var(--background)) 100%
+  );
+  position: relative;
+}
+
+.company-detail-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 300px;
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 0%,
+    hsl(var(--primary) / 0.1) 0%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+/* Detail page header */
+.company-detail-header {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Detail page sections */
+.company-detail-section {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.company-detail-section:hover {
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.1);
+  border-color: hsl(var(--border) / 0.5);
+}
+
+/* Detail page info grid */
+.company-detail-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .company-detail-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Detail page error state */
+.company-detail-error {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--destructive) / 0.3);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Detail page loading state */
+.company-detail-loading {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--card) / 0.8) 0%,
+    hsl(var(--card) / 0.6) 100%
+  );
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border) / 0.3);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* Dark mode for detail page */
+@media (prefers-color-scheme: dark) {
+  .company-detail-page::before {
+    background: radial-gradient(
+      ellipse 80% 50% at 50% 0%,
+      hsl(var(--primary) / 0.15) 0%,
+      transparent 100%
+    );
+  }
+}
+

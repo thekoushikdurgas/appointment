@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { cn } from '../../utils/cn';
 
 export interface RadioProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;
@@ -27,21 +26,21 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
     const radioId = id || `radio-${Math.random().toString(36).substr(2, 9)}`;
     const hasError = !!error;
     
+    const wrapperClassName = `radio-wrapper${fullWidth ? ' radio-wrapper--full-width' : ''}`;
+    const inputClassName = `radio-input${hasError ? ' radio-input--error' : ''}${className ? ' ' + className : ''}`;
+    const dotClassName = `radio-dot${hasError ? ' radio-dot--error' : ''}`;
+    
     return (
-      <div className={cn('radio-wrapper', fullWidth && 'w-full')}>
+      <div className={wrapperClassName}>
         <div className="radio-container">
-          <div className="relative flex items-center">
+          <div className="radio-input-wrapper">
             {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
             <input
               ref={ref}
               type="radio"
               id={radioId}
               checked={checked}
-              className={cn(
-                'radio-input',
-                hasError && 'error',
-                className
-              )}
+              className={inputClassName}
               aria-invalid={hasError ? 'true' : 'false'}
               aria-describedby={
                 error ? `${radioId}-error` : helperText ? `${radioId}-helper` : undefined
@@ -50,10 +49,7 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
             />
             <div className="radio-circle">
               {checked && (
-                <div className={cn(
-                  'radio-dot',
-                  hasError && 'error'
-                )} />
+                <div className={dotClassName} />
               )}
             </div>
           </div>
@@ -69,7 +65,7 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
         {error && (
           <p
             id={`${radioId}-error`}
-            className="form-error-text ml-7"
+            className="form-error-text radio-error-text"
             role="alert"
           >
             {error}
@@ -78,7 +74,7 @@ export const Radio = React.forwardRef<HTMLInputElement, RadioProps>(
         {helperText && !error && (
           <p
             id={`${radioId}-helper`}
-            className="form-helper-text ml-7"
+            className="form-helper-text radio-helper-text"
           >
             {helperText}
           </p>

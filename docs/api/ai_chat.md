@@ -5,7 +5,7 @@ Complete API documentation for AI chat conversation endpoints, including listing
 ## Base URL
 
 ```txt
-http://localhost:8000
+http://54.88.182.69:8000
 ```
 
 For production, use:

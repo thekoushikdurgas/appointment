@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { Contact, ContactCreate } from '../../../types/index';
-import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, TagIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, MailIcon, PhoneIcon, BuildingIcon, MapPinIcon, CalendarIcon, UsersIcon, EditIcon, SuccessIcon, AlertTriangleIcon } from '../../../components/icons/IconComponents';
+import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, MailIcon, PhoneIcon, BuildingIcon, MapPinIcon, CalendarIcon, UsersIcon, EditIcon, SuccessIcon, AlertTriangleIcon, LoadingSpinner } from '../../../components/icons/IconComponents';
 import { useDebounce } from '../../../hooks/useDebounce';
 import { fetchContacts, fetchDistinctValues, fetchFieldValues, ContactFilters, createContact } from '../../../services/contact';
 import { uploadContactsCSV, getImportJobStatus, pollImportJobStatus, getImportErrors, ImportJob, ImportError } from '../../../services/import';
@@ -13,11 +13,33 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Textarea } from '../../../components/ui/Textarea';
 import { Select } from '../../../components/ui/Select';
-import { cn } from '../../../utils/cn';
+import { Tooltip } from '../../../components/ui/Tooltip';
+import { ContactCard } from '../../../components/contacts/ContactCard';
+import { MobileFilterDrawer } from '../../../components/contacts/MobileFilterDrawer';
+import { FilterDebugPanel } from '../../../components/contacts/FilterDebugPanel';
+import { filterLogger } from '../../../utils/filterLogger';
 
 type SortableColumn = 'name' | 'company' | 'title' | 'status' | 'emailStatus' | 'city' | 'state' | 'country' | 'industry' | 'phone' | 'created_at';
 type SortDirection = 'asc' | 'desc';
 
+/**
+ * Filters Interface
+ * 
+ * Comprehensive filter options for the contacts page, extending ContactFilters from the API service.
+ * Includes all 60+ API parameters organized by category.
+ * 
+ * **Filter Categories:**
+ * - Text Filters (31): Partial matching on names, emails, phones, URLs, etc.
+ * - Exact Match Filters (8): Exact matching on status, seniority, stage, and numeric values
+ * - Numeric Range Filters (8 pairs): Min/max ranges for employees, revenue, funding
+ * - Date Range Filters (4): ISO datetime ranges for created/updated timestamps
+ * - Location Filters (2): Full-text search on company and contact locations
+ * - Exclusion Filters (9): Array-based filters to exclude specific values
+ * 
+ * **Usage:**
+ * All string filters default to empty string (''), arrays default to [], and status/industry default to 'All'.
+ * Empty values and 'All' are filtered out when building API requests.
+ */
 interface Filters extends ContactFilters {
     status: Contact['status'] | 'All';
     emailStatus: 'All' | 'Verified' | 'Unverified' | 'Bounced';
@@ -27,6 +49,11 @@ interface Filters extends ContactFilters {
     city: string;
     state: string;
     country: string;
+    // Numeric exact match filters
+    employees_count: string;
+    annual_revenue: string;
+    total_funding: string;
+    // Numeric range filters
     employees_min: string;
     employees_max: string;
     annual_revenue_min: string;
@@ -97,6 +124,11 @@ const initialFilters: Filters = {
     city: '',
     state: '',
     country: '',
+    // Numeric exact match filters
+    employees_count: '',
+    annual_revenue: '',
+    total_funding: '',
+    // Numeric range filters
     employees_min: '',
     employees_max: '',
     annual_revenue_min: '',
@@ -164,11 +196,20 @@ const StatusBadge: React.FC<{ status: Contact['status'] }> = ({ status }) => {
     Customer: "badge badge-status-customer",
     Archived: "badge badge-status-archived",
   };
-  return <span className={statusClasses[status]}>{status}</span>;
+  const statusTooltips = {
+    Lead: "Potential customer - not yet converted",
+    Customer: "Active customer",
+    Archived: "Inactive or archived contact",
+  };
+  return (
+    <Tooltip content={statusTooltips[status]}>
+      <span className={statusClasses[status]}>{status}</span>
+    </Tooltip>
+  );
 };
 
 const EmailStatusBadge: React.FC<{ status: string | undefined }> = ({ status }) => {
-    if (!status) return <span className="text-muted-foreground">-</span>;
+    if (!status) return <span className="contacts-empty-value">-</span>;
     
     const statusClasses: { [key: string]: string } = {
       valid: "badge badge-email-valid",
@@ -176,10 +217,21 @@ const EmailStatusBadge: React.FC<{ status: string | undefined }> = ({ status }) 
       invalid: "badge badge-email-invalid",
     };
     
+    const statusTooltips: { [key: string]: string } = {
+      valid: "Email address has been verified",
+      unknown: "Email verification status unknown",
+      invalid: "Email address is invalid or bounced",
+    };
+    
     const statusClass = statusClasses[status] || "badge badge-primary";
     const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+    const tooltip = statusTooltips[status] || "Email status";
     
-    return <span className={statusClass}>{formattedStatus}</span>;
+    return (
+      <Tooltip content={tooltip}>
+        <span className={statusClass}>{formattedStatus}</span>
+      </Tooltip>
+    );
 };
 
 
@@ -195,7 +247,7 @@ const Highlight: React.FC<{ text: string | undefined; highlight: string }> = ({ 
     <span>
       {parts.map((part, i) =>
         regex.test(part) ? (
-          <mark key={i} className="bg-primary/20 text-primary rounded px-1 py-0.5">
+          <mark key={i} className="contacts-highlight">
             {part}
           </mark>
         ) : (
@@ -215,131 +267,13 @@ const DetailItem: React.FC<{label: string; value?: string | number | null}> = ({
     ) : null
 );
 
-const ContactDetailModal: React.FC<{ contact: Contact; onClose: () => void }> = ({ contact, onClose }) => {
-    const tags = contact.tags?.split(',').map(t => t.trim()).filter(Boolean) || [];
-    const technologies = contact.technologies?.split(',').map(t => t.trim()).filter(Boolean) || [];
-
-    return (
-        <div className="contact-modal-overlay" onClick={onClose}>
-            <div className="contact-modal-content" onClick={e => e.stopPropagation()}>
-                <header className="contact-modal-header">
-                    <div className="contact-modal-header-info">
-                        <Image src={contact.avatarUrl} alt={contact.name} className="contact-modal-avatar" width={64} height={64} />
-                        <div>
-                            <h2 className="text-2xl font-bold text-foreground">{contact.name}</h2>
-                            <p className="text-muted-foreground">{contact.title || 'No title specified'}</p>
-                            <p className="text-muted-foreground flex items-center gap-2"><OfficeBuildingIcon className="w-4 h-4" /> {contact.company}</p>
-                        </div>
-                    </div>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary" aria-label="Close contact details" title="Close contact details">
-                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
-                    </button>
-                </header>
-                
-                <main className="contact-modal-body">
-                    <div className="flex items-center gap-4">
-                        {contact.personLinkedinUrl && <a href={contact.personLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Person LinkedIn profile"><LinkedInIcon className="w-6 h-6"/></a>}
-                        {contact.twitterUrl && <a href={contact.twitterUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Twitter profile"><TwitterIcon className="w-6 h-6"/></a>}
-                        {contact.facebookUrl && <a href={contact.facebookUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Facebook profile"><FacebookIcon className="w-6 h-6"/></a>}
-                        {contact.website && <a href={contact.website} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Website"><GlobeAltIcon className="w-6 h-6"/></a>}
-                        {contact.companyLinkedinUrl && <a href={contact.companyLinkedinUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary" aria-label="Company LinkedIn profile"><LinkedInIcon className="w-6 h-6"/></a>}
-                    </div>
-
-                    <section className="contact-modal-section">
-                        <h3>Contact Information</h3>
-                        <div className="contact-modal-grid">
-                            <DetailItem label="Email" value={contact.email} />
-                            <DetailItem label="Phone" value={contact.phone} />
-                            <DetailItem label="Location" value={`${contact.city || ''} ${contact.state || ''} ${contact.country || ''}`.trim()} />
-                            <DetailItem label="Email Status" value={contact.emailStatus} />
-                            <DetailItem label="Primary Email Catch-All Status" value={contact.primaryEmailCatchAllStatus} />
-                            <DetailItem label="Departments" value={contact.departments} />
-                            <DetailItem label="Seniority" value={contact.seniority} />
-                            <DetailItem label="Stage" value={contact.stage} />
-                        </div>
-                    </section>
-                    
-                    <section className="contact-modal-section">
-                        <h3>Company Information</h3>
-                        <div className="contact-modal-grid">
-                            <DetailItem label="Company" value={contact.company} />
-                            <DetailItem label="Company Name for Emails" value={contact.companyNameForEmails} />
-                            <DetailItem label="Industry" value={contact.industry} />
-                            <DetailItem label="Employees" value={contact.employeesCount} />
-                            <DetailItem label="Company Phone" value={contact.companyPhone} />
-                            <DetailItem label="Company Address" value={contact.companyAddress} />
-                            <DetailItem label="Company Location" value={`${contact.companyCity || ''} ${contact.companyState || ''} ${contact.companyCountry || ''}`.trim()} />
-                            <DetailItem label="Annual Revenue" value={contact.annualRevenue ? `$${contact.annualRevenue.toLocaleString()}`: null} />
-                            <DetailItem label="Website" value={contact.website} />
-                        </div>
-                    </section>
-
-                    {(contact.totalFunding || contact.latestFunding || contact.latestFundingAmount || contact.lastRaisedAt) && (
-                    <section className="contact-modal-section">
-                        <h3>Funding Information</h3>
-                        <div className="contact-modal-grid">
-                                <DetailItem label="Total Funding" value={contact.totalFunding ? `$${contact.totalFunding.toLocaleString()}` : null} />
-                                <DetailItem label="Latest Funding" value={contact.latestFunding} />
-                                <DetailItem label="Latest Funding Amount" value={contact.latestFundingAmount ? `$${contact.latestFundingAmount.toLocaleString()}` : null} />
-                                <DetailItem label="Last Raised At" value={contact.lastRaisedAt} />
-                            </div>
-                        </section>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {tags.length > 0 && (
-                            <section className="contact-modal-section">
-                                <h3 className="flex items-center gap-2"><TagIcon className="w-5 h-5"/> Tags</h3>
-                                <div className="contact-modal-tags">
-                                    {tags.map(tag => (
-                                        <span key={tag} className="contact-modal-tag">{tag}</span>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-                        {technologies.length > 0 && (
-                            <section className="contact-modal-section">
-                                <h3>Technologies</h3>
-                                <div className="contact-modal-tags">
-                                    {technologies.map(tech => (
-                                        <span key={tech} className="contact-modal-tag">{tech}</span>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
-                    </div>
-
-                    {(contact.createdAt || contact.updatedAt) && (
-                        <section className="contact-modal-section">
-                            <h3>Timestamps</h3>
-                            <div className="contact-modal-grid">
-                                <DetailItem label="Created At" value={contact.createdAt ? new Date(contact.createdAt).toLocaleString() : null} />
-                                <DetailItem label="Updated At" value={contact.updatedAt ? new Date(contact.updatedAt).toLocaleString() : null} />
-                            </div>
-                        </section>
-                    )}
-                    
-                    {contact.notes && (
-                        <section className="contact-modal-section">
-                            <h3>Notes</h3>
-                            <div className="bg-secondary p-4 rounded-lg border border-border">
-                                <p>{contact.notes}</p>
-                            </div>
-                        </section>
-                    )}
-                </main>
-            </div>
-        </div>
-    );
-};
-
-const FilterInput: React.FC<{ label: string; name: keyof Filters, value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string }> = 
-({ label, name, value, onChange, placeholder }) => {
+const FilterInput: React.FC<{ label: string; name: keyof Filters, value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; type?: string }> = 
+({ label, name, value, onChange, placeholder, type = 'text' }) => {
     const nameString = String(name);
     return (
-        <div>
+        <div className="filter-input-wrapper">
             <label htmlFor={nameString} className="form-label">{label}</label>
-            <input id={nameString} name={nameString} type="text" value={value} onChange={onChange} placeholder={placeholder} className="input text-sm"/>
+            <input id={nameString} name={nameString} type={type} value={value} onChange={onChange} placeholder={placeholder} className="input" style={{ fontSize: 'var(--font-size-sm)' }}/>
         </div>
     );
 };
@@ -349,12 +283,12 @@ const FilterRangeInput: React.FC<{ label: string; minName: keyof Filters, minVal
     const minNameString = String(minName);
     const maxNameString = String(maxName);
     return (
-        <div>
+        <div className="filter-input-wrapper">
             <label className="form-label">{label}</label>
-            <div className="flex items-center gap-2">
-                <input name={minNameString} type="number" value={minValue} onChange={onChange} placeholder="Min" className="input text-sm"/>
-                <span className="text-muted-foreground">-</span>
-                <input name={maxNameString} type="number" value={maxValue} onChange={onChange} placeholder="Max" className="input text-sm"/>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <input name={minNameString} type="number" value={minValue} onChange={onChange} placeholder="Min" className="input" style={{ fontSize: 'var(--font-size-sm)' }}/>
+                <span style={{ color: 'hsl(var(--muted-foreground))' }}>-</span>
+                <input name={maxNameString} type="number" value={maxValue} onChange={onChange} placeholder="Max" className="input" style={{ fontSize: 'var(--font-size-sm)' }}/>
             </div>
         </div>
     );
@@ -421,29 +355,31 @@ const FilterDateRange: React.FC<{
     };
     
     return (
-        <div>
+        <div className="filter-input-wrapper">
             <label className="form-label">{label}</label>
-            <div className="flex flex-col gap-2">
+            <div className="filter-date-range-wrapper">
                 <div>
-                    <label htmlFor={`${afterNameString}_input`} className="text-xs text-muted-foreground mb-1">From</label>
+                    <label htmlFor={`${afterNameString}_input`} className="filter-input-label filter-input-label--from">From</label>
                     <input 
                         id={`${afterNameString}_input`}
                         name={afterNameString} 
                         type="datetime-local" 
                         value={isoToLocal(afterValue)} 
                         onChange={handleChange}
-                        className="input text-sm"
+                        className="input"
+                        style={{ fontSize: 'var(--font-size-sm)' }}
                     />
                 </div>
                 <div>
-                    <label htmlFor={`${beforeNameString}_input`} className="text-xs text-muted-foreground mb-1">To</label>
+                    <label htmlFor={`${beforeNameString}_input`} className="filter-input-label filter-input-label--to">To</label>
                     <input 
                         id={`${beforeNameString}_input`}
                         name={beforeNameString} 
                         type="datetime-local" 
                         value={isoToLocal(beforeValue)} 
                         onChange={handleChange}
-                        className="input text-sm"
+                        className="input"
+                        style={{ fontSize: 'var(--font-size-sm)' }}
                     />
                 </div>
             </div>
@@ -488,22 +424,22 @@ const FilterMultiSelect: React.FC<{
     };
 
     return (
-        <div>
+        <div className="filter-multi-select-wrapper">
             <label htmlFor={nameString} className="form-label">{label}</label>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="filter-multi-select-tags">
                 {values.map((value, index) => (
                     <span
                         key={index}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-secondary text-foreground rounded-md text-sm"
+                        className="filter-multi-select-tag"
                     >
                         <span>{value}</span>
                         <button
                             type="button"
                             onClick={() => onRemove(name, value)}
-                            className="hover:text-destructive focus:outline-none"
+                            className="filter-multi-select-tag-remove"
                             aria-label={`Remove ${value}`}
                         >
-                            <XMarkIcon className="w-3 h-3" />
+                            <XMarkIcon className="filter-multi-select-tag-icon" />
                         </button>
                     </span>
                 ))}
@@ -517,7 +453,8 @@ const FilterMultiSelect: React.FC<{
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
                 placeholder={placeholder || 'Type and press Enter to add'}
-                className="input text-sm"
+                className="input"
+                style={{ fontSize: 'var(--font-size-sm)' }}
             />
         </div>
     );
@@ -556,7 +493,7 @@ const FilterSidebar: React.FC<{
                     title={`${isOpen ? 'Collapse' : 'Expand'} ${title} section`}
                 >
                     <span>{title}</span>
-                    {isOpen ? <ChevronUpIcon className="w-5 h-5 text-muted-foreground"/> : <ChevronDownIcon className="w-5 h-5 text-muted-foreground"/>}
+                    {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
                 </button>
                 {isOpen && <div className="filter-accordion-content">{children}</div>}
             </div>
@@ -583,7 +520,7 @@ const FilterSidebar: React.FC<{
         <aside className="filter-sidebar">
             <div className="filter-sidebar-header">
                 <div className="filter-sidebar-title">
-                    <FilterIcon className="w-5 h-5 text-primary" />
+                    <FilterIcon />
                     <h2>Filters</h2>
                     {activeFilterCount > 0 && (
                         <span className="filter-sidebar-badge">
@@ -604,7 +541,7 @@ const FilterSidebar: React.FC<{
                 <AccordionSection title="Status & Stage" id="status">
                     <div>
                         <label htmlFor="status" className="form-label">Contact Status (Stage)</label>
-                        <select id="status" name="status" value={filters.status} onChange={onFilterChange} className="select text-sm">
+                        <select id="status" name="status" value={filters.status} onChange={onFilterChange} className="select">
                             <option value="All">All Statuses</option>
                             <option value="Lead">Lead</option>
                             <option value="Customer">Customer</option>
@@ -613,7 +550,7 @@ const FilterSidebar: React.FC<{
                     </div>
                     <div>
                         <label htmlFor="emailStatus" className="form-label">Email Status</label>
-                        <select id="emailStatus" name="emailStatus" value={filters.emailStatus} onChange={onFilterChange} className="select text-sm">
+                        <select id="emailStatus" name="emailStatus" value={filters.emailStatus} onChange={onFilterChange} className="select">
                             <option value="All">All Email Statuses</option>
                             <option value="valid">Verified</option>
                             <option value="unknown">Unverified</option>
@@ -645,7 +582,7 @@ const FilterSidebar: React.FC<{
                             name="title" 
                             value={filters.title} 
                             onChange={onFilterChange} 
-                            className="select text-sm"
+                            className="select"
                             disabled={isLoadingTitles}
                         >
                             <option value="">All Titles</option>
@@ -666,7 +603,7 @@ const FilterSidebar: React.FC<{
                 <AccordionSection title="Company Info" id="company">
                     <div>
                         <label htmlFor="industry" className="form-label">Industry</label>
-                        <select id="industry" name="industry" value={filters.industry} onChange={onFilterChange} className="select text-sm">
+                        <select id="industry" name="industry" value={filters.industry} onChange={onFilterChange} className="select">
                              <option value="All">All Industries</option>
                             {uniqueIndustries.map(industry => (
                                 <option key={industry} value={industry}>
@@ -682,7 +619,7 @@ const FilterSidebar: React.FC<{
                             name="company_name_for_emails" 
                             value={filters.company_name_for_emails} 
                             onChange={onFilterChange} 
-                            className="select text-sm"
+                            className="select"
                             disabled={isLoadingCompanies}
                         >
                             <option value="">All Companies</option>
@@ -699,12 +636,52 @@ const FilterSidebar: React.FC<{
                     </div>
                     <FilterInput label="Company Address" name="company_address" value={filters.company_address} onChange={onFilterChange} placeholder="e.g. 123 Main St" />
                     <FilterInput label="Company Phone" name="company_phone" value={filters.company_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                    <FilterRangeInput label="Employees" minName="employees_min" minValue={filters.employees_min} maxName="employees_max" maxValue={filters.employees_max} onChange={onFilterChange} />
-                    <FilterRangeInput label="Annual Revenue" minName="annual_revenue_min" minValue={filters.annual_revenue_min} maxName="annual_revenue_max" maxValue={filters.annual_revenue_max} onChange={onFilterChange} />
+                    
+                    {/* Employees Filters */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <h4 className="filter-section-title">Employees</h4>
+                        <FilterInput 
+                            label="Exact Count" 
+                            name="employees_count" 
+                            value={filters.employees_count} 
+                            onChange={onFilterChange} 
+                            placeholder="e.g. 100" 
+                            type="number"
+                        />
+                        <FilterRangeInput 
+                            label="Range" 
+                            minName="employees_min" 
+                            minValue={filters.employees_min} 
+                            maxName="employees_max" 
+                            maxValue={filters.employees_max} 
+                            onChange={onFilterChange} 
+                        />
+                    </div>
+                    
+                    {/* Annual Revenue Filters */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <h4 className="filter-section-title">Annual Revenue ($)</h4>
+                        <FilterInput 
+                            label="Exact Amount" 
+                            name="annual_revenue" 
+                            value={filters.annual_revenue} 
+                            onChange={onFilterChange} 
+                            placeholder="e.g. 10000000" 
+                            type="number"
+                        />
+                        <FilterRangeInput 
+                            label="Range" 
+                            minName="annual_revenue_min" 
+                            minValue={filters.annual_revenue_min} 
+                            maxName="annual_revenue_max" 
+                            maxValue={filters.annual_revenue_max} 
+                            onChange={onFilterChange} 
+                        />
+                    </div>
                 </AccordionSection>
 
                 <AccordionSection title="Location" id="location">
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-2">Location Search</h4>
+                    <h4 className="filter-section-title">Location Search</h4>
                     <FilterInput 
                         label="Company Location" 
                         name="company_location" 
@@ -719,18 +696,38 @@ const FilterSidebar: React.FC<{
                         onChange={onFilterChange} 
                         placeholder="Search contact location metadata"
                     />
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 mt-4">Person Location</h4>
+                    <h4 className="filter-section-title filter-section-title--spaced">Person Location</h4>
                     <FilterInput label="City" name="city" value={filters.city} onChange={onFilterChange} />
                     <FilterInput label="State" name="state" value={filters.state} onChange={onFilterChange} />
                     <FilterInput label="Country" name="country" value={filters.country} onChange={onFilterChange} />
-                    <h4 className="text-xs font-semibold text-muted-foreground mb-2 mt-4">Company Location</h4>
+                    <h4 className="filter-section-title filter-section-title--spaced">Company Location</h4>
                     <FilterInput label="Company City" name="company_city" value={filters.company_city} onChange={onFilterChange} />
                     <FilterInput label="Company State" name="company_state" value={filters.company_state} onChange={onFilterChange} />
                     <FilterInput label="Company Country" name="company_country" value={filters.company_country} onChange={onFilterChange} />
                 </AccordionSection>
 
                 <AccordionSection title="Funding & Revenue" id="funding">
-                    <FilterRangeInput label="Total Funding" minName="total_funding_min" minValue={filters.total_funding_min} maxName="total_funding_max" maxValue={filters.total_funding_max} onChange={onFilterChange} />
+                    {/* Total Funding Filters */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <h4 className="filter-section-title">Total Funding ($)</h4>
+                        <FilterInput 
+                            label="Exact Amount" 
+                            name="total_funding" 
+                            value={filters.total_funding} 
+                            onChange={onFilterChange} 
+                            placeholder="e.g. 50000000" 
+                            type="number"
+                        />
+                        <FilterRangeInput 
+                            label="Range" 
+                            minName="total_funding_min" 
+                            minValue={filters.total_funding_min} 
+                            maxName="total_funding_max" 
+                            maxValue={filters.total_funding_max} 
+                            onChange={onFilterChange} 
+                        />
+                    </div>
+                    
                     <FilterRangeInput label="Latest Funding Amount" minName="latest_funding_amount_min" minValue={filters.latest_funding_amount_min} maxName="latest_funding_amount_max" maxValue={filters.latest_funding_amount_max} onChange={onFilterChange} />
                     <FilterInput label="Latest Funding" name="latest_funding" value={filters.latest_funding} onChange={onFilterChange} placeholder="e.g. Series B" />
                     <FilterInput label="Last Raised At" name="last_raised_at" value={filters.last_raised_at} onChange={onFilterChange} placeholder="e.g. 2023-06-01" />
@@ -769,7 +766,7 @@ const FilterSidebar: React.FC<{
                 </AccordionSection>
 
                 <AccordionSection title="Exclusion Filters" id="exclusion">
-                    <p className="text-xs text-muted-foreground mb-3">Exclude contacts matching any of these values</p>
+                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'hsl(var(--muted-foreground))', marginBottom: '0.75rem' }}>Exclude contacts matching any of these values</p>
                     <FilterMultiSelect
                         label="Exclude Titles"
                         name="exclude_titles"
@@ -839,15 +836,15 @@ const FilterSidebar: React.FC<{
                 <AccordionSection title="Advanced Filters" id="advanced">
                     <div>
                         <label htmlFor="stage" className="form-label">Stage</label>
-                        <input id="stage" name="stage" type="text" value={filters.stage} onChange={onFilterChange} placeholder="e.g. lead, customer" className="input text-sm"/>
+                        <input id="stage" name="stage" type="text" value={filters.stage} onChange={onFilterChange} placeholder="e.g. lead, customer" className="input"/>
                     </div>
                     <div>
                         <label htmlFor="seniority" className="form-label">Seniority</label>
-                        <input id="seniority" name="seniority" type="text" value={filters.seniority} onChange={onFilterChange} placeholder="e.g. c-level, director" className="input text-sm"/>
+                        <input id="seniority" name="seniority" type="text" value={filters.seniority} onChange={onFilterChange} placeholder="e.g. c-level, director" className="input"/>
                     </div>
                     <div>
                         <label htmlFor="primary_email_catch_all_status" className="form-label">Primary Email Catch-All Status</label>
-                        <input id="primary_email_catch_all_status" name="primary_email_catch_all_status" type="text" value={filters.primary_email_catch_all_status} onChange={onFilterChange} placeholder="e.g. valid, invalid" className="input text-sm"/>
+                        <input id="primary_email_catch_all_status" name="primary_email_catch_all_status" type="text" value={filters.primary_email_catch_all_status} onChange={onFilterChange} placeholder="e.g. valid, invalid" className="input"/>
                     </div>
                     <FilterMultiSelect
                         label="Exclude Company IDs"
@@ -873,15 +870,15 @@ const FilterPill: React.FC<{
 }> = ({ label, value, onRemove }) => {
     const displayValue = Array.isArray(value) ? value.join(', ') : value;
     return (
-        <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded text-xs">
-            <span className="font-medium">{label}:</span>
-            <span className="truncate max-w-[150px]" title={displayValue}>{displayValue}</span>
+        <span className="filter-pill">
+            <span className="filter-pill__label">{label}:</span>
+            <span className="filter-pill__value" title={displayValue}>{displayValue}</span>
             <button
                 onClick={onRemove}
-                className="hover:text-primary/80 focus:outline-none"
+                className="filter-pill__remove"
                 aria-label={`Remove ${label} filter`}
             >
-                <XMarkIcon className="w-3 h-3" />
+                <XMarkIcon className="filter-pill__icon" />
             </button>
         </span>
     );
@@ -927,8 +924,8 @@ const FilterSummaryBar: React.FC<{
     if (activeFilters.length === 0) return null;
 
     return (
-        <div className="flex flex-wrap items-center gap-2 p-3 bg-secondary/50 rounded-lg border border-border mb-4">
-            <span className="text-xs text-muted-foreground font-medium">
+        <div className="filter-summary-bar">
+            <span className="filter-summary-bar__label">
                 Active Filters ({activeFilters.length}):
             </span>
             {activeFilters.map((filter) => (
@@ -943,7 +940,7 @@ const FilterSummaryBar: React.FC<{
                 variant="ghost"
                 size="sm"
                 onClick={onClearAll}
-                className="ml-auto text-xs"
+                className="filter-summary-bar__clear"
             >
                 Clear All
             </Button>
@@ -1004,22 +1001,22 @@ const ColumnTogglePanel: React.FC<{
         <div className="column-toggle-overlay" onClick={onClose}>
             <div className="column-toggle-panel" onClick={e => e.stopPropagation()}>
                 <div className="column-toggle-header">
-                    <h3 className="text-lg font-semibold text-foreground">Configure Columns</h3>
+                    <h3 className="column-toggle-header__title">Configure Columns</h3>
                     <button
                         onClick={onClose}
-                        className="p-1 rounded hover:bg-secondary"
+                        className="column-toggle-header__close"
                         aria-label="Close column configuration"
                     >
-                        <XMarkIcon className="w-5 h-5 text-muted-foreground" />
+                        <XMarkIcon className="column-toggle-header__close-icon" />
                     </button>
                 </div>
                 
                 <div className="column-toggle-body">
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
-                        <span className="text-sm text-muted-foreground">
+                    <div className="column-toggle-body__header">
+                        <span className="column-toggle-body__count">
                             Showing {visibleCount} of {columns.length} columns
                         </span>
-                        <div className="flex gap-2">
+                        <div className="column-toggle-body__actions">
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -1040,15 +1037,15 @@ const ColumnTogglePanel: React.FC<{
                     {Object.entries(columnsByCategory).map(([category, cols]) => {
                         if (cols.length === 0) return null;
                         return (
-                            <div key={category} className="mb-4">
-                                <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">
+                            <div key={category} className="column-toggle-body__category">
+                                <h4 className="column-toggle-body__category-title">
                                     {category}
                                 </h4>
-                                <div className="space-y-2">
+                                <div className="column-toggle-body__category-list">
                                     {cols.map(col => (
                                         <label
                                             key={col.id}
-                                            className="flex items-center gap-2 cursor-pointer hover:bg-secondary/50 p-2 rounded"
+                                            className="column-toggle-body__category-item"
                                         >
                                             <input
                                                 type="checkbox"
@@ -1056,7 +1053,7 @@ const ColumnTogglePanel: React.FC<{
                                                 onChange={() => onToggleColumn(col.id)}
                                                 className="checkbox-input"
                                             />
-                                            <span className="text-sm text-foreground">{col.label}</span>
+                                            <span className="column-toggle-body__category-item-label">{col.label}</span>
                                         </label>
                                     ))}
                                 </div>
@@ -1066,7 +1063,7 @@ const ColumnTogglePanel: React.FC<{
                 </div>
 
                 <div className="column-toggle-footer">
-                    <Button variant="primary" onClick={onClose} className="w-full">
+                    <Button variant="primary" onClick={onClose} className="column-toggle-footer__button">
                         Apply Changes
                     </Button>
                 </div>
@@ -1087,17 +1084,17 @@ const ImportJobStatus: React.FC<{
     
     return (
         <div className="import-job-status">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-foreground">Import Status</h3>
-                <button onClick={onClose} className="p-1 rounded hover:bg-secondary" aria-label="Close">
-                    <XMarkIcon className="w-5 h-5 text-muted-foreground" />
+            <div className="import-job-status__header">
+                <h3 className="import-job-status__title">Import Status</h3>
+                <button onClick={onClose} className="import-job-status__close" aria-label="Close">
+                    <XMarkIcon className="import-job-status__close-icon" />
                 </button>
             </div>
             
-            <div className="space-y-4">
-                <div>
-                    <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-foreground">Status</span>
+            <div className="import-job-status__content">
+                <div className="import-job-status__section">
+                    <div className="import-job-status__section-header">
+                        <span className="import-job-status__section-label">Status</span>
                         <span className={`badge ${
                             job.status === 'completed' ? 'badge-status-customer' :
                             job.status === 'failed' ? 'badge-status-archived' :
@@ -1108,40 +1105,40 @@ const ImportJobStatus: React.FC<{
                         </span>
                     </div>
                     {job.message && (
-                        <p className="text-sm text-muted-foreground">{job.message}</p>
+                        <p className="import-job-status__message">{job.message}</p>
                     )}
                 </div>
 
                 {job.status === 'running' && (
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-foreground">Progress</span>
-                            <span className="text-sm text-muted-foreground">
+                    <div className="import-job-status__progress">
+                        <div className="import-job-status__progress-header">
+                            <span className="import-job-status__section-label">Progress</span>
+                            <span className="import-job-status__section-value">
                                 {job.success_count + job.error_count} / {job.total_rows}
                             </span>
                         </div>
-                        <div className="w-full bg-secondary rounded-full h-2">
+                        <div className="import-job-status__progress-bar-container">
                             <div 
-                                className="bg-primary h-2 rounded-full transition-all duration-300"
+                                className="import-job-status__progress-bar"
                                 style={{ width: `${progress}%` }}
                             />
                         </div>
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <p className="text-xs text-muted-foreground mb-1">Total Rows</p>
-                        <p className="text-lg font-semibold text-foreground">{job.total_rows.toLocaleString()}</p>
+                <div className="import-job-status__stats">
+                    <div className="import-job-status__stat">
+                        <p className="import-job-status__stat-label">Total Rows</p>
+                        <p className="import-job-status__stat-value">{job.total_rows.toLocaleString()}</p>
                     </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground mb-1">Success</p>
-                        <p className="text-lg font-semibold text-success">{job.success_count.toLocaleString()}</p>
+                    <div className="import-job-status__stat">
+                        <p className="import-job-status__stat-label">Success</p>
+                        <p className="import-job-status__stat-value import-job-status__stat-value--success">{job.success_count.toLocaleString()}</p>
                     </div>
                     {job.error_count > 0 && (
-                        <div>
-                            <p className="text-xs text-muted-foreground mb-1">Errors</p>
-                            <p className="text-lg font-semibold text-destructive">{job.error_count.toLocaleString()}</p>
+                        <div className="import-job-status__stat">
+                            <p className="import-job-status__stat-label">Errors</p>
+                            <p className="import-job-status__stat-value import-job-status__stat-value--destructive">{job.error_count.toLocaleString()}</p>
                         </div>
                     )}
                 </div>
@@ -1151,19 +1148,19 @@ const ImportJobStatus: React.FC<{
                         variant="outline"
                         size="sm"
                         onClick={onViewErrors}
-                        className="w-full"
+                        className="import-job-status__view-errors"
                     >
                         View Errors ({job.error_count})
                     </Button>
                 )}
 
                 {job.started_at && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="import-job-status__timestamp">
                         Started: {new Date(job.started_at).toLocaleString()}
                     </div>
                 )}
                 {job.finished_at && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="import-job-status__timestamp">
                         Finished: {new Date(job.finished_at).toLocaleString()}
                     </div>
                 )}
@@ -1261,91 +1258,86 @@ const ImportModal: React.FC<{
 
     return (
         <div className="contact-modal-overlay" onClick={onClose}>
-            <div className="contact-modal-content max-w-2xl" onClick={e => e.stopPropagation()}>
+            <div className="contact-modal-content contact-modal-content--medium" onClick={e => e.stopPropagation()}>
                 <header className="contact-modal-header">
-                    <h2 className="text-2xl font-bold text-foreground">Import Contacts</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary" aria-label="Close">
-                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
+                    <h2 className="contact-modal-header__title">Import Contacts</h2>
+                    <button onClick={onClose} className="contact-modal-header__close" aria-label="Close">
+                        <XMarkIcon className="contact-modal-header__close-icon"/>
                     </button>
                 </header>
                 
                 <main className="contact-modal-body">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="form-label mb-2">Upload CSV File</label>
-                            <div
-                                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                                    isDragging 
-                                        ? 'border-primary bg-primary/5' 
-                                        : 'border-border hover:border-primary/50'
-                                }`}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                            >
-                                {file ? (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center justify-center gap-2">
-                                            <span className="text-sm font-medium text-foreground">{file.name}</span>
-                                            <button
-                                                onClick={() => setFile(null)}
-                                                className="p-1 rounded hover:bg-secondary"
-                                                aria-label="Remove file"
-                                            >
-                                                <XMarkIcon className="w-4 h-4 text-muted-foreground" />
-                                            </button>
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">
-                                            {(file.size / 1024 / 1024).toFixed(2)} MB
-                                        </p>
+                    <div className="contact-modal-body__section">
+                        <label className="contact-modal-body__label">Upload CSV File</label>
+                        <div
+                            className={`contact-modal-body__dropzone ${isDragging ? 'contact-modal-body__dropzone--dragging' : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
+                            {file ? (
+                                <div className="contact-modal-body__dropzone-content">
+                                    <div className="contact-modal-body__dropzone-file">
+                                        <span className="contact-modal-body__dropzone-file-name">{file.name}</span>
+                                        <button
+                                            onClick={() => setFile(null)}
+                                            className="contact-modal-body__dropzone-file-remove"
+                                            aria-label="Remove file"
+                                        >
+                                            <XMarkIcon className="contact-modal-body__dropzone-file-remove-icon" />
+                                        </button>
                                     </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">
-                                            Drag and drop a CSV file here, or click to browse
-                                        </p>
-                                        <input
-                                            type="file"
-                                            accept=".csv,text/csv,application/vnd.ms-excel"
-                                            onChange={handleFileInputChange}
-                                            className="hidden"
-                                            id="file-upload"
-                                        />
-                                        <label htmlFor="file-upload" className="cursor-pointer">
-                                            <span className="inline-block">
-                                                <Button variant="outline" size="sm">
-                                                    Browse Files
-                                                </Button>
-                                            </span>
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
+                                    <p className="contact-modal-body__dropzone-file-size">
+                                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="contact-modal-body__dropzone-content">
+                                    <p className="contact-modal-body__dropzone-text">
+                                        Drag and drop a CSV file here, or click to browse
+                                    </p>
+                                    <input
+                                        type="file"
+                                        accept=".csv,text/csv,application/vnd.ms-excel"
+                                        onChange={handleFileInputChange}
+                                        className="contacts-hidden"
+                                        id="file-upload"
+                                    />
+                                    <label htmlFor="file-upload" style={{ cursor: 'pointer' }}>
+                                        <span style={{ display: 'inline-block' }}>
+                                            <Button variant="outline" size="sm" className="contact-modal-body__dropzone-browse">
+                                                Browse Files
+                                            </Button>
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
+                    </div>
 
-                        {error && (
-                            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
-                                {error}
-                            </div>
-                        )}
-
-                        <div className="text-xs text-muted-foreground space-y-1">
-                            <p>• Maximum file size: 50MB</p>
-                            <p>• Only CSV files are supported</p>
-                            <p>• The import will be processed in the background</p>
+                    {error && (
+                        <div className="contact-modal-body__error">
+                            {error}
                         </div>
+                    )}
+
+                    <div className="contact-modal-body__help">
+                        <p className="contact-modal-body__help-item">• Maximum file size: 50MB</p>
+                        <p className="contact-modal-body__help-item">• Only CSV files are supported</p>
+                        <p className="contact-modal-body__help-item">• The import will be processed in the background</p>
                     </div>
                 </main>
 
                 <footer className="contact-modal-footer">
-                    <Button variant="ghost" onClick={onClose} disabled={isUploading}>
+                    <Button variant="ghost" onClick={onClose} disabled={isUploading} className="contact-modal-footer__button">
                         Cancel
                     </Button>
                     <Button 
                         variant="primary" 
                         onClick={handleUpload} 
                         disabled={!file || isUploading}
-                        leftIcon={isUploading ? undefined : <PlusIcon className="w-4 h-4" />}
+                        leftIcon={isUploading ? undefined : <PlusIcon />}
+                        className="contact-modal-footer__button"
                     >
                         {isUploading ? 'Uploading...' : 'Upload & Import'}
                     </Button>
@@ -1395,42 +1387,42 @@ const ImportErrorsModal: React.FC<{
 
     return (
         <div className="contact-modal-overlay" onClick={onClose}>
-            <div className="contact-modal-content max-w-4xl max-h-[80vh]" onClick={e => e.stopPropagation()}>
+            <div className="contact-modal-content contact-modal-content--large" onClick={e => e.stopPropagation()}>
                 <header className="contact-modal-header">
-                    <h2 className="text-2xl font-bold text-foreground">Import Errors</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary" aria-label="Close">
-                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
+                    <h2 className="contact-modal-header__title">Import Errors</h2>
+                    <button onClick={onClose} className="contact-modal-header__close" aria-label="Close">
+                        <XMarkIcon className="contact-modal-header__close-icon"/>
                     </button>
                 </header>
                 
-                <main className="contact-modal-body overflow-y-auto">
+                <main className="contact-modal-body" style={{ overflowY: 'auto' }}>
                     {isLoading ? (
-                        <div className="text-center py-8">
-                            <div className="spinner w-6 h-6 border-2 border-primary border-t-transparent mx-auto mb-2"></div>
-                            <p className="text-sm text-muted-foreground">Loading errors...</p>
+                        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                            <div className="import-spinner"></div>
+                            <p className="import-loading-text">Loading errors...</p>
                         </div>
                     ) : error ? (
-                        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded text-sm text-destructive">
+                        <div className="contact-modal-body__error">
                             {error}
                         </div>
                     ) : errors.length === 0 ? (
-                        <div className="text-center py-8">
-                            <p className="text-muted-foreground">No errors found.</p>
+                        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                            <p className="import-empty-text">No errors found.</p>
                         </div>
                     ) : (
-                        <div className="space-y-2">
+                        <div className="contact-modal-body__errors-list">
                             {errors.map((err, index) => (
-                                <div key={index} className="p-3 bg-secondary rounded border border-border">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium text-foreground mb-1">
+                                <div key={index} className="contact-modal-body__error-item">
+                                    <div className="contact-modal-body__error-item-header">
+                                        <div style={{ flex: 1 }}>
+                                            <p className="contact-modal-body__error-item-message">
                                                 Row {err.row_number}
                                             </p>
-                                            <p className="text-sm text-destructive mb-2">{err.error_message}</p>
+                                            <p className="contact-modal-body__error-item-message" style={{ color: 'hsl(var(--destructive))' }}>{err.error_message}</p>
                                             {err.row_data && Object.keys(err.row_data).length > 0 && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    <p className="font-medium mb-1">Row Data:</p>
-                                                    <pre className="bg-background p-2 rounded overflow-x-auto">
+                                                <div className="contact-modal-body__error-item-data">
+                                                    <p className="contact-modal-body__error-item-data-label">Row Data:</p>
+                                                    <pre className="contact-modal-body__error-item-data-pre">
                                                         {JSON.stringify(err.row_data, null, 2)}
                                                     </pre>
                                                 </div>
@@ -1444,7 +1436,7 @@ const ImportErrorsModal: React.FC<{
                 </main>
 
                 <footer className="contact-modal-footer">
-                    <Button variant="primary" onClick={onClose}>
+                    <Button variant="primary" onClick={onClose} className="contact-modal-footer__button">
                         Close
                     </Button>
                 </footer>
@@ -1639,197 +1631,242 @@ const CreateContactModal: React.FC<{
 
     return (
         <div className="contact-modal-overlay" onClick={onClose}>
-            <div className="contact-modal-content max-w-2xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="contact-modal-content contact-modal-content--medium" style={{ maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
                 <header className="contact-modal-header">
-                    <h2 className="text-2xl font-bold text-foreground">Create New Contact</h2>
+                    <h2 className="contact-modal-header__title">Create New Contact</h2>
                     <button 
                         onClick={onClose} 
-                        className="p-2 rounded-full hover:bg-secondary" 
+                        className="contact-modal-header__close" 
                         aria-label="Close contact creation form"
                         title="Close"
                     >
-                        <XMarkIcon className="w-6 h-6 text-muted-foreground"/>
+                        <XMarkIcon className="contact-modal-header__close-icon"/>
                     </button>
                 </header>
                 
-                <main className="contact-modal-body overflow-y-auto">
-                    <form id="create-contact-form" onSubmit={handleSubmit} className="space-y-4" noValidate>
+                <main className="contact-modal-body" style={{ overflowY: 'auto' }}>
+                    <form id="create-contact-form" onSubmit={handleSubmit} className="create-contact-form" noValidate>
                         {/* General Error */}
                         {generalError && (
-                            <Card className="border-error/20 bg-error/5">
-                                <CardContent className="flex items-center gap-3 p-4">
-                                    <AlertTriangleIcon className="w-5 h-5 text-error flex-shrink-0" />
-                                    <p className="text-sm text-error flex-1">{generalError}</p>
+                            <Card className="contacts-error-card">
+                                <CardContent className="contacts-error-card-content">
+                                    <AlertTriangleIcon className="contacts-error-card-icon" />
+                                    <p className="create-contact-form__general-error">{generalError}</p>
                                 </CardContent>
                             </Card>
                         )}
 
                         {/* Success Message */}
                         {successMessage && (
-                            <Card className="border-success/20 bg-success/5">
-                                <CardContent className="flex items-center gap-3 p-4">
-                                    <SuccessIcon className="w-5 h-5 text-success flex-shrink-0" />
-                                    <p className="text-sm text-success flex-1">{successMessage}</p>
+                            <Card className="contacts-success-card">
+                                <CardContent className="contacts-success-card-content">
+                                    <SuccessIcon className="contacts-success-card-icon" />
+                                    <p className="create-contact-form__success">{successMessage}</p>
                                 </CardContent>
                             </Card>
                         )}
 
                         {/* Name Fields */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', gap: '1rem' }}>
+                            <div className="create-contact-form__field">
+                                <Input
+                                    label="First Name"
+                                    id="first_name"
+                                    type="text"
+                                    value={formData.first_name || ''}
+                                    onChange={(e) => handleFieldChange('first_name', e.target.value)}
+                                    error={errors.first_name}
+                                    placeholder="John"
+                                    leftIcon={<UsersIcon />}
+                                    fullWidth
+                                />
+                            </div>
+                            <div className="create-contact-form__field">
+                                <Input
+                                    label="Last Name"
+                                    id="last_name"
+                                    type="text"
+                                    value={formData.last_name || ''}
+                                    onChange={(e) => handleFieldChange('last_name', e.target.value)}
+                                    error={errors.last_name}
+                                    placeholder="Doe"
+                                    leftIcon={<UsersIcon />}
+                                    fullWidth
+                                />
+                            </div>
+                        </div>
+
+                        {/* Email */}
+                        <div className="create-contact-form__field">
                             <Input
-                                label="First Name"
-                                id="first_name"
-                                type="text"
-                                value={formData.first_name || ''}
-                                onChange={(e) => handleFieldChange('first_name', e.target.value)}
-                                error={errors.first_name}
-                                placeholder="John"
-                                leftIcon={<UsersIcon className="w-4 h-4" />}
-                                fullWidth
-                            />
-                            <Input
-                                label="Last Name"
-                                id="last_name"
-                                type="text"
-                                value={formData.last_name || ''}
-                                onChange={(e) => handleFieldChange('last_name', e.target.value)}
-                                error={errors.last_name}
-                                placeholder="Doe"
-                                leftIcon={<UsersIcon className="w-4 h-4" />}
+                                label="Email"
+                                id="email"
+                                type="email"
+                                value={formData.email || ''}
+                                onChange={(e) => handleFieldChange('email', e.target.value)}
+                                error={errors.email}
+                                placeholder="john@example.com"
+                                leftIcon={<MailIcon />}
                                 fullWidth
                             />
                         </div>
 
-                        {/* Email */}
-                        <Input
-                            label="Email"
-                            id="email"
-                            type="email"
-                            value={formData.email || ''}
-                            onChange={(e) => handleFieldChange('email', e.target.value)}
-                            error={errors.email}
-                            placeholder="john@example.com"
-                            leftIcon={<MailIcon className="w-4 h-4" />}
-                            fullWidth
-                        />
-
                         {/* Title */}
-                        <Input
-                            label="Job Title"
-                            id="title"
-                            type="text"
-                            value={formData.title || ''}
-                            onChange={(e) => handleFieldChange('title', e.target.value)}
-                            error={errors.title}
-                            placeholder="CEO, Manager, etc."
-                            leftIcon={<OfficeBuildingIcon className="w-4 h-4" />}
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Input
+                                label="Job Title"
+                                id="title"
+                                type="text"
+                                value={formData.title || ''}
+                                onChange={(e) => handleFieldChange('title', e.target.value)}
+                                error={errors.title}
+                                placeholder="CEO, Manager, etc."
+                                leftIcon={<OfficeBuildingIcon />}
+                                fullWidth
+                            />
+                        </div>
 
                         {/* Departments */}
-                        <Input
-                            label="Departments"
-                            id="departments"
-                            type="text"
-                            value={departmentsInput}
-                            onChange={(e) => handleDepartmentsChange(e.target.value)}
-                            error={errors.departments}
-                            placeholder="executive, sales (comma-separated)"
-                            helperText="Enter departments separated by commas"
-                            leftIcon={<BuildingIcon className="w-4 h-4" />}
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Input
+                                label="Departments"
+                                id="departments"
+                                type="text"
+                                value={departmentsInput}
+                                onChange={(e) => handleDepartmentsChange(e.target.value)}
+                                error={errors.departments}
+                                placeholder="executive, sales (comma-separated)"
+                                helperText="Enter departments separated by commas"
+                                leftIcon={<BuildingIcon />}
+                                fullWidth
+                            />
+                            {formData.departments && formData.departments.length > 0 && (
+                                <div className="create-contact-form__departments-tags">
+                                    {formData.departments.map((dept, index) => (
+                                        <span key={index} className="create-contact-form__departments-tag">
+                                            {dept}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const newDepts = (formData.departments || []).filter((_, i) => i !== index);
+                                                    setFormData(prev => ({ ...prev, departments: newDepts }));
+                                                    setDepartmentsInput(newDepts.join(', '));
+                                                }}
+                                                className="create-contact-form__departments-tag-remove"
+                                                aria-label={`Remove ${dept}`}
+                                            >
+                                                <XMarkIcon className="create-contact-form__departments-tag-icon" />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         {/* Mobile Phone */}
-                        <Input
-                            label="Mobile Phone"
-                            id="mobile_phone"
-                            type="tel"
-                            value={formData.mobile_phone || ''}
-                            onChange={(e) => handleFieldChange('mobile_phone', e.target.value)}
-                            error={errors.mobile_phone}
-                            placeholder="+1234567890"
-                            leftIcon={<PhoneIcon className="w-4 h-4" />}
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Input
+                                label="Mobile Phone"
+                                id="mobile_phone"
+                                type="tel"
+                                value={formData.mobile_phone || ''}
+                                onChange={(e) => handleFieldChange('mobile_phone', e.target.value)}
+                                error={errors.mobile_phone}
+                                placeholder="+1234567890"
+                                leftIcon={<PhoneIcon />}
+                                fullWidth
+                            />
+                        </div>
 
                         {/* Email Status */}
-                        <Select
-                            label="Email Status"
-                            id="email_status"
-                            value={formData.email_status || ''}
-                            onChange={(e) => handleFieldChange('email_status', e.target.value)}
-                            error={errors.email_status}
-                            options={[
-                                { value: '', label: 'Select email status (optional)' },
-                                { value: 'valid', label: 'Verified' },
-                                { value: 'unknown', label: 'Unverified' },
-                                { value: 'invalid', label: 'Bounced' },
-                            ]}
-                            placeholder="Select email status"
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Select
+                                label="Email Status"
+                                id="email_status"
+                                value={formData.email_status || ''}
+                                onChange={(e) => handleFieldChange('email_status', e.target.value)}
+                                error={errors.email_status}
+                                options={[
+                                    { value: '', label: 'Select email status (optional)' },
+                                    { value: 'valid', label: 'Verified' },
+                                    { value: 'unknown', label: 'Unverified' },
+                                    { value: 'invalid', label: 'Bounced' },
+                                ]}
+                                placeholder="Select email status"
+                                fullWidth
+                            />
+                        </div>
 
                         {/* Seniority */}
-                        <Input
-                            label="Seniority"
-                            id="seniority"
-                            type="text"
-                            value={formData.seniority || ''}
-                            onChange={(e) => handleFieldChange('seniority', e.target.value)}
-                            error={errors.seniority}
-                            placeholder="c-level, director, manager, etc."
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Input
+                                label="Seniority"
+                                id="seniority"
+                                type="text"
+                                value={formData.seniority || ''}
+                                onChange={(e) => handleFieldChange('seniority', e.target.value)}
+                                error={errors.seniority}
+                                placeholder="c-level, director, manager, etc."
+                                fullWidth
+                            />
+                        </div>
 
                         {/* Company ID */}
-                        <Input
-                            label="Company ID (UUID)"
-                            id="company_id"
-                            type="text"
-                            value={formData.company_id || ''}
-                            onChange={(e) => handleFieldChange('company_id', e.target.value)}
-                            error={errors.company_id}
-                            placeholder="Company UUID (optional)"
-                            leftIcon={<BuildingIcon className="w-4 h-4" />}
-                            helperText="Optional: UUID of the related company"
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Input
+                                label="Company ID (UUID)"
+                                id="company_id"
+                                type="text"
+                                value={formData.company_id || ''}
+                                onChange={(e) => handleFieldChange('company_id', e.target.value)}
+                                error={errors.company_id}
+                                placeholder="Company UUID (optional)"
+                                leftIcon={<BuildingIcon />}
+                                helperText="Optional: UUID of the related company"
+                                fullWidth
+                            />
+                        </div>
 
                         {/* Text Search */}
-                        <Textarea
-                            label="Search Text / Location"
-                            id="text_search"
-                            value={formData.text_search || ''}
-                            onChange={(e) => handleFieldChange('text_search', e.target.value)}
-                            error={errors.text_search}
-                            placeholder="Free-form search text, e.g., location information"
-                            helperText="Optional: Additional searchable text or location information"
-                            rows={3}
-                            fullWidth
-                        />
+                        <div className="create-contact-form__field">
+                            <Textarea
+                                label="Search Text / Location"
+                                id="text_search"
+                                value={formData.text_search || ''}
+                                onChange={(e) => handleFieldChange('text_search', e.target.value)}
+                                error={errors.text_search}
+                                placeholder="Free-form search text, e.g., location information"
+                                helperText="Optional: Additional searchable text or location information"
+                                rows={3}
+                                fullWidth
+                            />
+                        </div>
                     </form>
                 </main>
 
                 <footer className="contact-modal-footer">
-                    <Button
-                        variant="outline"
-                        type="button"
-                        onClick={onClose}
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="primary"
-                        type="submit"
-                        form="create-contact-form"
-                        isLoading={isSubmitting}
-                        disabled={isSubmitting}
-                        leftIcon={!isSubmitting ? <PlusIcon className="w-4 h-4" /> : undefined}
-                    >
-                        {isSubmitting ? 'Creating...' : 'Create Contact'}
-                    </Button>
+                    <div className="create-contact-form__actions">
+                        <Button
+                            variant="outline"
+                            type="button"
+                            onClick={onClose}
+                            disabled={isSubmitting}
+                            className="contact-modal-footer__button"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="primary"
+                            type="submit"
+                            form="create-contact-form"
+                            isLoading={isSubmitting}
+                            disabled={isSubmitting}
+                            leftIcon={!isSubmitting ? <PlusIcon /> : undefined}
+                            className="contact-modal-footer__button"
+                        >
+                            {isSubmitting ? 'Creating...' : 'Create Contact'}
+                        </Button>
+                    </div>
                 </footer>
             </div>
         </div>
@@ -1841,7 +1878,10 @@ const Contacts: React.FC = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  
+  // View mode state for responsive design
+  const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
+  const [isMobile, setIsMobile] = useState(false);
   
   // Sorting state
   const [sortColumn, setSortColumn] = useState<SortableColumn | null>(null);
@@ -1849,6 +1889,7 @@ const Contacts: React.FC = () => {
 
   // Filter state
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [uniqueIndustries, setUniqueIndustries] = useState<string[]>([]);
   const [uniqueTitles, setUniqueTitles] = useState<string[]>([]);
@@ -1991,9 +2032,26 @@ const Contacts: React.FC = () => {
   const debouncedFilters = useDebounce(filters, 300);
   const isSearching = searchTerm !== debouncedSearchTerm;
 
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    Object.entries(filters).forEach(([key, value]) => {
+      if (key === 'status' || key === 'emailStatus' || key === 'industry') {
+        if (value && value !== 'All') count++;
+      } else if (Array.isArray(value)) {
+        if (value.length > 0) count++;
+      } else if (value && value !== '') {
+        count++;
+      }
+    });
+    return count;
+  }, [filters]);
+
   // Load contacts with dual pagination support
   const loadContacts = useCallback(async () => {
     setIsLoading(true);
+    const startTime = performance.now();
+    
     try {
       // Determine pagination mode based on whether custom sorting is applied
       const isCustomSorting = sortColumn !== null;
@@ -2026,7 +2084,43 @@ const Contacts: React.FC = () => {
         fetchParams.offset = offset;
       }
 
+      // Log active filters before API request
+      filterLogger.logActiveFilters(debouncedFilters);
+      
+      // Build query params for logging
+      const queryParams: Record<string, any> = {};
+      if (debouncedSearchTerm) queryParams.search = debouncedSearchTerm;
+      Object.entries(debouncedFilters).forEach(([key, value]) => {
+        if (value && value !== 'All' && value !== '') {
+          if (Array.isArray(value) && value.length > 0) {
+            queryParams[key] = value;
+          } else if (!Array.isArray(value)) {
+            queryParams[key] = value;
+          }
+        }
+      });
+      if (mode === 'cursor') {
+        queryParams.page_size = pageSize;
+        if (cursor) queryParams.cursor = cursor;
+      } else {
+        queryParams.ordering = `${sortDirection === 'desc' ? '-' : ''}${sortColumn}`;
+        queryParams.limit = limit;
+        queryParams.offset = offset;
+      }
+      
+      // Log API request
+      filterLogger.logApiRequest('/api/v1/contacts/', queryParams, 'GET');
+
       const data = await fetchContacts(fetchParams);
+      
+      const duration = Math.round(performance.now() - startTime);
+      
+      // Log API response
+      filterLogger.logApiResponse(200, {
+        count: data.count,
+        results: data.contacts,
+        meta: data.meta,
+      }, duration);
       
       setContacts(data.contacts);
       setTotalContacts(data.count);
@@ -2062,6 +2156,10 @@ const Contacts: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to load contacts:', error instanceof Error ? error.message : String(error));
+      
+      // Log API error
+      filterLogger.error('Failed to load contacts', error);
+      
       setContacts([]);
       setTotalContacts(0);
     } finally {
@@ -2072,6 +2170,23 @@ const Contacts: React.FC = () => {
   useEffect(() => {
     loadContacts();
   }, [loadContacts]);
+
+  // Responsive view mode handling
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      // Auto-switch to card view on mobile, table view on desktop
+      setViewMode(mobile ? 'card' : 'table');
+    };
+
+    // Initial check
+    handleResize();
+
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const loadIndustries = async () => {
@@ -2177,15 +2292,47 @@ const Contacts: React.FC = () => {
   const currentPage = paginationMode === 'offset' ? Math.floor(offset / limit) + 1 : 1;
   const totalPages = paginationMode === 'offset' ? Math.ceil(totalContacts / limit) : 1;
   
+  /**
+   * Handle filter input changes
+   * 
+   * Updates filter state when user changes a filter input field.
+   * Automatically resets pagination to show results from the beginning.
+   * Logs the filter change for debugging purposes.
+   * 
+   * @param e - Change event from input or select element
+   */
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    const oldValue = filters[name as keyof Filters];
+    
+    // Log filter change
+    filterLogger.logFilterChange(name, oldValue, value);
+    
     setFilters(prev => ({ ...prev, [name]: value }));
     // Reset pagination on filter change
     setCursor(null);
     setOffset(0);
   };
 
+  /**
+   * Add a value to an exclusion filter
+   * 
+   * Exclusion filters are array-based filters that exclude contacts matching any of the values.
+   * This function adds a new value to the exclusion array if it doesn't already exist.
+   * Automatically resets pagination and logs the change.
+   * 
+   * @param name - Name of the exclusion filter (e.g., 'exclude_titles')
+   * @param value - Value to add to the exclusion list
+   */
   const addExclusionValue = (name: keyof Filters, value: string) => {
+    const oldArray = (filters[name] as string[]) || [];
+    const newArray = oldArray.includes(value) ? oldArray : [...oldArray, value];
+    
+    // Log filter change
+    if (newArray.length !== oldArray.length) {
+      filterLogger.logFilterChange(String(name), oldArray, newArray);
+    }
+    
     setFilters(prev => {
       const currentArray = (prev[name] as string[]) || [];
       if (!currentArray.includes(value)) {
@@ -2198,7 +2345,22 @@ const Contacts: React.FC = () => {
     setOffset(0);
   };
 
+  /**
+   * Remove a value from an exclusion filter
+   * 
+   * Removes a specific value from an exclusion filter array.
+   * Automatically resets pagination and logs the change.
+   * 
+   * @param name - Name of the exclusion filter (e.g., 'exclude_titles')
+   * @param value - Value to remove from the exclusion list
+   */
   const removeExclusionValue = (name: keyof Filters, value: string) => {
+    const oldArray = (filters[name] as string[]) || [];
+    const newArray = oldArray.filter(v => v !== value);
+    
+    // Log filter change
+    filterLogger.logFilterChange(String(name), oldArray, newArray);
+    
     setFilters(prev => {
       const currentArray = (prev[name] as string[]) || [];
       return { ...prev, [name]: currentArray.filter(v => v !== value) };
@@ -2208,7 +2370,25 @@ const Contacts: React.FC = () => {
     setOffset(0);
   };
 
+  /**
+   * Clear all active filters
+   * 
+   * Resets all filters to their initial state (empty or 'All' values).
+   * Logs which filters were cleared for debugging.
+   * Automatically resets pagination.
+   */
   const clearFilters = () => {
+    // Get list of active filter names
+    const activeFilterNames = Object.keys(filters).filter(key => {
+      const value = filters[key as keyof Filters];
+      if (value === 'All' || value === '' || value === null || value === undefined) return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      return true;
+    });
+    
+    // Log filter clear
+    filterLogger.logFilterClear(activeFilterNames);
+    
     setFilters(initialFilters);
     // Reset pagination on filter change
     setCursor(null);
@@ -2288,15 +2468,15 @@ const Contacts: React.FC = () => {
     switch (column.id) {
       case 'name':
         return (
-          <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <UsersIcon className="w-5 h-5 text-primary" />
+          <div className="contacts-table-name-cell">
+            <div className="contacts-table-name-avatar">
+              <UsersIcon />
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-foreground truncate">
+            <div className="contacts-table-name-content">
+              <p className="contacts-table-name-text">
                 <Highlight text={contact.name} highlight={debouncedSearchTerm} />
               </p>
-              <p className="text-sm text-muted-foreground truncate">
+              <p className="contacts-table-name-email">
                 <Highlight text={contact.email} highlight={debouncedSearchTerm} />
               </p>
             </div>
@@ -2305,8 +2485,8 @@ const Contacts: React.FC = () => {
       
       case 'company':
         return (
-          <div className="flex items-center gap-2">
-            <BuildingIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className="contacts-table-company-cell">
+            <BuildingIcon className="contacts-table-company-icon" />
             <Highlight text={contact.company} highlight={debouncedSearchTerm} />
           </div>
         );
@@ -2319,8 +2499,8 @@ const Contacts: React.FC = () => {
       
       case 'city':
         return (
-          <div className="flex items-center gap-1 text-sm">
-            <MapPinIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className="contacts-table-location-cell">
+            <MapPinIcon className="contacts-table-location-icon" />
             {contact.city && contact.state ? `${contact.city}, ${contact.state}` : (contact.city || contact.state || contact.country || '-')}
           </div>
         );
@@ -2328,8 +2508,8 @@ const Contacts: React.FC = () => {
       case 'createdAt':
       case 'updatedAt':
         return (
-          <div className="flex items-center gap-1 text-sm">
-            <CalendarIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className="contacts-table-date-cell">
+            <CalendarIcon className="contacts-table-date-icon" />
             {value ? new Date(value as string).toLocaleDateString() : '-'}
           </div>
         );
@@ -2344,16 +2524,16 @@ const Contacts: React.FC = () => {
       
       case 'phone':
         return value ? (
-          <div className="flex items-center gap-1">
-            <PhoneIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className="contacts-table-phone-cell">
+            <PhoneIcon className="contacts-table-phone-icon" />
             {value as string}
           </div>
         ) : '-';
       
       case 'email':
         return value ? (
-          <div className="flex items-center gap-1">
-            <MailIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <div className="contacts-table-email-cell">
+            <MailIcon className="contacts-table-email-icon" />
             <Highlight text={value as string} highlight={debouncedSearchTerm} />
           </div>
         ) : '-';
@@ -2362,9 +2542,9 @@ const Contacts: React.FC = () => {
       case 'personLinkedinUrl':
       case 'companyLinkedinUrl':
         return value ? (
-          <a href={value as string} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-            <GlobeAltIcon className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate max-w-[150px]">{value as string}</span>
+          <a href={value as string} target="_blank" rel="noopener noreferrer" className="contacts-table-link-cell" onClick={(e) => e.stopPropagation()}>
+            <GlobeAltIcon className="contacts-table-link-icon" />
+            <span className="contacts-table-link-text">{value as string}</span>
           </a>
         ) : '-';
       
@@ -2380,9 +2560,9 @@ const Contacts: React.FC = () => {
   return (
     <div className="contacts-page">
         {isFilterSidebarOpen && (
-            <div className="contacts-filter-overlay lg:hidden" onClick={() => setIsFilterSidebarOpen(false)}></div>
+            <div className="contacts-filter-overlay" onClick={() => setIsFilterSidebarOpen(false)}></div>
         )}
-        <div className={cn('contacts-filter-sidebar lg:hidden', isFilterSidebarOpen && 'contacts-filter-sidebar-open')}>
+        <div className={`contacts-filter-sidebar-mobile${isFilterSidebarOpen ? ' contacts-filter-sidebar-mobile--open' : ''}`}>
              <FilterSidebar 
                 filters={filters} 
                 onFilterChange={handleFilterChange} 
@@ -2397,7 +2577,7 @@ const Contacts: React.FC = () => {
             />
         </div>
 
-        <div className="hidden lg:block w-80 flex-shrink-0 max-h-full overflow-hidden">
+        <div className="contacts-filter-sidebar-desktop">
              <FilterSidebar 
                 filters={filters} 
                 onFilterChange={handleFilterChange} 
@@ -2413,80 +2593,87 @@ const Contacts: React.FC = () => {
         </div>
 
         <main className="contacts-main">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Contacts</h1>
-                <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-                    <Button
-                        onClick={() => setIsColumnPanelOpen(true)}
-                        variant="outline"
-                        size="md"
-                        leftIcon={<FilterIcon className="w-5 h-5" />}
-                    >
-                        <span className="hidden sm:inline">Columns ({visibleColumns.length}/{columns.length})</span>
-                        <span className="sm:hidden">Columns</span>
-                    </Button>
-                    <Button
-                        onClick={() => setIsCreateContactModalOpen(true)}
-                        variant="primary"
-                        size="md"
-                        leftIcon={<PlusIcon className="w-5 h-5" />}
-                    >
-                        <span className="hidden sm:inline">Create Contact</span>
-                        <span className="sm:hidden">Create</span>
-                    </Button>
+            <div className="contacts-header">
+                <h1 className="contacts-header-title">Contacts</h1>
+                <div className="contacts-header-actions">
+                    <Tooltip content="Configure visible columns">
+                        <Button
+                            onClick={() => setIsColumnPanelOpen(true)}
+                            variant="outline"
+                            size="md"
+                            leftIcon={<FilterIcon />}
+                        >
+                            <span className="contacts-header-action-text">Columns ({visibleColumns.length}/{columns.length})</span>
+                            <span className="contacts-header-action-text--mobile">Columns</span>
+                        </Button>
+                    </Tooltip>
+                    <Tooltip content="Create a new contact">
+                        <Button
+                            onClick={() => setIsCreateContactModalOpen(true)}
+                            variant="primary"
+                            size="md"
+                            leftIcon={<PlusIcon />}
+                        >
+                            <span className="contacts-header-action-text">Create Contact</span>
+                            <span className="contacts-header-action-text--mobile">Create</span>
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
 
             {/* Response Metadata Display */}
             {responseMeta && (
-                <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
+                <div className="contacts-response-meta">
+                    <span className="contacts-response-meta-item">
                         <strong>Strategy:</strong> {responseMeta.strategy}
                     </span>
                     {responseMeta.count_mode && (
-                        <span className="flex items-center gap-1">
+                        <span className="contacts-response-meta-item">
                             <strong>Count:</strong> {responseMeta.count_mode}
                         </span>
                     )}
                     {responseMeta.using_replica && (
-                        <span className="flex items-center gap-1 text-primary">
+                        <span className="contacts-response-meta-item contacts-response-meta-item--highlight">
                             <strong>Using Replica</strong>
                         </span>
                     )}
-                    <span className="flex items-center gap-1">
+                    <span className="contacts-response-meta-item">
                         <strong>Records:</strong> {responseMeta.returned_records}/{responseMeta.page_size}
                     </span>
                 </div>
             )}
             
             <div className="contacts-search-bar">
-                <div className="relative flex-1">
+                <div className="contacts-search-input-wrapper">
                     <Input
                         type="text"
                         placeholder="Search by name, email, company..."
                         value={searchTerm}
                         onChange={(e) => { setSearchTerm(e.target.value); setCursor(null); setOffset(0); }}
-                        leftIcon={<SearchIcon className="w-5 h-5" />}
+                        leftIcon={<SearchIcon />}
                         rightIcon={isSearching ? (
-                            <svg className="w-5 h-5 text-muted-foreground animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
+                            <LoadingSpinner size="md" className="contacts-loading-spinner" />
                         ) : undefined}
                         fullWidth
                     />
                 </div>
-                <Button
-                    onClick={() => setIsFilterSidebarOpen(true)}
-                    variant="outline"
-                    size="md"
-                    iconOnly
-                    className="lg:hidden"
-                    aria-label="Open filters"
-                    title="Open filters"
-                >
-                    <FilterIcon className="w-5 h-5" />
-                </Button>
+                <Tooltip content="Open filters">
+                    <Button
+                        onClick={() => isMobile ? setIsMobileFilterOpen(true) : setIsFilterSidebarOpen(true)}
+                        variant="outline"
+                        size="md"
+                        iconOnly
+                        className="contacts-filter-btn-mobile"
+                        aria-label="Open filters"
+                    >
+                        <FilterIcon className="contacts-filter-icon" />
+                        {activeFilterCount > 0 && (
+                            <span className="contacts-badge-text">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </Button>
+                </Tooltip>
             </div>
 
             {/* Filter Summary Bar */}
@@ -2498,18 +2685,29 @@ const Contacts: React.FC = () => {
       
             <div className="contacts-table-container">
             {isLoading ? (
-              <div className="text-center py-20">
+              <div className="contacts-loading-container">
                   <div className="inline-block">
-                    <div className="spinner w-8 h-8 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Loading contacts...</p>
+                    <div className="contacts-loading-spinner"></div>
+                    <p className="contacts-loading-text">Loading contacts...</p>
                   </div>
               </div>
             ) : contacts.length === 0 ? (
-              <Card className="text-center py-20">
-                  <p className="text-muted-foreground text-lg">
+              <Card className="contacts-empty-container">
+                  <p className="contacts-empty-text">
                       No contacts found matching your criteria.
                   </p>
               </Card>
+            ) : viewMode === 'card' ? (
+              <div className="contacts-card-grid">
+                {contacts.map((contact) => (
+                  <ContactCard
+                    key={contact.id}
+                    contact={contact}
+                    searchTerm={debouncedSearchTerm}
+                    className="stagger-item"
+                  />
+                ))}
+              </div>
             ) : (
                   <Table responsive>
                     <TableHeader>
@@ -2520,43 +2718,51 @@ const Contacts: React.FC = () => {
                             sortable={column.sortable}
                             sortDirection={sortColumn === column.id ? sortDirection : null}
                             onSort={column.sortable ? () => handleSort(column.id as SortableColumn) : undefined}
-                            className={`min-w-[${column.width}]`}
+                            style={column.width ? { minWidth: column.width } : undefined}
                           >
                             {column.label}
                           </TableHead>
                         ))}
-                        <TableHead className="text-right min-w-[80px]">Actions</TableHead>
+                        <TableHead className="table-head-actions">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {contacts.map(contact => (
                         <TableRow 
                           key={contact.id} 
-                          onClick={() => setSelectedContact(contact)}
-                          className="cursor-pointer"
+                          onClick={() => {
+                            if (contact.uuid) {
+                              window.open(`/contacts/${contact.uuid}`, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          className="contacts-table-row-interactive"
+                          title="Click to view contact details in new tab"
                         >
                           {visibleColumns.map(column => (
                             <TableCell
                               key={column.id}
-                              className={`${column.width ? `min-w-[${column.width}]` : ''} ${column.id === 'name' ? '' : 'whitespace-nowrap'}`}
+                              className={column.id !== 'name' ? 'contacts-table-cell-nowrap' : ''}
+                              style={column.width ? { minWidth: column.width } : undefined}
                             >
                               {renderCellContent(column, contact)}
                             </TableCell>
                           ))}
-                          <TableCell className="text-right min-w-[80px]">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              iconOnly
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                alert('Edit functionality is not supported by the current API.');
-                              }}
-                              aria-label="Edit contact"
-                              title="Edit contact"
-                            >
-                              <EditIcon className="w-4 h-4" />
-                            </Button>
+                          <TableCell className="table-cell-actions">
+                            <Tooltip content="Edit contact">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                iconOnly
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  alert('Edit functionality is not supported by the current API.');
+                                }}
+                                aria-label="Edit contact"
+                                className="icon-hover-scale"
+                              >
+                                <EditIcon />
+                              </Button>
+                            </Tooltip>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -2571,27 +2777,28 @@ const Contacts: React.FC = () => {
                             <>
                                 Showing <strong className="text-foreground">{contacts.length}</strong> contacts
                                 {totalContacts > 0 && ` (Total: ${totalContacts.toLocaleString()})`}
-                                <span className="ml-2 text-xs text-muted-foreground">(Cursor Pagination)</span>
+                                <span className="contacts-pagination-note">(Cursor Pagination)</span>
                             </>
                         ) : (
                             <>
                                 Showing <strong className="text-foreground">{offset + 1}</strong> to <strong className="text-foreground">{Math.min(offset + limit, totalContacts)}</strong> of <strong className="text-foreground">{totalContacts.toLocaleString()}</strong> results
-                                <span className="ml-2 text-xs text-muted-foreground">(Page {currentPage} of {totalPages})</span>
+                                <span className="contacts-pagination-note">(Page {currentPage} of {totalPages})</span>
                             </>
                         )}
                     </div>
                     <div className="contacts-pagination-controls">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            iconOnly
-                            onClick={handlePrevPage}
-                            disabled={paginationMode === 'cursor' ? !prevCursor : offset === 0}
-                            aria-label="Previous page"
-                            title="Previous page"
-                        >
-                            <ChevronLeftIcon className="w-5 h-5"/>
-                        </Button>
+                        <Tooltip content="Previous page">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                iconOnly
+                                onClick={handlePrevPage}
+                                disabled={paginationMode === 'cursor' ? !prevCursor : offset === 0}
+                                aria-label="Previous page"
+                            >
+                                <ChevronLeftIcon />
+                            </Button>
+                        </Tooltip>
                         {paginationMode === 'offset' && (
                             <span className="contacts-pagination-page">Page {currentPage} of {totalPages}</span>
                         )}
@@ -2605,25 +2812,25 @@ const Contacts: React.FC = () => {
                                     { value: '50', label: '50 per page' },
                                     { value: '100', label: '100 per page' },
                                 ]}
-                                className="text-sm"
+                                className="contacts-pagination-select"
                             />
                         )}
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            iconOnly
-                            onClick={handleNextPage}
-                            disabled={paginationMode === 'cursor' ? !nextCursor : offset + limit >= totalContacts}
-                            aria-label="Next page"
-                            title="Next page"
-                        >
-                            <ChevronRightIcon className="w-5 h-5"/>
-                        </Button>
+                        <Tooltip content="Next page">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                iconOnly
+                                onClick={handleNextPage}
+                                disabled={paginationMode === 'cursor' ? !nextCursor : offset + limit >= totalContacts}
+                                aria-label="Next page"
+                            >
+                                <ChevronRightIcon />
+                            </Button>
+                        </Tooltip>
                     </div>
                 </div>
             )}
         </main>
-      {selectedContact && <ContactDetailModal contact={selectedContact} onClose={() => setSelectedContact(null)} />}
       
       {/* Column Toggle Panel */}
       <ColumnTogglePanel
@@ -2642,7 +2849,7 @@ const Contacts: React.FC = () => {
       />
       {isImportStatusModalOpen && currentImportJob && (
         <div className="contact-modal-overlay" onClick={() => setIsImportStatusModalOpen(false)}>
-          <div className="contact-modal-content max-w-lg" onClick={e => e.stopPropagation()}>
+          <div className="contact-modal-content contact-modal-content-wrapper" onClick={e => e.stopPropagation()}>
             <ImportJobStatus 
               job={currentImportJob} 
               onClose={() => setIsImportStatusModalOpen(false)}
@@ -2662,6 +2869,54 @@ const Contacts: React.FC = () => {
         isOpen={isCreateContactModalOpen}
         onClose={() => setIsCreateContactModalOpen(false)}
         onSuccess={loadContacts}
+      />
+      
+      {/* Mobile Filter Drawer */}
+      <MobileFilterDrawer
+        isOpen={isMobileFilterOpen}
+        onClose={() => setIsMobileFilterOpen(false)}
+        title="Filters"
+        activeFilterCount={activeFilterCount}
+      >
+        <FilterSidebar 
+          filters={filters} 
+          onFilterChange={handleFilterChange} 
+          onAddExclusionValue={addExclusionValue}
+          onRemoveExclusionValue={removeExclusionValue}
+          clearFilters={clearFilters} 
+          uniqueIndustries={uniqueIndustries}
+          uniqueTitles={uniqueTitles}
+          uniqueCompanies={uniqueCompanies}
+          isLoadingTitles={isLoadingTitles}
+          isLoadingCompanies={isLoadingCompanies}
+        />
+      </MobileFilterDrawer>
+      
+      {/* Filter Debug Panel */}
+      <FilterDebugPanel
+        filters={filters}
+        queryParams={(() => {
+          const params: Record<string, any> = {};
+          if (searchTerm) params.search = searchTerm;
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value && value !== 'All' && value !== '') {
+              if (Array.isArray(value) && value.length > 0) {
+                params[key] = value;
+              } else if (!Array.isArray(value)) {
+                params[key] = value;
+              }
+            }
+          });
+          if (paginationMode === 'cursor') {
+            params.page_size = pageSize;
+            if (cursor) params.cursor = cursor;
+          } else if (sortColumn) {
+            params.ordering = `${sortDirection === 'desc' ? '-' : ''}${sortColumn}`;
+            params.limit = limit;
+            params.offset = offset;
+          }
+          return params;
+        })()}
       />
     </div>
   );
