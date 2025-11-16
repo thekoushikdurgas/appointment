@@ -32,10 +32,12 @@ Before starting the deployment, ensure you have:
 
 - **EC2 Public IP**: `3.88.218.42`
 - **EC2 Hostname**: `ec2-3-88-218-42.compute-1.amazonaws.com`
-- **SSH Command**: 
+- **SSH Command**:
+
   ```bash
   ssh -i "contacts.pem" ubuntu@ec2-3-88-218-42.compute-1.amazonaws.com
   ```
+
 - **Application Port**: `3000` (internal)
 - **Nginx Port**: `80` (public HTTP)
 - **Node.js Version**: `20.x LTS`
@@ -64,7 +66,7 @@ Once connected to the server, clone the repository and run the setup script:
 # Clone the repository
 cd ~
 git clone https://github.com/thekoushikdurgas/appointment.git nexuscrm
-cd nexuscrm
+cd appointment
 
 # Make setup script executable
 chmod +x deploy/ec2-setup.sh
@@ -74,6 +76,7 @@ sudo ./deploy/ec2-setup.sh
 ```
 
 **What the setup script does:**
+
 - Updates system packages
 - Installs essential packages (git, build-essential, ufw, nginx)
 - Configures firewall (UFW) for SSH, HTTP, and HTTPS
@@ -140,6 +143,7 @@ chmod +x deploy/ec2-deploy.sh
 ```
 
 **What the deployment script does:**
+
 - Verifies `.env.production` exists
 - Installs npm dependencies
 - Builds the Next.js application for production
@@ -237,7 +241,7 @@ sudo tail -f /var/log/nginx/nexuscrm-error.log
 
 Open your web browser and navigate to:
 
-```
+```txt
 http://3.88.218.42
 ```
 
@@ -284,6 +288,7 @@ chmod +x deploy/ec2-update.sh
 ```
 
 **What the update script does:**
+
 - Creates a backup of the current build
 - Pulls latest changes from Git
 - Updates npm dependencies
@@ -364,6 +369,7 @@ pm2 restart nexuscrm && sudo systemctl restart nginx
 **Problem:** PM2 shows the application as stopped or errored.
 
 **Solutions:**
+
 ```bash
 # Check logs for errors
 pm2 logs nexuscrm --err
@@ -386,6 +392,7 @@ pm2 save
 **Problem:** Nginx returns 502 error when accessing the site.
 
 **Solutions:**
+
 ```bash
 # Check if application is running
 pm2 list
@@ -406,6 +413,7 @@ sudo systemctl restart nginx
 **Problem:** `npm run build` fails.
 
 **Solutions:**
+
 ```bash
 # Clear Next.js cache
 rm -rf .next
@@ -426,6 +434,7 @@ npm run build
 **Problem:** Application doesn't pick up environment variables.
 
 **Solutions:**
+
 ```bash
 # Verify .env.production exists
 ls -la .env.production
@@ -445,6 +454,7 @@ pm2 logs nexuscrm | grep -i "env\|config"
 **Problem:** Port 3000 is already in use.
 
 **Solutions:**
+
 ```bash
 # Find what's using port 3000
 sudo lsof -i :3000
@@ -460,6 +470,7 @@ sudo kill -9 <PID>
 **Problem:** Can't access the application via EC2 public IP.
 
 **Solutions:**
+
 ```bash
 # Check security group rules (in AWS Console)
 # Ensure port 80 (HTTP) is open to 0.0.0.0/0
@@ -480,6 +491,7 @@ curl http://localhost
 **Problem:** Application uses too much memory.
 
 **Solutions:**
+
 ```bash
 # Check memory usage
 pm2 monit
@@ -565,6 +577,7 @@ htop                        # Monitor system resources
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Review application logs: `pm2 logs nexuscrm`
 3. Review Nginx logs: `sudo tail -f /var/log/nginx/nexuscrm-error.log`
@@ -573,4 +586,3 @@ For issues or questions:
 ---
 
 **Last Updated:** 2025-01-27
-
