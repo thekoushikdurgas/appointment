@@ -2,6 +2,11 @@
 const nextConfig = {
   devIndicators: false,
   reactStrictMode: true,
+  // Standalone output for optimized production builds
+  output: 'standalone',
+  // Production optimizations
+  compress: true,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {

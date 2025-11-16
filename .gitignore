@@ -13,6 +13,7 @@ node_modules
 # Production
 /build
 /dist
+.env.production
 
 # Misc
 .DS_Store
