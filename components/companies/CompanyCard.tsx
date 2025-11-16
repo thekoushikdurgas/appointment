@@ -8,9 +8,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Company } from '../../types/company';
-import { Card, CardContent } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { Company } from '@/types/company';
+import { Card, CardContent } from '@components/ui/Card';
+import { Badge } from '@components/ui/Badge';
 import {
   BuildingIcon,
   UsersIcon,
@@ -133,7 +133,7 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({
             {company.industries && company.industries.length > 0 && (
               <div className="company-card__industries">
                 {company.industries.slice(0, 2).map((industry, idx) => (
-                  <span key={idx} className="company-industry-badge">
+                  <span key={`${company.uuid}-industry-${idx}-${industry}`} className="company-industry-badge">
                     {industry}
                   </span>
                 ))}
@@ -202,7 +202,7 @@ export const CompanyCard: React.FC<CompanyCardProps> = ({
             <p className="company-card__technologies-label">Technologies</p>
             <div className="company-card__technologies-list">
               {company.technologies.slice(0, 3).map((tech, idx) => (
-                <span key={idx} className="company-tech-badge">
+                <span key={`${company.uuid}-tech-${idx}-${tech}`} className="company-tech-badge">
                   {tech}
                 </span>
               ))}

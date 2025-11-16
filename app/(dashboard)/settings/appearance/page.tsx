@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTheme } from '../../../../hooks/useTheme';
-import { SunIcon, MoonIcon, PaintBrushIcon, SparklesIcon } from '../../../../components/icons/IconComponents';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
-import { Button } from '../../../../components/ui/Button';
-import { Tooltip } from '../../../../components/ui/Tooltip';
-import { CollapsibleSection } from '../../../../components/ui/CollapsibleSection';
+import { useTheme } from '@hooks/useTheme';
+import { SunIcon, MoonIcon, PaintBrushIcon, SparklesIcon } from '@components/icons/IconComponents';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
+import { Button } from '@components/ui/Button';
+import { Tooltip } from '@components/ui/Tooltip';
+import { CollapsibleSection } from '@components/ui/CollapsibleSection';
 
 const AppearanceSettings: React.FC = () => {
     const { theme, toggleTheme } = useTheme();

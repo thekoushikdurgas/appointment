@@ -8,11 +8,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { CompanyContact, CompanyContactFilters } from '../../types/company';
+import { CompanyContact, CompanyContactFilters } from '@/types/company';
 import {
   fetchCompanyContacts,
   getCompanyContactsCount,
-} from '../../services/company';
+} from '@services/company';
 import {
   SearchIcon,
   XMarkIcon,
@@ -26,17 +26,20 @@ import {
   MailIcon,
   PhoneIcon,
   EyeIcon,
-} from '../icons/IconComponents';
-import { useDebounce } from '../../hooks/useDebounce';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
-import { Tooltip } from '../ui/Tooltip';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
+  CheckIcon,
+} from '@components/icons/IconComponents';
+import { useDebounce } from '@hooks/useDebounce';
+import { Input } from '@components/ui/Input';
+import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Tooltip } from '@components/ui/Tooltip';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
 import { CompanyContactCard } from './CompanyContactCard';
 import { CompanyContactFilterDrawer } from './CompanyContactFilterDrawer';
 import { CompanyContactsSkeletonLoader, CompanyContactsFullSkeleton } from './CompanyContactsSkeletonLoader';
 import { CompanyContactsEmptyState, CompanyContactsErrorState } from './CompanyContactsEmptyState';
+import { ExportModal } from '@components/contacts/ExportModal';
+import { DownloadIcon } from '@components/icons/IconComponents';
 
 interface CompanyContactsSectionProps {
   companyUuid: string;
@@ -100,6 +103,8 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
   const [prevCursor, setPrevCursor] = useState<string | null>(null);
   const [sortColumn, setSortColumn] = useState<SortableColumn | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [selectedContactUuids, setSelectedContactUuids] = useState<Set<string>>(new Set());
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Debounce search term
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
@@ -257,6 +262,43 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
     }
   };
 
+  // Selection handlers
+  const toggleContactSelection = useCallback((uuid: string | undefined) => {
+    if (!uuid) return;
+    
+    setSelectedContactUuids(prev => {
+      const newSelection = new Set(prev);
+      if (newSelection.has(uuid)) {
+        newSelection.delete(uuid);
+      } else {
+        newSelection.add(uuid);
+      }
+      return newSelection;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const allUuids = contacts.filter(c => c.uuid).map(c => c.uuid!);
+    const allSelected = allUuids.length > 0 && allUuids.every(uuid => selectedContactUuids.has(uuid));
+    
+    if (allSelected) {
+      setSelectedContactUuids(new Set());
+    } else {
+      setSelectedContactUuids(new Set(allUuids));
+    }
+  }, [contacts, selectedContactUuids]);
+
+  const isSelectAllChecked = useMemo(() => {
+    const allUuids = contacts.filter(c => c.uuid).map(c => c.uuid!);
+    return allUuids.length > 0 && allUuids.every(uuid => selectedContactUuids.has(uuid));
+  }, [contacts, selectedContactUuids]);
+
+  const isSelectAllIndeterminate = useMemo(() => {
+    const allUuids = contacts.filter(c => c.uuid).map(c => c.uuid!);
+    const selectedCount = allUuids.filter(uuid => selectedContactUuids.has(uuid)).length;
+    return selectedCount > 0 && selectedCount < allUuids.length;
+  }, [contacts, selectedContactUuids]);
+
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -280,18 +322,35 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
               )}
             </div>
           </div>
-          <Button
-            variant="secondary"
-            onClick={() => setShowFilters(true)}
-            leftIcon={<FilterIcon />}
-          >
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge variant="glass-primary" size="sm" style={{ marginLeft: '0.5rem' }}>
-                {activeFilterCount}
-              </Badge>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {selectedContactUuids.size > 0 && (
+              <>
+                <span style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))' }}>
+                  {selectedContactUuids.size} selected
+                </span>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setShowExportModal(true)}
+                  leftIcon={<DownloadIcon />}
+                >
+                  Export ({selectedContactUuids.size})
+                </Button>
+              </>
             )}
-          </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setShowFilters(true)}
+              leftIcon={<FilterIcon />}
+            >
+              Filters
+              {activeFilterCount > 0 && (
+                <Badge variant="glass-primary" size="sm" style={{ marginLeft: '0.5rem' }}>
+                  {activeFilterCount}
+                </Badge>
+              )}
+            </Button>
+          </div>
         </div>
 
         {/* Search Bar */}
@@ -365,6 +424,38 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="company-contacts-section__table-header company-contacts-section__table-header--checkbox">
+                      <div className="checkbox-input-wrapper">
+                        <input
+                          type="checkbox"
+                          checked={isSelectAllChecked}
+                          ref={(input) => {
+                            if (input) input.indeterminate = isSelectAllIndeterminate;
+                          }}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            toggleSelectAll();
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label="Select all contacts"
+                          className="checkbox-input"
+                        />
+                        <div 
+                          className="checkbox-box"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSelectAll();
+                          }}
+                        >
+                          {isSelectAllChecked && (
+                            <CheckIcon className="checkbox-icon" />
+                          )}
+                          {isSelectAllIndeterminate && !isSelectAllChecked && (
+                            <div className="checkbox-indeterminate-indicator" />
+                          )}
+                        </div>
+                      </div>
+                    </TableHead>
                     <TableHead onClick={() => handleSort('firstName')} className="company-contacts-section__table-header">
                       <div className="company-contacts-section__table-header-content">
                         Name
@@ -389,14 +480,45 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {contacts.map((contact) => (
+                  {contacts.map((contact, index) => {
+                    const isSelected = contact.uuid ? selectedContactUuids.has(contact.uuid) : false;
+                    return (
                     <TableRow
-                      key={contact.id}
+                      key={contact.uuid || `contact-${index}`}
                       onClick={() => handleContactClick(contact)}
-                      className="companies-table-row-hover"
+                      className={`companies-table-row-hover ${isSelected ? 'companies-table-row-selected' : ''}`}
                       style={{ cursor: 'pointer' }}
                       title="Click to view contact details in new tab"
                     >
+                      <TableCell 
+                        className="company-contacts-section__table-cell company-contacts-section__table-cell--checkbox"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="checkbox-input-wrapper">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              toggleContactSelection(contact.uuid);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Select ${getFullName(contact)}`}
+                            className="checkbox-input"
+                          />
+                          <div 
+                            className="checkbox-box"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleContactSelection(contact.uuid);
+                            }}
+                          >
+                            {isSelected && (
+                              <CheckIcon className="checkbox-icon" />
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell className="company-contacts-section__table-cell-name">
                         <div className="company-contacts-section__table-cell-name-content">
                           <div className="company-contacts-section__table-cell-avatar">
@@ -420,7 +542,7 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
                         {contact.departments && contact.departments.length > 0 ? (
                           <div className="company-contacts-section__table-cell-departments">
                             {contact.departments.slice(0, 2).map((dept, idx) => (
-                              <Badge key={idx} variant="glass" size="sm">
+                              <Badge key={`${contact.uuid}-dept-${idx}-${dept}`} variant="glass" size="sm">
                                 {dept}
                               </Badge>
                             ))}
@@ -472,7 +594,8 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
                         </Tooltip>
                       </TableCell>
                     </TableRow>
-                  ))}
+                  );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -482,9 +605,9 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
               {loading ? (
                 <CompanyContactsSkeletonLoader variant="card" count={3} />
               ) : (
-                contacts.map((contact) => (
+                contacts.map((contact, index) => (
                   <CompanyContactCard
-                    key={contact.id}
+                    key={contact.uuid || `contact-${index}`}
                     contact={contact}
                     searchTerm={debouncedSearchTerm}
                     onClick={() => handleContactClick(contact)}
@@ -529,6 +652,23 @@ export const CompanyContactsSection: React.FC<CompanyContactsSectionProps> = ({
         onFiltersChange={handleFilterChange}
         onApply={() => setShowFilters(false)}
         onClear={handleClearFilters}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => {
+          setShowExportModal(false);
+          setSelectedContactUuids(new Set());
+        }}
+        selectedContactUuids={Array.from(selectedContactUuids)}
+        exportType="contacts"
+        currentPageData={contacts}
+        totalCount={totalCount}
+        navigateToHistory={true}
+        onExportComplete={() => {
+          setSelectedContactUuids(new Set());
+        }}
       />
     </div>
   );

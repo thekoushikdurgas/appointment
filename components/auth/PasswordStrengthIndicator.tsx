@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { CheckIcon, XIcon } from '../icons/IconComponents';
+import { CheckIcon, XIcon } from '@components/icons/IconComponents';
 
 export interface PasswordStrengthIndicatorProps {
   password: string;

@@ -4,7 +4,7 @@
  * Standardized request wrapper with retry logic, timeout handling, and interceptors
  */
 
-import { parseApiError, parseExceptionError, ParsedError, isRetryableError } from './errorHandler';
+import { parseApiError, parseExceptionError, ParsedError, isRetryableError } from '@utils/errorHandler';
 
 /**
  * Request options

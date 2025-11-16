@@ -1500,6 +1500,8 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   background-color: hsl(var(--muted) / 0.5);
   border-radius: var(--radius-sm);
+  height: var(--shimmer-height, auto);
+  width: var(--shimmer-width, auto);
 }
 
 .company-contacts-skeleton-loader {
@@ -2408,6 +2410,17 @@
   background-color: hsl(var(--muted) / 0.5);
 }
 
+.company-contacts-section__table-header--checkbox {
+  width: 48px;
+  padding: 1rem;
+  text-align: center;
+  cursor: default;
+}
+
+.company-contacts-section__table-header--checkbox:hover {
+  background-color: transparent;
+}
+
 .company-contacts-section__table-header-content {
   display: flex;
   align-items: center;
@@ -2425,6 +2438,16 @@
 
 .company-contacts-section__table-sort-icon--primary {
   color: hsl(var(--primary));
+}
+
+.company-contacts-section__table-cell {
+  padding: 1rem;
+}
+
+.company-contacts-section__table-cell--checkbox {
+  width: 48px;
+  padding: 1rem;
+  text-align: center;
 }
 
 .company-contacts-section__table-cell-name {

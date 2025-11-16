@@ -7,10 +7,10 @@
 'use client';
 
 import React from 'react';
-import { Company } from '../../types/company';
-import { Modal } from '../ui/Modal';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
+import { Company } from '@/types/company';
+import { Modal } from '@components/ui/Modal';
+import { Badge } from '@components/ui/Badge';
+import { Button } from '@components/ui/Button';
 import {
   BuildingIcon,
   UsersIcon,
@@ -108,7 +108,7 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({
             </h3>
             <div className="company-details-modal__badges">
               {company.industries.map((industry, idx) => (
-                <Badge key={idx} variant="default">
+                <Badge key={`${company.uuid}-industry-${idx}-${industry}`} variant="default">
                   {industry}
                 </Badge>
               ))}
@@ -271,7 +271,7 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({
             </h3>
             <div className="company-details-modal__badges">
               {company.technologies.map((tech, idx) => (
-                <Badge key={idx} variant="info">
+                <Badge key={`${company.uuid}-tech-${idx}-${tech}`} variant="info">
                   {tech}
                 </Badge>
               ))}
@@ -287,7 +287,7 @@ export const CompanyDetailsModal: React.FC<CompanyDetailsModalProps> = ({
             </h3>
             <div className="company-details-modal__badges">
               {company.keywords.map((keyword, idx) => (
-                <Badge key={idx} variant="default">
+                <Badge key={`${company.uuid}-keyword-${idx}-${keyword}`} variant="default">
                   {keyword}
                 </Badge>
               ))}

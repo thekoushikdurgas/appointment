@@ -551,7 +551,7 @@
   
   /* Better spacing for larger screens */
   .dashboard-content {
-    padding: 2rem;
+    /* padding: 2rem; */
   }
 }
 

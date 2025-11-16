@@ -8,8 +8,8 @@
 'use client';
 
 import React from 'react';
-import { BuildingIcon, PlusIcon, SearchIcon, FilterIcon } from '../icons/IconComponents';
-import { Button } from '../ui/Button';
+import { BuildingIcon, PlusIcon, SearchIcon, FilterIcon } from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
 
 interface CompanyEmptyStateProps {
   variant?: 'no-data' | 'no-results' | 'no-filters';

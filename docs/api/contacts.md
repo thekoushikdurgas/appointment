@@ -5,7 +5,7 @@ Complete API documentation for contact management endpoints, including listing, 
 ## Base URL
 
 ```txt
-http://107.21.188.21:8000
+http://54.87.173.234:8000
 ```
 
 **API Version:** All endpoints are under `/api/v1/contacts/`
@@ -153,7 +153,7 @@ These filters exclude contacts matching any of the provided values:
 
 #### Pagination Parameters
 
-- `limit` (integer): Number of results per page (max 100, default: 25) - Used with custom ordering
+- `limit` (integer, optional): Number of results per page. **If not provided, returns all matching contacts (unlimited).** When provided, limits results to the specified number (capped at MAX_PAGE_SIZE).
 - `offset` (integer): Offset for pagination (used when custom ordering is applied)
 - `page_size` (integer): Page size for cursor pagination (used when ordering by created_at, default: 25, max: 100)
 
@@ -169,7 +169,7 @@ These filters exclude contacts matching any of the provided values:
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/contacts/?cursor=cj0xJnN1YiI6IjE2ODAwMDAwMDAwMDAwMDAwMDAwMCJ9",
+  "next": "http://54.87.173.234:8000/api/v1/contacts/?cursor=cj0xJnN1YiI6IjE2ODAwMDAwMDAwMDAwMDAwMDAwMCJ9",
   "previous": null,
   "results": [
     {
@@ -241,8 +241,8 @@ Every list response now ships with a `meta` section describing how the data was 
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/contacts/?ordering=-employees&limit=25&offset=25",
-  "previous": "http://107.21.188.21:8000/api/v1/contacts/?ordering=-employees&limit=25&offset=0",
+  "next": "http://54.87.173.234:8000/api/v1/contacts/?ordering=-employees&limit=25&offset=25",
+  "previous": "http://54.87.173.234:8000/api/v1/contacts/?ordering=-employees&limit=25&offset=0",
   "results": [
     {
       "id": 1,
@@ -258,7 +258,7 @@ Every list response now ships with a `meta` section describing how the data was 
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/contacts/?view=simple&cursor=...",
+  "next": "http://54.87.173.234:8000/api/v1/contacts/?view=simple&cursor=...",
   "previous": null,
   "results": [
     {
@@ -325,9 +325,9 @@ GET /api/v1/contacts/?view=simple&company=Acme&limit=10
 
 ---
 
-### GET /api/v1/contacts/{id}/ - Retrieve Contact
+### GET /api/v1/contacts/{contact_uuid}/ - Retrieve Contact
 
-Get detailed information about a specific contact by ID.
+Get detailed information about a specific contact by UUID.
 
 **Headers:**
 
@@ -335,7 +335,7 @@ Get detailed information about a specific contact by ID.
 
 **Path Parameters:**
 
-- `id` (integer): Contact ID
+- `contact_uuid` (string): Contact UUID
 
 **Query Parameters:**
 
@@ -347,7 +347,7 @@ Get detailed information about a specific contact by ID.
 
 ```json
 {
-  "id": 1,
+  "uuid": "abc123-def456-ghi789",
   "first_name": "John",
   "last_name": "Doe",
   "title": "CEO",
@@ -479,6 +479,61 @@ GET /api/v1/contacts/count/?email_status=valid&industry=Technology
 
 ---
 
+### GET /api/v1/contacts/count/uuids/ - Get Contact UUIDs
+
+Get a list of contact UUIDs that match the provided filters. Returns count and list of UUIDs. Useful for bulk operations or exporting specific contact sets.
+
+**Headers:**
+
+- `X-Request-Id` (optional): Request tracking ID
+
+**Query Parameters:**
+
+**This endpoint accepts ALL the same query parameters as `/api/v1/contacts/count/` endpoint, plus an additional parameter:**
+
+- `limit` (integer, optional): Maximum number of UUIDs to return. **If not provided, returns all matching UUIDs (unlimited).** When provided, limits results to the specified number.
+
+All filter parameters from `/api/v1/contacts/` are supported:
+
+- All text filters (first_name, last_name, title, company, etc.)
+- All exact filters (email_status, stage, seniority, etc.)
+- All numeric range filters (employees_min, employees_max, etc.)
+- All date range filters (created_at_after, created_at_before, updated_at_after, updated_at_before, etc.)
+- All exclude filters (exclude_titles, exclude_seniorities, exclude_departments, exclude_company_locations, exclude_contact_locations, exclude_technologies, exclude_keywords, exclude_industries, exclude_company_ids, etc.)
+- Search and distinct parameters
+
+**Response:**
+
+```json
+{
+  "count": 1234,
+  "uuids": ["uuid1", "uuid2", "uuid3", ...]
+}
+```
+
+**Status Codes:**
+
+- `200 OK`: Success
+- `400 Bad Request`: Invalid query parameters
+- `401 Unauthorized`: Authentication required
+- `500 Internal Server Error`: Error retrieving UUIDs
+
+**Example Requests:**
+
+```txt
+GET /api/v1/contacts/count/uuids/
+GET /api/v1/contacts/count/uuids/?country=United States&city=San Francisco&employees_min=50
+GET /api/v1/contacts/count/uuids/?email_status=valid&industry=Technology&limit=1000
+```
+
+**Notes:**
+
+- Returns all matching UUIDs by default (unlimited) unless `limit` parameter is provided
+- Useful for bulk operations, exports, or when you only need UUIDs without full contact data
+- All the same filtering capabilities as the count endpoint
+
+---
+
 ### POST /api/v1/contacts/ - Create Contact
 
 Create a new contact. Requires admin authentication and the `X-Contacts-Write-Key` header.
@@ -537,7 +592,7 @@ These endpoints return only the `id` and the specific field value for each conta
 
 - `search` (string): Search term to filter results (case-insensitive, searches within the field)
 - `distinct` (boolean): If `true`, returns only distinct field values (default: `false`)
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 ### GET /api/v1/contacts/title/ - List Titles
@@ -552,14 +607,14 @@ Get list of contacts with only id and title field.
 
 - `search` (string): Search term to filter results (case-insensitive, searches within title field)
 - `distinct` (boolean): If `true`, returns only distinct title values (default: `false`)
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/contacts/title/?limit=25&offset=25",
+  "next": "http://54.87.173.234:8000/api/v1/contacts/title/?limit=25&offset=25",
   "previous": null,
   "results": [
     {
@@ -601,14 +656,14 @@ Get list of contacts with only id and company field.
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct company values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/contacts/company/?limit=25&offset=25",
+  "next": "http://54.87.173.234:8000/api/v1/contacts/company/?limit=25&offset=25",
   "previous": null,
   "results": [
     {
@@ -649,7 +704,7 @@ Get list of contacts with only id and industry field.
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct industry values
 - `separated` (boolean): If `true`, expands comma-separated industries into individual records (one record per industry). Each contact ID may appear multiple times.
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -692,7 +747,7 @@ Get list of contacts with only id and keywords field. Supports expansion of comm
   - When `separated=true`: Uses two-stage filtering (pre-filter at DB level, then post-filter individual keywords after expansion)
 - `separated` (boolean): If `true`, expands comma-separated keywords into individual records (one record per keyword). Each contact ID may appear multiple times.
 - `distinct` (boolean): If `true`, returns only distinct keyword values. When combined with `separated=true`, returns unique individual keywords across all contacts.
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -813,7 +868,7 @@ Get list of contacts with only id and technologies field.
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct technology values
 - `separated` (boolean): If `true`, expands comma-separated technologies into individual records (one record per technology). Each contact ID may appear multiple times.
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -853,7 +908,7 @@ Return address text for related companies, sourced from the `Company.text_search
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct company address values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -893,7 +948,7 @@ Return person-level address text sourced from the `Contact.text_search` column.
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct contact address values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -933,7 +988,7 @@ Get list of contacts with only id and city field (from ContactMetadata).
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct city values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -968,7 +1023,7 @@ Get list of contacts with only id and state field (from ContactMetadata).
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct state values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -1003,7 +1058,7 @@ Get list of contacts with only id and country field (from ContactMetadata).
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct country values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -1038,7 +1093,7 @@ Get list of contacts with only id and company city field (from CompanyMetadata).
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct company city values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -1073,7 +1128,7 @@ Get list of contacts with only id and company state field (from CompanyMetadata)
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct company state values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -1108,7 +1163,7 @@ Get list of contacts with only id and company country field (from CompanyMetadat
 
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct company country values
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 
 **Response:**
@@ -1250,7 +1305,7 @@ file: [CSV file]
 
 ```bash
 curl -X POST \
-  http://107.21.188.21:8000/api/v1/contacts/import/ \
+  http://54.87.173.234:8000/api/v1/contacts/import/ \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
   -F "file=@contacts.csv"
 ```
@@ -1454,7 +1509,7 @@ Returns a JSON array of error records:
 
 ```bash
 curl -X GET \
-  http://107.21.188.21:8000/api/v1/contacts/import/abc123def456/errors/ \
+  http://54.87.173.234:8000/api/v1/contacts/import/abc123def456/errors/ \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 ```
 

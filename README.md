@@ -29,7 +29,7 @@ npm install
 ```env
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 API_KEY=your_gemini_api_key
-NEXT_PUBLIC_API_BASE_URL=http://54.88.182.69:8000
+NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234
 ```
 
 3. Run the development server:

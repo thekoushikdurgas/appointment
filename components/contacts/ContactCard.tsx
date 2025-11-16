@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Contact } from '../../types/index';
+import { Contact } from '@/types/index';
 import { 
   MailIcon, 
   PhoneIcon, 
@@ -12,9 +12,9 @@ import {
   GlobeAltIcon,
   EditIcon,
   EyeIcon
-} from '../icons/IconComponents';
-import { Button } from '../ui/Button';
-import { Tooltip } from '../ui/Tooltip';
+} from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
+import { Tooltip } from '@components/ui/Tooltip';
 
 interface ContactCardProps {
   contact: Contact;

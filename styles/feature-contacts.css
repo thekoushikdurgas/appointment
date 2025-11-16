@@ -1170,3 +1170,295 @@
   }
 }
 
+/* ============================================
+   EXPORT MODAL
+   ============================================ */
+
+.export-modal-content {
+  padding: 1.5rem;
+}
+
+.export-modal-section {
+  margin-bottom: 1.5rem;
+}
+
+.export-modal-text {
+  margin-bottom: 0.5rem;
+}
+
+.export-modal-text--small {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.export-modal-text--bold {
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.export-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.export-modal-center {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.export-modal-spinner-wrapper {
+  margin-bottom: 1rem;
+}
+
+.export-modal-status-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+}
+
+.export-modal-status-card--success {
+  background-color: hsl(var(--success) / 0.1);
+  border: 1px solid hsl(var(--success) / 0.2);
+}
+
+.export-modal-status-card--error {
+  background-color: hsl(var(--destructive) / 0.1);
+  border: 1px solid hsl(var(--destructive) / 0.2);
+}
+
+.export-modal-status-card-content {
+  flex: 1;
+}
+
+.export-modal-status-card-title {
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.export-modal-status-card-message {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.export-modal-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+.export-modal-icon--success {
+  color: hsl(var(--success));
+}
+
+.export-modal-icon--error {
+  color: hsl(var(--destructive));
+}
+
+.export-modal-info {
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.export-modal-info-item {
+  margin-bottom: 0.5rem;
+}
+
+.export-modal-info-item--muted {
+  color: hsl(var(--muted-foreground));
+}
+
+.export-modal-mode-selection {
+  margin-bottom: 1.5rem;
+}
+
+.export-modal-label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.export-modal-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.export-modal-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.875rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  border: 1px solid hsl(var(--border) / 0.3);
+  background-color: hsl(var(--background) / 0.5);
+}
+
+.export-modal-radio:hover {
+  background-color: hsl(var(--muted) / 0.3);
+  border-color: hsl(var(--border));
+}
+
+.export-modal-radio input[type="radio"] {
+  cursor: pointer;
+  width: 1rem;
+  height: 1rem;
+  accent-color: hsl(var(--primary));
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}
+
+.export-modal-radio:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-modal-radio:has(input:disabled) input[type="radio"] {
+  cursor: not-allowed;
+}
+
+.export-modal-radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.export-modal-radio-label {
+  font-weight: var(--font-weight-medium);
+  font-size: 0.9375rem;
+  color: hsl(var(--foreground));
+}
+
+.export-modal-radio-count {
+  font-size: 0.8125rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.export-modal-specified-rows {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.export-modal-loading,
+.export-modal-error {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.export-modal-error {
+  color: hsl(var(--destructive));
+}
+
+.export-modal-error-message {
+  margin-bottom: 1rem;
+}
+
+/* ============================================
+   CONTACTS PAGE - FILTER INPUTS
+   ============================================ */
+
+.filter-input-sm {
+  font-size: var(--font-size-sm);
+}
+
+.filter-range-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-range-separator {
+  color: hsl(var(--muted-foreground));
+}
+
+.filter-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-exclude-text {
+  font-size: var(--font-size-xs);
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.75rem;
+}
+
+/* ============================================
+   CONTACTS PAGE - IMPORT MODAL
+   ============================================ */
+
+.import-job-status__progress-bar {
+  width: var(--progress-width, 0%);
+}
+
+.contact-modal-body--scrollable {
+  overflow-y: auto;
+}
+
+.contact-modal-content--max-height {
+  max-height: 90vh;
+}
+
+.contact-modal-center {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.contact-modal-error-message {
+  color: hsl(var(--destructive));
+}
+
+.contact-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.contact-modal-file-label {
+  cursor: pointer;
+}
+
+.contact-modal-file-label-inline {
+  display: inline-block;
+}
+
+/* ============================================
+   CONTACTS PAGE - SELECTION SUMMARY
+   ============================================ */
+
+.contacts-selection-summary {
+  padding: 0.75rem 1rem;
+  background-color: hsl(var(--muted) / 0.3);
+  border-bottom: 1px solid hsl(var(--border));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.contacts-selection-summary__content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ============================================
+   CONTACTS PAGE - TABLE CELLS
+   ============================================ */
+
+.contacts-table-head--narrow {
+  width: 50px;
+  padding: 0.5rem;
+}
+
+.contacts-table-cell--compact {
+  padding: 0.5rem;
+}
+

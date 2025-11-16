@@ -10,14 +10,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Company } from '../../../../types/company';
-import { getCompanyByUuid, deleteCompany, updateCompany } from '../../../../services/company';
-import { Button } from '../../../../components/ui/Button';
-import { Badge } from '../../../../components/ui/Badge';
-import { Tooltip } from '../../../../components/ui/Tooltip';
-import { ConfirmDialog } from '../../../../components/contacts/ConfirmDialog';
-import { CompanyDetailSkeletonLoader } from '../../../../components/companies/CompanyDetailSkeleton';
-import { CompanyContactsSection } from '../../../../components/companies/CompanyContactsSection';
+import { Company } from '@/types/company';
+import { getCompanyByUuid, deleteCompany, updateCompany } from '@services/company';
+import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Tooltip } from '@components/ui/Tooltip';
+import { ConfirmDialog } from '@components/contacts/ConfirmDialog';
+import { CompanyDetailSkeletonLoader } from '@components/companies/CompanyDetailSkeleton';
+import { CompanyContactsSection } from '@components/companies/CompanyContactsSection';
 import {
   ArrowLeftIcon,
   EditIcon,
@@ -99,7 +99,7 @@ const CompanyDetailPage: React.FC = () => {
 
     try {
       setIsDeleting(true);
-      await deleteCompany(company.id);
+      await deleteCompany(company.uuid);
       showToast('Company deleted successfully', 'success');
       setTimeout(() => {
         window.close();
@@ -198,7 +198,7 @@ const CompanyDetailPage: React.FC = () => {
   return (
     <div className="company-detail-page">
       {/* Header */}
-      <div className="company-detail-header">
+      {/* <div className="company-detail-header">
         <div className="company-detail-header-content">
           <div className="company-detail-header-left">
             <Button
@@ -229,10 +229,10 @@ const CompanyDetailPage: React.FC = () => {
             </Tooltip>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Overview Section */}
-      <div className="company-detail-overview" style={{ animationDelay: '50ms' }}>
+      <div className="company-detail-overview" style={{ '--animation-delay': '50ms' } as React.CSSProperties}>
         <div className="company-detail-overview-header">
           <div className="company-detail-overview-icon">
             <BuildingIcon />
@@ -242,7 +242,7 @@ const CompanyDetailPage: React.FC = () => {
             {company.industries && company.industries.length > 0 && (
               <div className="company-detail-overview-industries">
                 {company.industries.map((industry, idx) => (
-                  <span key={idx} className="company-detail-industry-badge">
+                  <span key={`${company.uuid}-industry-${idx}-${industry}`} className="company-detail-industry-badge">
                     {industry}
                   </span>
                 ))}
@@ -251,7 +251,7 @@ const CompanyDetailPage: React.FC = () => {
             {company.technologies && company.technologies.length > 0 && (
               <div className="company-detail-overview-technologies">
                 {company.technologies.map((tech, idx) => (
-                  <span key={idx} className="company-detail-tech-badge">
+                  <span key={`${company.uuid}-tech-${idx}-${tech}`} className="company-detail-tech-badge">
                     {tech}
                   </span>
                 ))}
@@ -311,7 +311,7 @@ const CompanyDetailPage: React.FC = () => {
       {/* Details Grid */}
       <div className="company-detail-details-grid">
         {/* Contact Information */}
-        <div className="company-detail-section" style={{ animationDelay: '100ms' }}>
+        <div className="company-detail-section" style={{ '--animation-delay': '100ms' } as React.CSSProperties}>
           <h3 className="company-detail-section-title">
             <GlobeAltIcon className="company-detail-section-title-icon" />
             Contact Information
@@ -402,7 +402,7 @@ const CompanyDetailPage: React.FC = () => {
         </div>
 
         {/* Location Information */}
-        <div className="company-detail-section" style={{ animationDelay: '150ms' }}>
+        <div className="company-detail-section" style={{ '--animation-delay': '150ms' } as React.CSSProperties}>
           <h3 className="company-detail-section-title">
             <MapPinIcon className="company-detail-section-title-icon" />
             Location Information
@@ -433,7 +433,7 @@ const CompanyDetailPage: React.FC = () => {
         </div>
 
         {/* Company Information */}
-        <div className="company-detail-section" style={{ animationDelay: '200ms' }}>
+        <div className="company-detail-section" style={{ '--animation-delay': '200ms' } as React.CSSProperties}>
           <h3 className="company-detail-section-title">
             <BuildingIcon className="company-detail-section-title-icon" />
             Company Information
@@ -444,7 +444,7 @@ const CompanyDetailPage: React.FC = () => {
                 <p className="company-detail-section-info-label">Industries</p>
                 <div className="company-detail-section-info-badges">
                   {company.industries.map((industry, idx) => (
-                    <span key={idx} className="company-detail-industry-badge">
+                    <span key={`${company.uuid}-industry-${idx}-${industry}`} className="company-detail-industry-badge">
                       {industry}
                     </span>
                   ))}
@@ -456,7 +456,7 @@ const CompanyDetailPage: React.FC = () => {
                 <p className="company-detail-section-info-label">Technologies</p>
                 <div className="company-detail-section-info-badges">
                   {company.technologies.map((tech, idx) => (
-                    <span key={idx} className="company-detail-tech-badge">
+                    <span key={`${company.uuid}-tech-${idx}-${tech}`} className="company-detail-tech-badge">
                       {tech}
                     </span>
                   ))}
@@ -468,7 +468,7 @@ const CompanyDetailPage: React.FC = () => {
                 <p className="company-detail-section-info-label">Keywords</p>
                 <div className="company-detail-section-info-badges">
                   {company.keywords.map((keyword, idx) => (
-                    <Badge key={idx} variant="glass" size="sm">
+                    <Badge key={`${company.uuid}-keyword-${idx}-${keyword}`} variant="glass" size="sm">
                       {keyword}
                     </Badge>
                   ))}
@@ -479,7 +479,7 @@ const CompanyDetailPage: React.FC = () => {
         </div>
 
         {/* Metadata */}
-        <div className="company-detail-section" style={{ animationDelay: '250ms' }}>
+        <div className="company-detail-section" style={{ '--animation-delay': '250ms' } as React.CSSProperties}>
           <h3 className="company-detail-section-title">
             <CalendarIcon className="company-detail-section-title-icon" />
             Metadata

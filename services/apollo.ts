@@ -6,6 +6,8 @@
  * **Key Functions:**
  * - `analyzeApolloUrl()` - Analyze Apollo.io URL and return structured parameter breakdown
  * - `searchContactsFromApolloUrl()` - Search contacts using Apollo.io URL parameters
+ * - `countContactsFromApolloUrl()` - Count contacts matching Apollo.io URL parameters
+ * - `getContactUuidsFromApolloUrl()` - Get contact UUIDs matching Apollo.io URL parameters
  * 
  * **Authentication:**
  * All endpoints require JWT authentication via Bearer token.
@@ -13,10 +15,12 @@
  * **API Endpoints:**
  * - POST /api/v2/apollo/analyze - Analyze Apollo URL
  * - POST /api/v2/apollo/contacts - Search contacts from Apollo URL
+ * - POST /api/v2/apollo/contacts/count - Count contacts from Apollo URL
+ * - POST /api/v2/apollo/contacts/count/uuids - Get contact UUIDs from Apollo URL
  */
 
 import { API_BASE_URL } from './api';
-import { authenticatedFetch } from './auth';
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
 import {
   parseApiError,
   parseExceptionError,
@@ -29,8 +33,16 @@ import {
   ApolloContactsSearchParams,
   ApolloAnalyzeRequest,
   ApolloContactsRequest,
-} from '../types/apollo';
-import { Contact } from '../types/index';
+  ApolloContactsCountRequest,
+  ApolloContactsCountResponse,
+  ApolloContactsUuidsRequest,
+  ApolloContactsUuidsResponse,
+  ApolloContactsUuidsParams,
+} from '@/types/apollo';
+
+// Re-export types for convenience
+export type { ApolloContactsUuidsParams };
+import { Contact } from '@/types/index';
 import { ResponseMeta } from './contact';
 
 /**
@@ -47,8 +59,7 @@ export interface ServiceResponse<T> {
  * API Contact response shape (snake_case from backend)
  */
 interface ApiContact {
-  id: number;
-  uuid?: string;
+  uuid: string;
   first_name?: string;
   last_name?: string;
   title?: string;
@@ -114,14 +125,13 @@ const mapApiToContact = (apiContact: ApiContact): Contact => {
     '';
 
   return {
-    id: apiContact.id,
     uuid: apiContact.uuid,
     name: fullName,
     email: apiContact.email || '',
     company: apiContact.company || '',
     phone: phone,
     status: (apiContact.stage || 'Lead') as Contact['status'],
-    avatarUrl: apiContact.photo_url || `https://picsum.photos/seed/${apiContact.id}/40/40`,
+    avatarUrl: apiContact.photo_url || `https://picsum.photos/seed/${apiContact.uuid}/40/40`,
     title: apiContact.title,
     industry: apiContact.industry,
     companySize: apiContact.company_size,
@@ -268,12 +278,14 @@ export const analyzeApolloUrl = async (
     const requestBody: ApolloAnalyzeRequest = { url };
 
     // Make API request
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v2/apollo/analyze`,
       {
         method: 'POST',
         headers,
-        body: JSON.stringify(requestBody),
+        data: requestBody,
+        useQueue: true,
+        useCache: false,
       }
     );
 
@@ -325,6 +337,10 @@ export const analyzeApolloUrl = async (
  * - `offset` (integer, optional): Starting offset for results (default: 0)
  * - `cursor` (string, optional): Opaque cursor token for pagination
  * - `view` (string, optional): When set to "simple", returns simplified contact data
+ * - `include_company_name` (string, optional): Include contacts whose company name matches this value (case-insensitive substring match)
+ * - `exclude_company_name` (array of strings, optional): Exclude contacts whose company name matches any provided value (case-insensitive)
+ * - `include_domain_list` (array of strings, optional): Include contacts whose company website domain matches any provided domain (case-insensitive)
+ * - `exclude_domain_list` (array of strings, optional): Exclude contacts whose company website domain matches any provided domain (case-insensitive)
  * 
  * **Response includes:**
  * - Contact results (paginated)
@@ -395,6 +411,31 @@ export const searchContactsFromApolloUrl = async (
     if (params?.offset !== undefined) query.set('offset', params.offset.toString());
     if (params?.cursor) query.set('cursor', params.cursor);
     if (params?.view) query.set('view', params.view);
+    if (params?.include_company_name) query.set('include_company_name', params.include_company_name);
+    if (params?.exclude_company_name && Array.isArray(params.exclude_company_name)) {
+      // Add each value as a separate query parameter (repeated params)
+      params.exclude_company_name.forEach((value) => {
+        if (value && value.trim()) {
+          query.append('exclude_company_name', value.trim());
+        }
+      });
+    }
+    if (params?.include_domain_list && Array.isArray(params.include_domain_list)) {
+      // Add each domain as a separate query parameter (repeated params)
+      params.include_domain_list.forEach((domain) => {
+        if (domain && domain.trim()) {
+          query.append('include_domain_list', domain.trim());
+        }
+      });
+    }
+    if (params?.exclude_domain_list && Array.isArray(params.exclude_domain_list)) {
+      // Add each domain as a separate query parameter (repeated params)
+      params.exclude_domain_list.forEach((domain) => {
+        if (domain && domain.trim()) {
+          query.append('exclude_domain_list', domain.trim());
+        }
+      });
+    }
 
     const queryString = query.toString();
     const endpoint = queryString
@@ -413,10 +454,12 @@ export const searchContactsFromApolloUrl = async (
     const requestBody: ApolloContactsRequest = { url };
 
     // Make API request
-    const response = await authenticatedFetch(endpoint, {
+    const response = await axiosAuthenticatedRequest(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify(requestBody),
+      data: requestBody,
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -478,6 +521,365 @@ export const searchContactsFromApolloUrl = async (
       message: formatErrorMessage(
         parsedError,
         'Failed to search contacts from Apollo URL'
+      ),
+      error: parsedError,
+    };
+  }
+};
+
+/**
+ * Count Contacts from Apollo.io URL
+ * 
+ * Counts contacts matching Apollo.io URL parameters. This endpoint converts an
+ * Apollo.io People Search URL into contact filter parameters and returns the total
+ * count of matching contacts from your database.
+ * 
+ * **Endpoint:** POST /api/v2/apollo/contacts/count
+ * 
+ * **Authentication:** Required (JWT Bearer token)
+ * 
+ * **Query Parameters:**
+ * - `include_company_name` (string, optional): Include contacts whose company name matches this value (case-insensitive substring match). Supports comma-separated values for OR logic.
+ * - `exclude_company_name` (array of strings, optional): Exclude contacts whose company name matches any provided value (case-insensitive). Can be provided multiple times or as comma-separated values.
+ * - `include_domain_list` (array of strings, optional): Include contacts whose company website domain matches any provided domain (case-insensitive). Domains are extracted from `CompanyMetadata.website` column.
+ * - `exclude_domain_list` (array of strings, optional): Exclude contacts whose company website domain matches any provided domain (case-insensitive). Domains are extracted from `CompanyMetadata.website` column.
+ * 
+ * **Response:**
+ * Returns a simple count response: `{ count: number }`
+ * 
+ * **Parameter Mappings:**
+ * Same as `/api/v2/apollo/contacts` endpoint - all Apollo URL parameters are mapped
+ * to contact filters using the same logic.
+ * 
+ * **Error Handling:**
+ * - 200 OK: Count retrieved successfully
+ * - 400 Bad Request: Invalid URL, not from Apollo.io domain, or invalid filter parameters
+ * - 401 Unauthorized: Authentication required
+ * - 500 Internal Server Error: Error occurred while counting contacts
+ * 
+ * **Use Cases:**
+ * 1. Quick Count Check: Get the total number of contacts matching an Apollo search before fetching results
+ * 2. Progress Tracking: Monitor how many contacts match specific criteria
+ * 3. Filter Validation: Verify that your Apollo URL filters are working as expected
+ * 4. Resource Planning: Estimate data volume before processing large result sets
+ * 
+ * @param url - Apollo.io URL to convert and count (must be from apollo.io domain)
+ * @param params - Optional parameters for company name filtering and domain filtering
+ * @returns Promise resolving to ServiceResponse with count number
+ * 
+ * @example
+ * ```typescript
+ * const result = await countContactsFromApolloUrl(
+ *   'https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California',
+ *   { include_company_name: 'Tech' }
+ * );
+ * 
+ * if (result.success && result.data) {
+ *   console.log('Total contacts:', result.data);
+ * } else {
+ *   console.error('Error:', result.message);
+ * }
+ * ```
+ */
+export const countContactsFromApolloUrl = async (
+  url: string,
+  params?: {
+    include_company_name?: string;
+    exclude_company_name?: string[];
+    include_domain_list?: string[];
+    exclude_domain_list?: string[];
+    requestId?: string;
+  }
+): Promise<ServiceResponse<number>> => {
+  try {
+    // Validate URL
+    const validation = validateApolloUrl(url);
+    if (!validation.valid) {
+      return {
+        success: false,
+        message: validation.error || 'Invalid URL',
+        error: {
+          message: validation.error || 'Invalid URL',
+          statusCode: 400,
+          isNetworkError: false,
+          isTimeoutError: false,
+        },
+      };
+    }
+
+    // Build query parameters
+    const query = new URLSearchParams();
+    if (params?.include_company_name) {
+      query.set('include_company_name', params.include_company_name);
+    }
+    if (params?.exclude_company_name && Array.isArray(params.exclude_company_name)) {
+      // Add each value as a separate query parameter (repeated params)
+      params.exclude_company_name.forEach((value) => {
+        if (value && value.trim()) {
+          query.append('exclude_company_name', value.trim());
+        }
+      });
+    }
+    if (params?.include_domain_list && Array.isArray(params.include_domain_list)) {
+      // Add each domain as a separate query parameter (repeated params)
+      params.include_domain_list.forEach((domain) => {
+        if (domain && domain.trim()) {
+          query.append('include_domain_list', domain.trim());
+        }
+      });
+    }
+    if (params?.exclude_domain_list && Array.isArray(params.exclude_domain_list)) {
+      // Add each domain as a separate query parameter (repeated params)
+      params.exclude_domain_list.forEach((domain) => {
+        if (domain && domain.trim()) {
+          query.append('exclude_domain_list', domain.trim());
+        }
+      });
+    }
+
+    const queryString = query.toString();
+    const endpoint = queryString
+      ? `${API_BASE_URL}/api/v2/apollo/contacts/count?${queryString}`
+      : `${API_BASE_URL}/api/v2/apollo/contacts/count`;
+
+    // Prepare headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (params?.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    // Prepare request body
+    const requestBody: ApolloContactsCountRequest = { url };
+
+    // Make API request
+    const response = await axiosAuthenticatedRequest(endpoint, {
+      method: 'POST',
+      headers,
+      data: requestBody,
+      useQueue: true,
+      useCache: false,
+    });
+
+    if (!response.ok) {
+      const error = await parseApiError(
+        response,
+        'Failed to count contacts from Apollo URL'
+      );
+      return {
+        success: false,
+        message: formatErrorMessage(
+          error,
+          'Failed to count contacts from Apollo URL'
+        ),
+        error,
+      };
+    }
+
+    const data: ApolloContactsCountResponse = await response.json();
+
+    return {
+      success: true,
+      message: `Found ${data.count} contact(s) matching Apollo URL criteria`,
+      data: data.count,
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(
+      error,
+      'Failed to count contacts from Apollo URL'
+    );
+    console.error('[APOLLO] Count contacts error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      success: false,
+      message: formatErrorMessage(
+        parsedError,
+        'Failed to count contacts from Apollo URL'
+      ),
+      error: parsedError,
+    };
+  }
+};
+
+/**
+ * Get Contact UUIDs from Apollo.io URL
+ * 
+ * Get a list of contact UUIDs matching Apollo.io URL parameters. This endpoint converts an
+ * Apollo.io People Search URL into contact filter parameters and returns matching contact UUIDs
+ * from your database.
+ * 
+ * **Endpoint:** POST /api/v2/apollo/contacts/count/uuids
+ * 
+ * **Authentication:** Required (JWT Bearer token)
+ * 
+ * **Query Parameters:**
+ * - `include_company_name` (string, optional): Include contacts whose company name matches this value (case-insensitive substring match). Supports comma-separated values for OR logic.
+ * - `exclude_company_name` (array of strings, optional): Exclude contacts whose company name matches any provided value (case-insensitive). Can be provided multiple times or as comma-separated values.
+ * - `include_domain_list` (array of strings, optional): Include contacts whose company website domain matches any provided domain (case-insensitive). Domains are extracted from `CompanyMetadata.website` column.
+ * - `exclude_domain_list` (array of strings, optional): Exclude contacts whose company website domain matches any provided domain (case-insensitive). Domains are extracted from `CompanyMetadata.website` column.
+ * - `limit` (integer, optional): Maximum number of UUIDs to return. If not provided, returns all matching UUIDs (unlimited).
+ * 
+ * **Response:**
+ * Returns count and list of UUIDs:
+ * - `count` (integer): Total number of matching contacts
+ * - `uuids` (array[string]): Array of contact UUIDs
+ * 
+ * **Parameter Mappings:**
+ * Same as `/api/v2/apollo/contacts` endpoint - all Apollo URL parameters are mapped
+ * to contact filters using the same logic.
+ * 
+ * **Error Handling:**
+ * - 200 OK: UUIDs retrieved successfully
+ * - 400 Bad Request: Invalid URL, not from Apollo.io domain, or invalid filter parameters
+ * - 401 Unauthorized: Authentication required
+ * - 500 Internal Server Error: Error occurred while retrieving UUIDs
+ * 
+ * **Use Cases:**
+ * 1. Bulk Operations: Get UUIDs for bulk updates or exports
+ * 2. Efficient Filtering: Retrieve only UUIDs without full contact data
+ * 3. Export Preparation: Get UUID list before exporting specific contact sets
+ * 4. Integration: Use UUIDs for downstream processing or API calls
+ * 
+ * @param url - Apollo.io URL to convert and search (must be from apollo.io domain)
+ * @param params - Optional parameters for company name filtering, domain filtering, and limit
+ * @returns Promise resolving to ServiceResponse with ApolloContactsUuidsResponse
+ * 
+ * @example
+ * ```typescript
+ * const result = await getContactUuidsFromApolloUrl(
+ *   'https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California',
+ *   { include_company_name: 'Tech', limit: 1000 }
+ * );
+ * 
+ * if (result.success && result.data) {
+ *   console.log('Total contacts:', result.data.count);
+ *   console.log('UUIDs:', result.data.uuids);
+ * } else {
+ *   console.error('Error:', result.message);
+ * }
+ * ```
+ */
+export const getContactUuidsFromApolloUrl = async (
+  url: string,
+  params?: ApolloContactsUuidsParams
+): Promise<ServiceResponse<ApolloContactsUuidsResponse>> => {
+  try {
+    // Validate URL
+    const validation = validateApolloUrl(url);
+    if (!validation.valid) {
+      return {
+        success: false,
+        message: validation.error || 'Invalid URL',
+        error: {
+          message: validation.error || 'Invalid URL',
+          statusCode: 400,
+          isNetworkError: false,
+          isTimeoutError: false,
+        },
+      };
+    }
+
+    // Build query parameters
+    const query = new URLSearchParams();
+    if (params?.include_company_name) {
+      query.set('include_company_name', params.include_company_name);
+    }
+    if (params?.exclude_company_name && Array.isArray(params.exclude_company_name)) {
+      // Add each value as a separate query parameter (repeated params)
+      params.exclude_company_name.forEach((value) => {
+        if (value && value.trim()) {
+          query.append('exclude_company_name', value.trim());
+        }
+      });
+    }
+    if (params?.include_domain_list && Array.isArray(params.include_domain_list)) {
+      // Add each domain as a separate query parameter (repeated params)
+      params.include_domain_list.forEach((domain) => {
+        if (domain && domain.trim()) {
+          query.append('include_domain_list', domain.trim());
+        }
+      });
+    }
+    if (params?.exclude_domain_list && Array.isArray(params.exclude_domain_list)) {
+      // Add each domain as a separate query parameter (repeated params)
+      params.exclude_domain_list.forEach((domain) => {
+        if (domain && domain.trim()) {
+          query.append('exclude_domain_list', domain.trim());
+        }
+      });
+    }
+    if (params?.limit !== undefined) {
+      query.set('limit', params.limit.toString());
+    }
+
+    const queryString = query.toString();
+    const endpoint = queryString
+      ? `${API_BASE_URL}/api/v2/apollo/contacts/count/uuids?${queryString}`
+      : `${API_BASE_URL}/api/v2/apollo/contacts/count/uuids`;
+
+    // Prepare headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (params?.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    // Prepare request body
+    const requestBody: ApolloContactsUuidsRequest = { url };
+
+    // Make API request
+    const response = await axiosAuthenticatedRequest(endpoint, {
+      method: 'POST',
+      headers,
+      data: requestBody,
+      useQueue: true,
+      useCache: false,
+    });
+
+    if (!response.ok) {
+      const error = await parseApiError(
+        response,
+        'Failed to get contact UUIDs from Apollo URL'
+      );
+      return {
+        success: false,
+        message: formatErrorMessage(
+          error,
+          'Failed to get contact UUIDs from Apollo URL'
+        ),
+        error,
+      };
+    }
+
+    const data: ApolloContactsUuidsResponse = await response.json();
+
+    return {
+      success: true,
+      message: `Found ${data.count} contact UUID(s) matching Apollo URL criteria`,
+      data,
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(
+      error,
+      'Failed to get contact UUIDs from Apollo URL'
+    );
+    console.error('[APOLLO] Get contact UUIDs error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      success: false,
+      message: formatErrorMessage(
+        parsedError,
+        'Failed to get contact UUIDs from Apollo URL'
       ),
       error: parsedError,
     };

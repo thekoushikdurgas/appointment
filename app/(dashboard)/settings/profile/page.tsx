@@ -2,18 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useAuth } from '../../../../hooks/useAuth';
-import { updateUserProfile, uploadUserAvatar, promoteToAdmin } from '../../../../services/user';
-import { User } from '../../../../types/index';
-import { Input } from '../../../../components/ui/Input';
-import { Textarea } from '../../../../components/ui/Textarea';
-import { Select } from '../../../../components/ui/Select';
-import { Button } from '../../../../components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
-import { CollapsibleSection } from '../../../../components/ui/CollapsibleSection';
-import { Tooltip } from '../../../../components/ui/Tooltip';
-import { BottomSheet } from '../../../../components/ui/BottomSheet';
-import { UploadIcon, UsersIcon, IdentificationIcon, GlobeAltIcon, SaveIcon, AlertTriangleIcon, SuccessIcon, MailIcon, BriefcaseIcon, ShieldCheckIcon } from '../../../../components/icons/IconComponents';
+import { useAuth } from '@hooks/useAuth';
+import { updateUserProfile, uploadUserAvatar, promoteToAdmin } from '@services/user';
+import { User } from '@/types/index';
+import { Input } from '@components/ui/Input';
+import { Textarea } from '@components/ui/Textarea';
+import { Select } from '@components/ui/Select';
+import { Button } from '@components/ui/Button';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
+import { CollapsibleSection } from '@components/ui/CollapsibleSection';
+import { Tooltip } from '@components/ui/Tooltip';
+import { BottomSheet } from '@components/ui/BottomSheet';
+import { UploadIcon, UsersIcon, IdentificationIcon, GlobeAltIcon, SaveIcon, AlertTriangleIcon, SuccessIcon, MailIcon, BriefcaseIcon, ShieldCheckIcon } from '@components/icons/IconComponents';
 
 const RoleBadge: React.FC<{ role: User['role'] }> = ({ role }) => {
   const roleConfig = {

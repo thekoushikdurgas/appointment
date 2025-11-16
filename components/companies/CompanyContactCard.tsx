@@ -8,17 +8,17 @@
 'use client';
 
 import React from 'react';
-import { CompanyContact } from '../../types/company';
+import { CompanyContact } from '@/types/company';
 import { 
   MailIcon, 
   PhoneIcon, 
   UserIcon,
   BriefcaseIcon,
   EyeIcon
-} from '../icons/IconComponents';
-import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
-import { Tooltip } from '../ui/Tooltip';
+} from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Tooltip } from '@components/ui/Tooltip';
 
 interface CompanyContactCardProps {
   contact: CompanyContact;
@@ -198,7 +198,7 @@ export const CompanyContactCard: React.FC<CompanyContactCardProps> = ({
         {contact.departments && contact.departments.length > 0 && (
           <>
             {contact.departments.slice(0, 2).map((dept, idx) => (
-              <Badge key={idx} variant="glass" size="sm">
+              <Badge key={`${contact.uuid}-dept-${idx}-${dept}`} variant="glass" size="sm">
                 {dept}
               </Badge>
             ))}

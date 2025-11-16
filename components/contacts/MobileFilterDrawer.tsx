@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { useSwipeGesture } from '../../hooks/useSwipeGesture';
-import { XMarkIcon, FilterIcon } from '../icons/IconComponents';
-import { Button } from '../ui/Button';
+import { useSwipeGesture } from '@hooks/useSwipeGesture';
+import { XMarkIcon, FilterIcon } from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
 
 interface MobileFilterDrawerProps {
   isOpen: boolean;

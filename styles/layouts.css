@@ -7,7 +7,17 @@
   width: 100vw;
   background-color: hsl(var(--secondary));
   color: hsl(var(--foreground));
-  overflow: hidden;
+  overflow: hidden auto;
+}
+
+/* Full-width layout when sidebar is hidden (detail pages) */
+.dashboard-layout--no-sidebar {
+  flex-direction: column;
+}
+
+.dashboard-layout--no-sidebar .dashboard-main {
+  width: 100%;
+  max-width: 100%;
 }
 
 .dashboard-main {
@@ -53,7 +63,7 @@
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
   transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   width: 16rem;
-  transform: translateX(-100%);
+  transform: var(--sidebar-transform, translateX(-100%));
 }
 
 @media (min-width: 1024px) {
@@ -159,6 +169,7 @@
 
 .sidebar-search-collapsed {
   padding: 0.5rem;
+  display: none;
 }
 
 @media (min-width: 1024px) {
@@ -212,11 +223,11 @@
 
 /* Nav Section Styles */
 .nav-section {
-  margin-bottom: 1.5rem;
+  /* margin-bottom: 1.5rem; */
 }
 
 .nav-section:last-child {
-  margin-bottom: 0;
+  /* margin-bottom: 0; */
 }
 
 .sidebar-nav-link {
@@ -224,14 +235,17 @@
   color: hsl(var(--muted-foreground));
   font-weight: var(--font-weight-medium);
   justify-content: flex-start;
-  gap: 0.75rem;
-  margin: 0.25rem 0;
-  padding: 0.75rem;
-  text-decoration: none;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  display: flex;
-  position: relative;
   align-items: center;
+  gap: .75rem;
+  margin: .25rem 0;
+  padding: .75rem;
+  text-decoration: none;
+  transition: all .3s 
+cubic-bezier(.68, -.55, .265, 1.55);
+  display: flex
+;
+  position: relative;
+  width: 100%;
 }
 
 .sidebar-nav-link:hover {
@@ -268,6 +282,7 @@
 
 .sidebar-nav-icon-wrapper {
   flex-shrink: 0;
+  display: flex;
 }
 
 .sidebar-nav-icon {
@@ -317,6 +332,7 @@
   opacity: 0;
   width: 0;
   visibility: hidden;
+  display: none;
 }
 
 @media (min-width: 1024px) {
@@ -765,7 +781,7 @@
 }
 
 .nav-section-divider-line {
-  width: 2rem;
+  width: 100%;
   height: 1px;
   background-color: hsl(var(--border));
 }
@@ -791,21 +807,6 @@
 
 .icon-hover-scale:hover {
   transform: scale(1.1);
-}
-
-.stagger-item {
-  animation: stagger-fade-in 0.3s ease-out backwards;
-}
-
-@keyframes stagger-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* User Menu Popup */

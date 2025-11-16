@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../../../hooks/useAuth';
-import { updateUserProfile } from '../../../../services/user';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
-import { Button } from '../../../../components/ui/Button';
-import { BellIcon, AlertTriangleIcon, SuccessIcon } from '../../../../components/icons/IconComponents';
+import { useAuth } from '@hooks/useAuth';
+import { updateUserProfile } from '@services/user';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
+import { Button } from '@components/ui/Button';
+import { BellIcon, AlertTriangleIcon, SuccessIcon } from '@components/icons/IconComponents';
 
 const NotificationsSettings: React.FC = () => {
     const { user, refreshUserProfile } = useAuth();

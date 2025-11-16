@@ -8,7 +8,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Company, CompanyCreate, CompanyUpdate, CompanyFilters } from '../../../types/company';
+import { Company, CompanyCreate, CompanyUpdate, CompanyFilters } from '@/types/company';
 import {
   SearchIcon,
   XMarkIcon,
@@ -28,27 +28,30 @@ import {
   EditIcon,
   DeleteIcon,
   CalendarIcon,
-} from '../../../components/icons/IconComponents';
-import { useDebounce } from '../../../hooks/useDebounce';
+  DownloadIcon,
+  CheckIcon,
+} from '@components/icons/IconComponents';
+import { useDebounce } from '@hooks/useDebounce';
 import {
   fetchCompanies,
   getCompanyCount,
   createCompany,
   updateCompany,
   deleteCompany,
-} from '../../../services/company';
-import { Input } from '../../../components/ui/Input';
-import { Button } from '../../../components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
-import { Card, CardContent } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
-import { Tooltip } from '../../../components/ui/Tooltip';
-import { CompanyCard } from '../../../components/companies/CompanyCard';
-import { CompanyDetailsModal } from '../../../components/companies/CompanyDetailsModal';
-import { CompanyFormModal } from '../../../components/companies/CompanyFormModal';
-import { CompanyFilterDrawer } from '../../../components/companies/CompanyFilterDrawer';
-import { CompanySkeletonLoader, CompanyStatsSkeletonLoader } from '../../../components/companies/CompanySkeletonLoader';
-import { CompanyEmptyState } from '../../../components/companies/CompanyEmptyState';
+} from '@services/company';
+import { Input } from '@components/ui/Input';
+import { Button } from '@components/ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
+import { Card, CardContent } from '@components/ui/Card';
+import { Badge } from '@components/ui/Badge';
+import { Tooltip } from '@components/ui/Tooltip';
+import { CompanyCard } from '@components/companies/CompanyCard';
+import { CompanyDetailsModal } from '@components/companies/CompanyDetailsModal';
+import { CompanyFormModal } from '@components/companies/CompanyFormModal';
+import { CompanyFilterDrawer } from '@components/companies/CompanyFilterDrawer';
+import { CompanySkeletonLoader, CompanyStatsSkeletonLoader } from '@components/companies/CompanySkeletonLoader';
+import { CompanyEmptyState } from '@components/companies/CompanyEmptyState';
+import { ExportModal } from '@components/contacts/ExportModal';
 
 type SortableColumn = 'name' | 'employeesCount' | 'annualRevenue' | 'totalFunding' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -134,6 +137,10 @@ export default function CompaniesPage() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  
+  // Selection state
+  const [selectedCompanyUuids, setSelectedCompanyUuids] = useState<Set<string>>(new Set());
   
   // Toast notifications
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -291,6 +298,46 @@ export default function CompaniesPage() {
     });
   }, [filters]);
 
+  // Selection helper functions
+  const toggleCompanySelection = useCallback((uuid: string | undefined) => {
+    if (!uuid) return;
+    setSelectedCompanyUuids(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(uuid)) {
+        newSet.delete(uuid);
+      } else {
+        newSet.add(uuid);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const allUuids = companies.filter(c => c.uuid).map(c => c.uuid!);
+    if (allUuids.length === 0) return;
+    
+    const allSelected = allUuids.every(uuid => selectedCompanyUuids.has(uuid));
+    if (allSelected) {
+      // Deselect all
+      setSelectedCompanyUuids(new Set());
+    } else {
+      // Select all
+      setSelectedCompanyUuids(new Set(allUuids));
+    }
+  }, [companies, selectedCompanyUuids]);
+
+  const isSelectAllChecked = useMemo(() => {
+    const allUuids = companies.filter(c => c.uuid).map(c => c.uuid!);
+    return allUuids.length > 0 && allUuids.every(uuid => selectedCompanyUuids.has(uuid));
+  }, [companies, selectedCompanyUuids]);
+
+  const isSelectAllIndeterminate = useMemo(() => {
+    const allUuids = companies.filter(c => c.uuid).map(c => c.uuid!);
+    if (allUuids.length === 0) return false;
+    const selectedCount = allUuids.filter(uuid => selectedCompanyUuids.has(uuid)).length;
+    return selectedCount > 0 && selectedCount < allUuids.length;
+  }, [companies, selectedCompanyUuids]);
+
   // Handle company actions
   const handleViewDetails = (company: Company) => {
     setSelectedCompany(company);
@@ -314,7 +361,7 @@ export default function CompaniesPage() {
     }
 
     try {
-      const result = await deleteCompany(company.id);
+      const result = await deleteCompany(company.uuid);
       if (result.success) {
         showToast('Company deleted successfully', 'success');
         loadCompanies();
@@ -334,7 +381,7 @@ export default function CompaniesPage() {
     try {
       let result;
       if (editingCompany) {
-        result = await updateCompany(editingCompany.id, data as CompanyUpdate);
+        result = await updateCompany(editingCompany.uuid, data as CompanyUpdate);
       } else {
         result = await createCompany(data as CompanyCreate);
       }
@@ -452,7 +499,7 @@ export default function CompaniesPage() {
             <p className="companies-stats-card-label">Companies</p>
           </div>
 
-          <div className="companies-stats-card" style={{ animationDelay: '50ms' }}>
+          <div className="companies-stats-card" style={{ '--animation-delay': '50ms' } as React.CSSProperties}>
             <div className="companies-stats-card-header">
               <div className="companies-stats-card-icon">
                 <UsersIcon />
@@ -463,7 +510,7 @@ export default function CompaniesPage() {
             <p className="companies-stats-card-label">Employees</p>
           </div>
 
-          <div className="companies-stats-card" style={{ animationDelay: '100ms' }}>
+          <div className="companies-stats-card" style={{ '--animation-delay': '100ms' } as React.CSSProperties}>
             <div className="companies-stats-card-header">
               <div className="companies-stats-card-icon">
                 <DollarIcon />
@@ -474,7 +521,7 @@ export default function CompaniesPage() {
             <p className="companies-stats-card-label">Revenue</p>
           </div>
 
-          <div className="companies-stats-card" style={{ animationDelay: '150ms' }}>
+          <div className="companies-stats-card" style={{ '--animation-delay': '150ms' } as React.CSSProperties}>
             <div className="companies-stats-card-header">
               <div className="companies-stats-card-icon">
                 <DollarIcon />
@@ -528,6 +575,18 @@ export default function CompaniesPage() {
           >
             Filters {hasActiveFilters && `(${Object.values(filters).filter(v => v && (Array.isArray(v) ? v.length > 0 : true)).length})`}
           </Button>
+
+          {/* Export Button */}
+          {selectedCompanyUuids.size > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() => setShowExportModal(true)}
+              leftIcon={<DownloadIcon />}
+              className="companies-export-btn"
+            >
+              Export ({selectedCompanyUuids.size})
+            </Button>
+          )}
 
           {/* Create Button */}
           <Button
@@ -610,6 +669,38 @@ export default function CompaniesPage() {
         <Table>
           <TableHeader className="companies-table-header">
             <TableRow>
+              <TableHead className="companies-table-head companies-table-head--checkbox">
+                <div className="checkbox-input-wrapper">
+                  <input
+                    type="checkbox"
+                    checked={isSelectAllChecked}
+                    ref={(input) => {
+                      if (input) input.indeterminate = isSelectAllIndeterminate;
+                    }}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleSelectAll();
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Select all companies"
+                    className="checkbox-input"
+                  />
+                  <div 
+                    className="checkbox-box"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleSelectAll();
+                    }}
+                  >
+                    {isSelectAllChecked && (
+                      <CheckIcon className="checkbox-icon" />
+                    )}
+                    {isSelectAllIndeterminate && !isSelectAllChecked && (
+                      <div className="checkbox-indeterminate-indicator" />
+                    )}
+                  </div>
+                </div>
+              </TableHead>
               <TableHead onClick={() => handleSort('name')} className="companies-table-head companies-table-head--sortable">
                 <div className="companies-table-head-content">
                   Company Name
@@ -644,7 +735,7 @@ export default function CompaniesPage() {
               <CompanySkeletonLoader count={5} variant="table" />
             ) : companies.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="companies-table-empty-cell">
+                <TableCell colSpan={8} className="companies-table-empty-cell">
                   <CompanyEmptyState
                     variant={searchTerm || hasActiveFilters ? 'no-results' : 'no-data'}
                     onAction={searchTerm || hasActiveFilters ? () => {
@@ -656,17 +747,48 @@ export default function CompaniesPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              companies.map((company, index) => (
+              companies.map((company, index) => {
+                const isSelected = company.uuid ? selectedCompanyUuids.has(company.uuid) : false;
+                return (
                 <TableRow
-                  key={company.id}
+                  key={company.uuid || `company-${index}`}
                   onClick={() => {
                     if (company.uuid) {
                       window.open(`/companies/${company.uuid}`, '_blank', 'noopener,noreferrer');
                     }
                   }}
-                  className="companies-table-row"
+                  className={`companies-table-row ${isSelected ? 'companies-table-row-selected' : ''}`}
                   title="Click to view company details in new tab"
                 >
+                  <TableCell 
+                    className="companies-table-cell companies-table-cell--compact"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="checkbox-input-wrapper">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          toggleCompanySelection(company.uuid);
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        aria-label={`Select ${company.name || 'company'}`}
+                        className="checkbox-input"
+                      />
+                      <div 
+                        className="checkbox-box"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleCompanySelection(company.uuid);
+                        }}
+                      >
+                        {isSelected && (
+                          <CheckIcon className="checkbox-icon" />
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell className="companies-table-cell companies-table-cell--name">
                     <div className="companies-table-cell-name-content">
                       <div className="companies-table-cell-name-icon">
@@ -679,7 +801,7 @@ export default function CompaniesPage() {
                     {company.industries && company.industries.length > 0 ? (
                       <div className="companies-table-industries">
                         {company.industries.slice(0, 2).map((industry, idx) => (
-                          <span key={idx} className="companies-table-industry-badge">
+                          <span key={`${company.uuid}-industry-${idx}-${industry}`} className="companies-table-industry-badge">
                             {industry}
                           </span>
                         ))}
@@ -737,7 +859,8 @@ export default function CompaniesPage() {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              );
+              })
             )}
           </TableBody>
         </Table>
@@ -759,7 +882,7 @@ export default function CompaniesPage() {
         ) : (
           companies.map((company, index) => (
             <CompanyCard
-              key={company.id}
+              key={company.uuid || `company-${index}`}
               company={company}
               onClick={() => {
                 if (company.uuid) {
@@ -830,6 +953,24 @@ export default function CompaniesPage() {
         onFiltersChange={handleFilterChange}
         onApply={() => setShowFilters(false)}
         onClear={handleClearFilters}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => {
+          setShowExportModal(false);
+          setSelectedCompanyUuids(new Set());
+        }}
+        selectedContactUuids={Array.from(selectedCompanyUuids)}
+        exportType="companies"
+        currentPageData={companies}
+        filters={filters}
+        totalCount={totalCount}
+        navigateToHistory={true}
+        onExportComplete={() => {
+          setSelectedCompanyUuids(new Set());
+        }}
       />
 
       {/* Toast Notification */}

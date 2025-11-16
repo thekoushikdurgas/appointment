@@ -8,8 +8,8 @@
 'use client';
 
 import React from 'react';
-import { UsersIcon, SearchIcon, FilterIcon, AlertTriangleIcon } from '../icons/IconComponents';
-import { Button } from '../ui/Button';
+import { UsersIcon, SearchIcon, FilterIcon, AlertTriangleIcon } from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
 
 interface CompanyContactsEmptyStateProps {
   variant?: 'no-contacts' | 'no-results';

@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { ChevronDownIcon } from '../icons/IconComponents';
+import { Card } from '@components/ui/Card';
+import { Button } from '@components/ui/Button';
+import { ChevronDownIcon } from '@components/icons/IconComponents';
 
 export interface FilterOption {
   id: string;

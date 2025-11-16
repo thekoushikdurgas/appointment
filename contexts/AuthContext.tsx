@@ -1,9 +1,9 @@
 "use client"
 
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '../types/index';
-import { login as apiLogin, register as apiRegister, logout as apiLogout, getSession, ServiceResponse } from '../services/auth';
-import { getUserProfile } from '../services/user';
+import { User } from '@/types/index';
+import { login as apiLogin, register as apiRegister, logout as apiLogout, getSession, refreshTokenRequest, getRefreshToken, ServiceResponse } from '@services/auth';
+import { getUserProfile } from '@services/user';
 
 interface AuthContextType {
   user: User | null;
@@ -24,12 +24,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const fetchUserProfile = async (sessionUser: any) => {
-    console.log(`[AUTH] Fetching profile for user ID: ${sessionUser.id}`);
+    console.log(`[AUTH] fetchUserProfile called for user ID: ${sessionUser.id}`);
     try {
+      console.log('[AUTH] About to call getUserProfile from user service');
       const profile = await getUserProfile(sessionUser);
+      console.log('[AUTH] getUserProfile returned:', profile ? 'Profile data' : 'null');
       
       if (profile) {
-        console.log('[AUTH] User profile fetched successfully:', profile);
+        console.log('[AUTH] User profile fetched successfully:', {
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+        });
+        console.log('[AUTH] Calling setUser with profile data');
         setUser(profile);
         console.log('[AUTH] User state successfully set with profile data.');
       } else {
@@ -86,8 +93,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // We'll check the current state by calling setUser with a function
         setUser((currentUser) => {
           if (!sessionData && currentUser) {
-            console.log('[AUTH] Session expired. Clearing user state.');
-            return null;
+            console.log('[AUTH] Session expired. Attempting token refresh...');
+            // Try to refresh the token before clearing user state
+            const refreshToken = getRefreshToken();
+            if (refreshToken && refreshToken.trim() !== '') {
+              // Refresh token is available, attempt refresh
+              refreshTokenRequest(refreshToken).then((refreshed) => {
+                if (refreshed) {
+                  console.log('[AUTH] Token refreshed successfully. Re-checking session...');
+                  // Re-check session after refresh
+                  getSession(true).then((newSessionData) => {
+                    if (newSessionData?.user) {
+                      console.log('[AUTH] Session restored after refresh. Fetching profile...');
+                      fetchUserProfile(newSessionData.user).catch((error) => {
+                        console.error('[AUTH] Error fetching profile after refresh:', error);
+                        // If profile fetch fails after refresh, clear user state
+                        setUser(null);
+                      });
+                    } else {
+                      console.log('[AUTH] Token refresh succeeded but no session found. Clearing user state.');
+                      setUser(null);
+                    }
+                  }).catch((error) => {
+                    console.error('[AUTH] Error re-checking session after refresh:', error);
+                    setUser(null);
+                  });
+                } else {
+                  console.log('[AUTH] Token refresh failed - refresh token may be invalid or expired. Clearing user state.');
+                  setUser(null);
+                }
+              }).catch((error) => {
+                console.error('[AUTH] Error during token refresh:', error);
+                console.log('[AUTH] Clearing user state due to refresh error.');
+                setUser(null);
+              });
+            } else {
+              // No refresh token available - session cannot be restored
+              console.log('[AUTH] No refresh token available. Session cannot be restored. Clearing user state.');
+              setUser(null);
+            }
+            return currentUser; // Return current user while refresh is in progress
           } else if (sessionData && !currentUser) {
             console.log('[AUTH] Session found. Fetching profile.');
             // Fetch profile asynchronously - it will call setUser internally
@@ -100,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error('[AUTH] Error checking session:', error);
       }
-    }, 60000); // Check every minute
+    }, 3600000); // Check every hour
 
     return () => {
       isMounted = false;
@@ -129,6 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, pass: string): Promise<ServiceResponse> => {
     console.log(`[AUTH] Attempting login for: ${email}`);
     const result = await apiLogin(email, pass);
+    console.log('[AUTH] apiLogin returned:', { success: result.success, message: result.message });
     
     if (!result.success) {
       console.error(`[AUTH] Login failed for ${email}:`, result.message);
@@ -139,9 +185,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Fetch session and profile after successful login
     try {
+      console.log('[AUTH] About to call getSession');
       const sessionData = await getSession();
+      console.log('[AUTH] getSession returned:', sessionData ? 'Session data' : 'null');
+      
       if (sessionData?.user) {
+        console.log('[AUTH] Session data available, user:', sessionData.user.id || sessionData.user.email);
+        console.log('[AUTH] About to call fetchUserProfile');
         await fetchUserProfile(sessionData.user);
+        console.log('[AUTH] fetchUserProfile completed');
       } else {
         console.warn('[AUTH] Login succeeded but no session data available. Profile will be fetched on next session check.');
       }
@@ -151,6 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Return success but log the error
     }
     
+    console.log('[AUTH] Login flow complete, returning result');
     return result; // Return full ServiceResponse
   };
 

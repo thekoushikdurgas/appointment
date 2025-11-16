@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../../../hooks/useAuth';
-import { useAuthSwipe } from '../../../hooks/useAuthSwipe';
-import { LogoIcon, AlertTriangleIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '../../../components/icons/IconComponents';
+import { useAuth } from '@hooks/useAuth';
+import { useAuthSwipe } from '@hooks/useAuthSwipe';
+import { LogoIcon, AlertTriangleIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '@components/icons/IconComponents';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Input } from '../../../components/ui/Input';
-import { Button } from '../../../components/ui/Button';
-import { Checkbox } from '../../../components/ui/Checkbox';
-import { GlassCard } from '../../../components/ui/GlassCard';
-import { SocialLoginButtons } from '../../../components/auth/SocialLoginButtons';
-import { FloatingIcons } from '../../../components/ui/FloatingIcons';
-import { ParticleEffect } from '../../../components/ui/ParticleEffect';
+import { Input } from '@components/ui/Input';
+import { Button } from '@components/ui/Button';
+import { Checkbox } from '@components/ui/Checkbox';
+import { GlassCard } from '@components/ui/GlassCard';
+import { SocialLoginButtons } from '@components/auth/SocialLoginButtons';
+import { FloatingIcons } from '@components/ui/FloatingIcons';
+import { ParticleEffect } from '@components/ui/ParticleEffect';
 
 interface FormErrors {
   email?: string;

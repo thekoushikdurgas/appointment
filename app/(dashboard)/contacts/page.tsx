@@ -2,22 +2,22 @@
 
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { Contact, ContactCreate } from '../../../types/index';
-import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, MailIcon, PhoneIcon, BuildingIcon, MapPinIcon, CalendarIcon, UsersIcon, EditIcon, SuccessIcon, AlertTriangleIcon, LoadingSpinner } from '../../../components/icons/IconComponents';
-import { useDebounce } from '../../../hooks/useDebounce';
-import { fetchContacts, fetchDistinctValues, fetchFieldValues, ContactFilters, createContact } from '../../../services/contact';
-import { uploadContactsCSV, getImportJobStatus, pollImportJobStatus, getImportErrors, ImportJob, ImportError } from '../../../services/import';
-import { Input } from '../../../components/ui/Input';
-import { Button } from '../../../components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../../../components/ui/Table';
-import { Card, CardContent } from '../../../components/ui/Card';
-import { Textarea } from '../../../components/ui/Textarea';
-import { Select } from '../../../components/ui/Select';
-import { Tooltip } from '../../../components/ui/Tooltip';
-import { ContactCard } from '../../../components/contacts/ContactCard';
-import { MobileFilterDrawer } from '../../../components/contacts/MobileFilterDrawer';
-import { FilterDebugPanel } from '../../../components/contacts/FilterDebugPanel';
-import { filterLogger } from '../../../utils/filterLogger';
+import { Contact, ContactCreate } from '@/types/index';
+import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, MailIcon, PhoneIcon, BuildingIcon, MapPinIcon, CalendarIcon, UsersIcon, EditIcon, SuccessIcon, AlertTriangleIcon, LoadingSpinner, DownloadIcon, CheckIcon } from '@components/icons/IconComponents';
+import { useDebounce } from '@hooks/useDebounce';
+import { fetchContacts, fetchDistinctValues, fetchFieldValues, ContactFilters, createContact } from '@services/contact';
+import { uploadContactsCSV, getImportJobStatus, pollImportJobStatus, getImportErrors, ImportJob, ImportError } from '@services/import';
+import { Input } from '@components/ui/Input';
+import { Button } from '@components/ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
+import { Card, CardContent } from '@components/ui/Card';
+import { Textarea } from '@components/ui/Textarea';
+import { Select } from '@components/ui/Select';
+import { Tooltip } from '@components/ui/Tooltip';
+import { ContactCard } from '@components/contacts/ContactCard';
+import { MobileFilterDrawer } from '@components/contacts/MobileFilterDrawer';
+import { ExportModal } from '@components/contacts/ExportModal';
+import { filterLogger } from '@utils/filterLogger';
 
 type SortableColumn = 'name' | 'company' | 'title' | 'status' | 'emailStatus' | 'city' | 'state' | 'country' | 'industry' | 'phone' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -273,7 +273,7 @@ const FilterInput: React.FC<{ label: string; name: keyof Filters, value: string;
     return (
         <div className="filter-input-wrapper">
             <label htmlFor={nameString} className="form-label">{label}</label>
-            <input id={nameString} name={nameString} type={type} value={value} onChange={onChange} placeholder={placeholder} className="input" style={{ fontSize: 'var(--font-size-sm)' }}/>
+            <input id={nameString} name={nameString} type={type} value={value} onChange={onChange} placeholder={placeholder} className="input filter-input-sm"/>
         </div>
     );
 };
@@ -285,10 +285,10 @@ const FilterRangeInput: React.FC<{ label: string; minName: keyof Filters, minVal
     return (
         <div className="filter-input-wrapper">
             <label className="form-label">{label}</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <input name={minNameString} type="number" value={minValue} onChange={onChange} placeholder="Min" className="input" style={{ fontSize: 'var(--font-size-sm)' }}/>
-                <span style={{ color: 'hsl(var(--muted-foreground))' }}>-</span>
-                <input name={maxNameString} type="number" value={maxValue} onChange={onChange} placeholder="Max" className="input" style={{ fontSize: 'var(--font-size-sm)' }}/>
+            <div className="filter-range-input-wrapper">
+                <input name={minNameString} type="number" value={minValue} onChange={onChange} placeholder="Min" className="input filter-input-sm"/>
+                <span className="filter-range-separator">-</span>
+                <input name={maxNameString} type="number" value={maxValue} onChange={onChange} placeholder="Max" className="input filter-input-sm"/>
             </div>
         </div>
     );
@@ -366,8 +366,7 @@ const FilterDateRange: React.FC<{
                         type="datetime-local" 
                         value={isoToLocal(afterValue)} 
                         onChange={handleChange}
-                        className="input"
-                        style={{ fontSize: 'var(--font-size-sm)' }}
+                        className="input filter-input-sm"
                     />
                 </div>
                 <div>
@@ -378,8 +377,7 @@ const FilterDateRange: React.FC<{
                         type="datetime-local" 
                         value={isoToLocal(beforeValue)} 
                         onChange={handleChange}
-                        className="input"
-                        style={{ fontSize: 'var(--font-size-sm)' }}
+                        className="input filter-input-sm"
                     />
                 </div>
             </div>
@@ -429,7 +427,7 @@ const FilterMultiSelect: React.FC<{
             <div className="filter-multi-select-tags">
                 {values.map((value, index) => (
                     <span
-                        key={index}
+                        key={`filter-tag-${index}-${value || ''}`}
                         className="filter-multi-select-tag"
                     >
                         <span>{value}</span>
@@ -453,8 +451,7 @@ const FilterMultiSelect: React.FC<{
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
                 placeholder={placeholder || 'Type and press Enter to add'}
-                className="input"
-                style={{ fontSize: 'var(--font-size-sm)' }}
+                className="input filter-input-sm"
             />
         </div>
     );
@@ -638,7 +635,7 @@ const FilterSidebar: React.FC<{
                     <FilterInput label="Company Phone" name="company_phone" value={filters.company_phone} onChange={onFilterChange} placeholder="+1234567890" />
                     
                     {/* Employees Filters */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="filter-field-group">
                         <h4 className="filter-section-title">Employees</h4>
                         <FilterInput 
                             label="Exact Count" 
@@ -659,7 +656,7 @@ const FilterSidebar: React.FC<{
                     </div>
                     
                     {/* Annual Revenue Filters */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="filter-field-group">
                         <h4 className="filter-section-title">Annual Revenue ($)</h4>
                         <FilterInput 
                             label="Exact Amount" 
@@ -708,7 +705,7 @@ const FilterSidebar: React.FC<{
 
                 <AccordionSection title="Funding & Revenue" id="funding">
                     {/* Total Funding Filters */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="filter-field-group">
                         <h4 className="filter-section-title">Total Funding ($)</h4>
                         <FilterInput 
                             label="Exact Amount" 
@@ -766,7 +763,7 @@ const FilterSidebar: React.FC<{
                 </AccordionSection>
 
                 <AccordionSection title="Exclusion Filters" id="exclusion">
-                    <p style={{ fontSize: 'var(--font-size-xs)', color: 'hsl(var(--muted-foreground))', marginBottom: '0.75rem' }}>Exclude contacts matching any of these values</p>
+                    <p className="filter-exclude-text">Exclude contacts matching any of these values</p>
                     <FilterMultiSelect
                         label="Exclude Titles"
                         name="exclude_titles"
@@ -1120,7 +1117,7 @@ const ImportJobStatus: React.FC<{
                         <div className="import-job-status__progress-bar-container">
                             <div 
                                 className="import-job-status__progress-bar"
-                                style={{ width: `${progress}%` }}
+                                style={{ '--progress-width': `${progress}%` } as React.CSSProperties}
                             />
                         </div>
                     </div>
@@ -1303,8 +1300,8 @@ const ImportModal: React.FC<{
                                         className="contacts-hidden"
                                         id="file-upload"
                                     />
-                                    <label htmlFor="file-upload" style={{ cursor: 'pointer' }}>
-                                        <span style={{ display: 'inline-block' }}>
+                                    <label htmlFor="file-upload" className="contact-modal-file-label">
+                                        <span className="contact-modal-file-label-inline">
                                             <Button variant="outline" size="sm" className="contact-modal-body__dropzone-browse">
                                                 Browse Files
                                             </Button>
@@ -1395,9 +1392,9 @@ const ImportErrorsModal: React.FC<{
                     </button>
                 </header>
                 
-                <main className="contact-modal-body" style={{ overflowY: 'auto' }}>
+                <main className="contact-modal-body contact-modal-body--scrollable">
                     {isLoading ? (
-                        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                        <div className="contact-modal-center">
                             <div className="import-spinner"></div>
                             <p className="import-loading-text">Loading errors...</p>
                         </div>
@@ -1406,19 +1403,19 @@ const ImportErrorsModal: React.FC<{
                             {error}
                         </div>
                     ) : errors.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                        <div className="contact-modal-center">
                             <p className="import-empty-text">No errors found.</p>
                         </div>
                     ) : (
                         <div className="contact-modal-body__errors-list">
                             {errors.map((err, index) => (
-                                <div key={index} className="contact-modal-body__error-item">
+                                <div key={`error-row-${err.row_number || index}`} className="contact-modal-body__error-item">
                                     <div className="contact-modal-body__error-item-header">
-                                        <div style={{ flex: 1 }}>
+                                        <div className="contact-modal-status-card-content">
                                             <p className="contact-modal-body__error-item-message">
                                                 Row {err.row_number}
                                             </p>
-                                            <p className="contact-modal-body__error-item-message" style={{ color: 'hsl(var(--destructive))' }}>{err.error_message}</p>
+                                            <p className="contact-modal-body__error-item-message contact-modal-error-message">{err.error_message}</p>
                                             {err.row_data && Object.keys(err.row_data).length > 0 && (
                                                 <div className="contact-modal-body__error-item-data">
                                                     <p className="contact-modal-body__error-item-data-label">Row Data:</p>
@@ -1631,7 +1628,7 @@ const CreateContactModal: React.FC<{
 
     return (
         <div className="contact-modal-overlay" onClick={onClose}>
-            <div className="contact-modal-content contact-modal-content--medium" style={{ maxHeight: '90vh' }} onClick={e => e.stopPropagation()}>
+            <div className="contact-modal-content contact-modal-content--medium contact-modal-content--max-height" onClick={e => e.stopPropagation()}>
                 <header className="contact-modal-header">
                     <h2 className="contact-modal-header__title">Create New Contact</h2>
                     <button 
@@ -1644,7 +1641,7 @@ const CreateContactModal: React.FC<{
                     </button>
                 </header>
                 
-                <main className="contact-modal-body" style={{ overflowY: 'auto' }}>
+                <main className="contact-modal-body contact-modal-body--scrollable">
                     <form id="create-contact-form" onSubmit={handleSubmit} className="create-contact-form" noValidate>
                         {/* General Error */}
                         {generalError && (
@@ -1667,7 +1664,7 @@ const CreateContactModal: React.FC<{
                         )}
 
                         {/* Name Fields */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(1, minmax(0, 1fr))', gap: '1rem' }}>
+                        <div className="contact-modal-grid">
                             <div className="create-contact-form__field">
                                 <Input
                                     label="First Name"
@@ -1743,7 +1740,7 @@ const CreateContactModal: React.FC<{
                             {formData.departments && formData.departments.length > 0 && (
                                 <div className="create-contact-form__departments-tags">
                                     {formData.departments.map((dept, index) => (
-                                        <span key={index} className="create-contact-form__departments-tag">
+                                        <span key={`dept-${index}-${dept}`} className="create-contact-form__departments-tag">
                                             {dept}
                                             <button
                                                 type="button"
@@ -2027,6 +2024,55 @@ const Contacts: React.FC = () => {
 
   // Create contact state
   const [isCreateContactModalOpen, setIsCreateContactModalOpen] = useState(false);
+
+  // Contact selection state
+  const [selectedContactUuids, setSelectedContactUuids] = useState<Set<string>>(new Set());
+  
+  // Selection helper functions
+  const toggleContactSelection = useCallback((uuid: string | undefined) => {
+    if (!uuid) return;
+    setSelectedContactUuids(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(uuid)) {
+        newSet.delete(uuid);
+      } else {
+        newSet.add(uuid);
+      }
+      return newSet;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const allUuids = contacts.filter(c => c.uuid).map(c => c.uuid!);
+    if (allUuids.length === 0) return;
+    
+    const allSelected = allUuids.every(uuid => selectedContactUuids.has(uuid));
+    if (allSelected) {
+      // Deselect all
+      setSelectedContactUuids(new Set());
+    } else {
+      // Select all
+      setSelectedContactUuids(new Set(allUuids));
+    }
+  }, [contacts, selectedContactUuids]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedContactUuids(new Set());
+  }, []);
+
+  const isSelectAllChecked = useMemo(() => {
+    const allUuids = contacts.filter(c => c.uuid).map(c => c.uuid!);
+    return allUuids.length > 0 && allUuids.every(uuid => selectedContactUuids.has(uuid));
+  }, [contacts, selectedContactUuids]);
+
+  const isSelectAllIndeterminate = useMemo(() => {
+    const allUuids = contacts.filter(c => c.uuid).map(c => c.uuid!);
+    const selectedCount = allUuids.filter(uuid => selectedContactUuids.has(uuid)).length;
+    return selectedCount > 0 && selectedCount < allUuids.length;
+  }, [contacts, selectedContactUuids]);
+
+  // Export state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const debouncedFilters = useDebounce(filters, 300);
@@ -2563,6 +2609,52 @@ const Contacts: React.FC = () => {
             <div className="contacts-filter-overlay" onClick={() => setIsFilterSidebarOpen(false)}></div>
         )}
         <div className={`contacts-filter-sidebar-mobile${isFilterSidebarOpen ? ' contacts-filter-sidebar-mobile--open' : ''}`}>
+            <div className="contacts-header">
+                <div className="contacts-header-actions">
+                        <Button
+                            onClick={() => setIsColumnPanelOpen(true)}
+                            variant="outline"
+                            size="md"
+                            leftIcon={<FilterIcon />}
+                        >
+                        </Button>
+                        <Button
+                            onClick={() => setIsCreateContactModalOpen(true)}
+                            variant="primary"
+                            size="md"
+                            leftIcon={<PlusIcon />}
+                        >
+                        </Button>
+                    {/* <Tooltip content="Configure visible columns">
+                    </Tooltip> */}
+                    {/* <Tooltip content="Create a new contact">
+                    </Tooltip> */}
+                    {selectedContactUuids.size > 0 && (
+                            <Button
+                                onClick={() => setIsExportModalOpen(true)}
+                                variant="outline"
+                                size="md"
+                                leftIcon={<DownloadIcon />}
+                            >
+                            </Button>
+                        // <Tooltip content={`Export ${selectedContactUuids.size} selected contact(s)`}>
+                        // </Tooltip>
+                    )}
+                    {selectedContactUuids.size > 0 && (
+                        <Tooltip content="Clear selection">
+                            <Button
+                                onClick={clearSelection}
+                                variant="ghost"
+                                size="md"
+                                iconOnly
+                                aria-label="Clear selection"
+                            >
+                                <XMarkIcon />
+                            </Button>
+                        </Tooltip>
+                    )}
+                </div>
+            </div>
              <FilterSidebar 
                 filters={filters} 
                 onFilterChange={handleFilterChange} 
@@ -2578,6 +2670,52 @@ const Contacts: React.FC = () => {
         </div>
 
         <div className="contacts-filter-sidebar-desktop">
+            <div className="contacts-header">
+                <div className="contacts-header-actions">
+                        <Button
+                            onClick={() => setIsColumnPanelOpen(true)}
+                            variant="outline"
+                            size="md"
+                            leftIcon={<FilterIcon />}
+                        >
+                        </Button>
+                    {/* <Tooltip content="Configure visible columns">
+                    </Tooltip> */}
+                        <Button
+                            onClick={() => setIsCreateContactModalOpen(true)}
+                            variant="primary"
+                            size="md"
+                            leftIcon={<PlusIcon />}
+                        >
+                        </Button>
+                    {/* <Tooltip content="Create a new contact">
+                    </Tooltip> */}
+                    {selectedContactUuids.size > 0 && (
+                            <Button
+                                onClick={() => setIsExportModalOpen(true)}
+                                variant="outline"
+                                size="md"
+                                leftIcon={<DownloadIcon />}
+                            >
+                            </Button>
+                        // <Tooltip content={`Export ${selectedContactUuids.size} selected contact(s)`}>
+                        // </Tooltip>
+                    )}
+                    {selectedContactUuids.size > 0 && (
+                        <Tooltip content="Clear selection">
+                            <Button
+                                onClick={clearSelection}
+                                variant="ghost"
+                                size="md"
+                                iconOnly
+                                aria-label="Clear selection"
+                            >
+                                <XMarkIcon />
+                            </Button>
+                        </Tooltip>
+                    )}
+                </div>
+            </div>
              <FilterSidebar 
                 filters={filters} 
                 onFilterChange={handleFilterChange} 
@@ -2593,33 +2731,22 @@ const Contacts: React.FC = () => {
         </div>
 
         <main className="contacts-main">
-            <div className="contacts-header">
-                <h1 className="contacts-header-title">Contacts</h1>
-                <div className="contacts-header-actions">
-                    <Tooltip content="Configure visible columns">
-                        <Button
-                            onClick={() => setIsColumnPanelOpen(true)}
-                            variant="outline"
-                            size="md"
-                            leftIcon={<FilterIcon />}
-                        >
-                            <span className="contacts-header-action-text">Columns ({visibleColumns.length}/{columns.length})</span>
-                            <span className="contacts-header-action-text--mobile">Columns</span>
-                        </Button>
-                    </Tooltip>
-                    <Tooltip content="Create a new contact">
-                        <Button
-                            onClick={() => setIsCreateContactModalOpen(true)}
-                            variant="primary"
-                            size="md"
-                            leftIcon={<PlusIcon />}
-                        >
-                            <span className="contacts-header-action-text">Create Contact</span>
-                            <span className="contacts-header-action-text--mobile">Create</span>
-                        </Button>
-                    </Tooltip>
+            {/* Selection Summary Bar */}
+            {selectedContactUuids.size > 0 && (
+                <div className="contacts-selection-summary">
+                    <div className="contacts-selection-summary__content">
+                        <strong>{selectedContactUuids.size}</strong>
+                        <span>contact{selectedContactUuids.size !== 1 ? 's' : ''} selected</span>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearSelection}
+                    >
+                        Clear Selection
+                    </Button>
                 </div>
-            </div>
+            )}
 
             {/* Response Metadata Display */}
             {responseMeta && (
@@ -2699,9 +2826,9 @@ const Contacts: React.FC = () => {
               </Card>
             ) : viewMode === 'card' ? (
               <div className="contacts-card-grid">
-                {contacts.map((contact) => (
+                {contacts.map((contact, index) => (
                   <ContactCard
-                    key={contact.id}
+                    key={contact.uuid || `contact-${index}`}
                     contact={contact}
                     searchTerm={debouncedSearchTerm}
                     className="stagger-item"
@@ -2712,6 +2839,38 @@ const Contacts: React.FC = () => {
                   <Table responsive>
                     <TableHeader>
                       <TableRow>
+                            <TableHead className="contacts-table-head--narrow">
+                          <div className="checkbox-input-wrapper">
+                            <input
+                              type="checkbox"
+                              checked={isSelectAllChecked}
+                              ref={(input) => {
+                                if (input) input.indeterminate = isSelectAllIndeterminate;
+                              }}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleSelectAll();
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label="Select all contacts"
+                              className="checkbox-input"
+                            />
+                            <div 
+                              className="checkbox-box"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSelectAll();
+                              }}
+                            >
+                              {isSelectAllChecked && (
+                                <CheckIcon className="checkbox-icon" />
+                              )}
+                              {isSelectAllIndeterminate && !isSelectAllChecked && (
+                                <div className="checkbox-indeterminate-indicator" />
+                              )}
+                            </div>
+                          </div>
+                        </TableHead>
                         {visibleColumns.map(column => (
                           <TableHead
                             key={column.id}
@@ -2727,45 +2886,77 @@ const Contacts: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {contacts.map(contact => (
-                        <TableRow 
-                          key={contact.id} 
-                          onClick={() => {
-                            if (contact.uuid) {
-                              window.open(`/contacts/${contact.uuid}`, '_blank', 'noopener,noreferrer');
-                            }
-                          }}
-                          className="contacts-table-row-interactive"
-                          title="Click to view contact details in new tab"
-                        >
-                          {visibleColumns.map(column => (
-                            <TableCell
-                              key={column.id}
-                              className={column.id !== 'name' ? 'contacts-table-cell-nowrap' : ''}
-                              style={column.width ? { minWidth: column.width } : undefined}
+                      {contacts.map((contact, index) => {
+                        const isSelected = contact.uuid ? selectedContactUuids.has(contact.uuid) : false;
+                        return (
+                          <TableRow 
+                            key={contact.uuid || `contact-${index}`}
+                            onClick={() => {
+                              if (contact.uuid) {
+                                window.open(`/contacts/${contact.uuid}`, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
+                            className={`contacts-table-row-interactive ${isSelected ? 'contacts-table-row-selected' : ''}`}
+                            title="Click to view contact details in new tab"
+                          >
+                            <TableCell 
+                              className="contacts-table-cell--compact"
+                              onClick={(e) => e.stopPropagation()}
                             >
-                              {renderCellContent(column, contact)}
+                              <div className="checkbox-input-wrapper">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    toggleContactSelection(contact.uuid);
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label={`Select ${contact.name || 'contact'}`}
+                                  className="checkbox-input"
+                                />
+                                <div 
+                                  className="checkbox-box"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleContactSelection(contact.uuid);
+                                  }}
+                                >
+                                  {isSelected && (
+                                    <CheckIcon className="checkbox-icon" />
+                                  )}
+                                </div>
+                              </div>
                             </TableCell>
-                          ))}
-                          <TableCell className="table-cell-actions">
-                            <Tooltip content="Edit contact">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  alert('Edit functionality is not supported by the current API.');
-                                }}
-                                aria-label="Edit contact"
-                                className="icon-hover-scale"
+                            {visibleColumns.map(column => (
+                              <TableCell
+                                key={column.id}
+                                className={column.id !== 'name' ? 'contacts-table-cell-nowrap' : ''}
+                                style={column.width ? { minWidth: column.width } : undefined}
                               >
-                                <EditIcon />
-                              </Button>
-                            </Tooltip>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                                {renderCellContent(column, contact)}
+                              </TableCell>
+                            ))}
+                            <TableCell className="table-cell-actions">
+                              <Tooltip content="Edit contact">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  iconOnly
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    alert('Edit functionality is not supported by the current API.');
+                                  }}
+                                  aria-label="Edit contact"
+                                  className="icon-hover-scale"
+                                >
+                                  <EditIcon />
+                                </Button>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
             )}
@@ -2870,6 +3061,19 @@ const Contacts: React.FC = () => {
         onClose={() => setIsCreateContactModalOpen(false)}
         onSuccess={loadContacts}
       />
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        selectedContactUuids={Array.from(selectedContactUuids)}
+        exportType="contacts"
+        currentPageData={contacts}
+        filters={filters}
+        totalCount={totalContacts}
+        navigateToHistory={true}
+        onExportComplete={() => {
+          clearSelection();
+        }}
+      />
       
       {/* Mobile Filter Drawer */}
       <MobileFilterDrawer
@@ -2891,33 +3095,6 @@ const Contacts: React.FC = () => {
           isLoadingCompanies={isLoadingCompanies}
         />
       </MobileFilterDrawer>
-      
-      {/* Filter Debug Panel */}
-      <FilterDebugPanel
-        filters={filters}
-        queryParams={(() => {
-          const params: Record<string, any> = {};
-          if (searchTerm) params.search = searchTerm;
-          Object.entries(filters).forEach(([key, value]) => {
-            if (value && value !== 'All' && value !== '') {
-              if (Array.isArray(value) && value.length > 0) {
-                params[key] = value;
-              } else if (!Array.isArray(value)) {
-                params[key] = value;
-              }
-            }
-          });
-          if (paginationMode === 'cursor') {
-            params.page_size = pageSize;
-            if (cursor) params.cursor = cursor;
-          } else if (sortColumn) {
-            params.ordering = `${sortDirection === 'desc' ? '-' : ''}${sortColumn}`;
-            params.limit = limit;
-            params.offset = offset;
-          }
-          return params;
-        })()}
-      />
     </div>
   );
 };

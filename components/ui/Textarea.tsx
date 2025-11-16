@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tooltip } from './Tooltip';
-import { ErrorIconSmall, InfoIconSmall } from '../icons/IconComponents';
+import { ErrorIconSmall, InfoIconSmall } from '@components/icons/IconComponents';
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   label?: string;

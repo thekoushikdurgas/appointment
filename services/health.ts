@@ -1,6 +1,6 @@
 import { API_BASE_URL } from './api';
-import { request } from '../utils/request';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '../utils/errorHandler';
+import { axiosRequest } from '@utils/axiosRequest';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
 
 /**
  * Health check response interface
@@ -32,28 +32,27 @@ export interface HealthCheckResult {
  * Get the base host URL (without API version prefix)
  */
 const getBaseHost = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.88.182.69:8000';
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234';
   return backendUrl;
 };
 
 /**
- * Check API health status with timeout handling
+ * Check API health status
  * 
- * Checks the versioned API health endpoint at `/api/health/`.
+ * Checks the versioned API health endpoint at `/api/v1/health/`.
  * 
  * NOTE: This is a public endpoint and does not require authentication.
  * Using `request` instead of `authenticatedFetch` is intentional.
  * 
- * @param timeout - Request timeout in milliseconds (default: 10000)
  * @returns Promise resolving to HealthCheckResult
  */
-export const checkHealth = async (timeout: number = 10000): Promise<HealthCheckResult> => {
+export const checkHealth = async (): Promise<HealthCheckResult> => {
   try {
     // Public endpoint - no authentication required
-    const response = await request(`${API_BASE_URL}/api/health/`, {
+    const response = await axiosRequest(`${API_BASE_URL}/api/v1/health/`, {
       method: 'GET',
-      timeout,
-      retries: 1,
+      useQueue: true,
+      useCache: true,
     });
 
     // Health endpoint returns 503 for unhealthy, but we still want to return the data
@@ -114,17 +113,16 @@ export const checkHealth = async (timeout: number = 10000): Promise<HealthCheckR
  * NOTE: This is a public endpoint and does not require authentication.
  * Using `request` instead of `authenticatedFetch` is intentional.
  * 
- * @param timeout - Request timeout in milliseconds (default: 10000)
  * @returns Promise resolving to HealthCheckResult
  */
-export const checkApplicationHealth = async (timeout: number = 10000): Promise<HealthCheckResult> => {
+export const checkApplicationHealth = async (): Promise<HealthCheckResult> => {
   try {
     const baseHost = getBaseHost();
     // Public endpoint - no authentication required
-    const response = await request(`${baseHost}/health`, {
+    const response = await axiosRequest(`${baseHost}/health`, {
       method: 'GET',
-      timeout,
-      retries: 1,
+      useQueue: true,
+      useCache: true,
     });
 
     // Health endpoint returns 503 for unhealthy, but we still want to return the data

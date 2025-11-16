@@ -40,9 +40,9 @@ import {
   CompanyContactOffsetListResponse,
   CompanyContactAttributeResponse,
   FetchCompanyContactAttributeParams,
-} from '../types/company';
+} from '@/types/company';
 import { API_BASE_URL } from './api';
-import { authenticatedFetch } from './auth';
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
 import {
   parseApiError,
   parseExceptionError,
@@ -177,7 +177,6 @@ const mapApiToCompany = (apiCompany: ApiCompany | any): Company => {
   }
 
   return {
-    id: apiCompany.id,
     uuid: apiCompany.uuid,
     name: apiCompany.name || '',
     employeesCount: apiCompany.employees_count,
@@ -322,10 +321,12 @@ export const fetchCompanies = async (
   }
 
   try {
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v1/companies/?${query.toString()}`,
       {
         method: 'GET',
+        useQueue: true,
+        useCache: true,
         headers,
       }
     );
@@ -372,9 +373,11 @@ export const fetchCompanies = async (
           ? `${API_BASE_URL}/api/v1/companies/count/?${countQuery.toString()}`
           : `${API_BASE_URL}/api/v1/companies/count/`;
 
-        const countResp = await authenticatedFetch(countUrl, {
+        const countResp = await axiosAuthenticatedRequest(countUrl, {
           method: 'GET',
           headers: requestId ? { 'X-Request-Id': requestId } : undefined,
+          useQueue: true,
+          useCache: true,
         });
 
         if (countResp.ok) {
@@ -420,64 +423,6 @@ export const fetchCompanies = async (
 };
 
 /**
- * Get a single company by ID
- * 
- * Retrieves detailed information about a specific company by its ID.
- * 
- * **Error Handling:**
- * - Returns `null` if company is not found (404)
- * - Throws error for other failures
- * 
- * @param id - The company ID
- * @param requestId - Optional X-Request-Id header value for request tracking
- * @returns Promise resolving to Company object or null if not found
- */
-export const getCompanyById = async (
-  id: number,
-  requestId?: string
-): Promise<Company | null> => {
-  try {
-    if (!id || typeof id !== 'number') {
-      throw new Error('Invalid company ID');
-    }
-
-    const headers: HeadersInit = {};
-    if (requestId) {
-      headers['X-Request-Id'] = requestId;
-    }
-
-    const response = await authenticatedFetch(
-      `${API_BASE_URL}/api/v1/companies/${id}/`,
-      {
-        method: 'GET',
-        headers,
-      }
-    );
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
-      const error = await parseApiError(
-        response,
-        `Failed to fetch company ${id}`
-      );
-      throw error;
-    }
-
-    const data: ApiCompany = await response.json();
-    return mapApiToCompany(data);
-  } catch (error) {
-    const parsedError = parseExceptionError(
-      error,
-      `Failed to fetch company ${id}`
-    );
-    console.error(`[COMPANY] Failed to fetch company ${id}:`, formatErrorForLogging(parsedError));
-    return null;
-  }
-};
-
-/**
  * Get company by UUID
  * 
  * Fetches a single company by its UUID.
@@ -504,10 +449,12 @@ export const getCompanyByUuid = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v1/companies/${uuid}/`,
       {
         method: 'GET',
+        useQueue: true,
+        useCache: true,
         headers,
       }
     );
@@ -572,9 +519,11 @@ export const getCompanyCount = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(url, {
+    const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {
@@ -601,6 +550,119 @@ export const getCompanyCount = async (
       isTimeoutError: parsedError.isTimeoutError,
     });
     return 0;
+  }
+};
+
+/**
+ * Get Company UUIDs
+ * 
+ * Get a list of company UUIDs that match the provided filters. Returns count and list of UUIDs.
+ * Useful for bulk operations or exporting specific company sets.
+ * 
+ * **Endpoint:** GET /api/v1/companies/count/uuids/
+ * 
+ * **Query Parameters:**
+ * This endpoint accepts ALL the same query parameters as `/api/v1/companies/count/` endpoint, plus:
+ * - `limit` (integer, optional): Maximum number of UUIDs to return. **If not provided, returns all matching UUIDs (unlimited).** When provided, limits results to the specified number.
+ * 
+ * All filter parameters from `/api/v1/companies/` are supported:
+ * - All text filters (name, address, city, state, country, etc.)
+ * - All numeric range filters (employees_min, employees_max, annual_revenue_min, annual_revenue_max, total_funding_min, total_funding_max, etc.)
+ * - All array filters (industries, keywords, technologies, etc.)
+ * - All exclude filters (exclude_industries, exclude_keywords, exclude_technologies, exclude_locations, etc.)
+ * - All location filters (city, state, country, address, company_location, etc.)
+ * - All contact information filters (phone_number, website, linkedin_url, facebook_url, twitter_url, etc.)
+ * - All date range filters (created_at_after, created_at_before, updated_at_after, updated_at_before, etc.)
+ * - Distinct parameter
+ * 
+ * **Response:**
+ * ```json
+ * {
+ *   "count": 1234,
+ *   "uuids": ["uuid1", "uuid2", "uuid3", ...]
+ * }
+ * ```
+ * 
+ * **Error Handling:**
+ * - Returns empty array and count 0 if operation fails
+ * 
+ * **Notes:**
+ * - Returns all matching UUIDs by default (unlimited) unless `limit` parameter is provided
+ * - Useful for bulk operations, exports, or when you only need UUIDs without full company data
+ * - All the same filtering capabilities as the count endpoint
+ * 
+ * @param filters - Optional CompanyFilters to filter the UUIDs
+ * @param params - Optional parameters including limit and requestId
+ * @returns Promise resolving to object with count and uuids array
+ * 
+ * @example
+ * ```typescript
+ * // Get all UUIDs matching filters
+ * const result = await getCompanyUuids(
+ *   { industries: 'Technology', employees_min: 100 },
+ *   { limit: 1000 }
+ * );
+ * 
+ * if (result) {
+ *   console.log('Total:', result.count);
+ *   console.log('UUIDs:', result.uuids);
+ * }
+ * ```
+ */
+export const getCompanyUuids = async (
+  filters?: CompanyFilters,
+  params?: {
+    limit?: number;
+    requestId?: string;
+  }
+): Promise<{ count: number; uuids: string[] }> => {
+  try {
+    const query = buildFilterQuery(filters);
+    
+    // Add limit if provided
+    if (params?.limit !== undefined) {
+      query.set('limit', params.limit.toString());
+    }
+
+    const queryString = query.toString();
+    const url = queryString
+      ? `${API_BASE_URL}/api/v1/companies/count/uuids/?${queryString}`
+      : `${API_BASE_URL}/api/v1/companies/count/uuids/`;
+
+    const headers: HeadersInit = {};
+    if (params?.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    const response = await axiosAuthenticatedRequest(url, {
+      method: 'GET',
+      headers,
+      useQueue: true,
+      useCache: true,
+    });
+
+    if (!response.ok) {
+      const error = await parseApiError(response, 'Failed to fetch company UUIDs');
+      throw error;
+    }
+
+    const data: { count: number; uuids: string[] } = await response.json();
+    return {
+      count: data.count || 0,
+      uuids: data.uuids || [],
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(error, 'Failed to fetch company UUIDs');
+    console.error('[COMPANY] Failed to fetch company UUIDs:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      count: 0,
+      uuids: [],
+    };
   }
 };
 
@@ -667,10 +729,12 @@ export const fetchFieldValues = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v1/companies/${field}/?${query.toString()}`,
       {
         method: 'GET',
+        useQueue: true,
+        useCache: true,
         headers,
       }
     );
@@ -797,12 +861,14 @@ export const createCompany = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v1/companies/`,
       {
         method: 'POST',
+        useQueue: true,
+        useCache: false,
         headers,
-        body: JSON.stringify(companyData),
+        data: companyData,
       }
     );
 
@@ -885,23 +951,23 @@ export const createCompany = async (
  * - 403 Forbidden: Admin access required or invalid write key
  * - 404 Not Found: Company not found
  * 
- * @param id - The company ID
+ * @param uuid - The company UUID
  * @param companyData - CompanyUpdate data with fields to update
  * @param requestId - Optional X-Request-Id header value for request tracking
  * @returns Promise resolving to ServiceResponse<Company> with updated company
  */
 export const updateCompany = async (
-  id: number,
+  uuid: string,
   companyData: CompanyUpdate,
   requestId?: string
 ): Promise<ServiceResponse<Company>> => {
   try {
-    if (!id || typeof id !== 'number') {
+    if (!uuid || typeof uuid !== 'string') {
       return {
         success: false,
-        message: 'Invalid company ID',
+        message: 'Invalid company UUID',
         error: {
-          message: 'Invalid company ID',
+          message: 'Invalid company UUID',
           isNetworkError: false,
           isTimeoutError: false,
         },
@@ -932,12 +998,14 @@ export const updateCompany = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
-      `${API_BASE_URL}/api/v1/companies/${id}/`,
+    const response = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v1/companies/${uuid}/`,
       {
         method: 'PUT',
         headers,
-        body: JSON.stringify(companyData),
+        data: companyData,
+        useQueue: true,
+        useCache: false,
       }
     );
 
@@ -1029,21 +1097,21 @@ export const updateCompany = async (
  * - 403 Forbidden: Admin access required or invalid write key
  * - 404 Not Found: Company not found
  * 
- * @param id - The company ID
+ * @param uuid - The company UUID
  * @param requestId - Optional X-Request-Id header value for request tracking
  * @returns Promise resolving to ServiceResponse<void>
  */
 export const deleteCompany = async (
-  id: number,
+  uuid: string,
   requestId?: string
 ): Promise<ServiceResponse<void>> => {
   try {
-    if (!id || typeof id !== 'number') {
+    if (!uuid || typeof uuid !== 'string') {
       return {
         success: false,
-        message: 'Invalid company ID',
+        message: 'Invalid company UUID',
         error: {
-          message: 'Invalid company ID',
+          message: 'Invalid company UUID',
           isNetworkError: false,
           isTimeoutError: false,
         },
@@ -1073,10 +1141,12 @@ export const deleteCompany = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
-      `${API_BASE_URL}/api/v1/companies/${id}/`,
+    const response = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v1/companies/${uuid}/`,
       {
         method: 'DELETE',
+        useQueue: true,
+        useCache: false,
         headers,
       }
     );
@@ -1214,7 +1284,6 @@ const mapApiToCompanyContact = (apiContact: ApiCompanyContact | any): CompanyCon
   }
 
   return {
-    id: apiContact.id,
     uuid: apiContact.uuid,
     firstName: apiContact.first_name,
     lastName: apiContact.last_name,
@@ -1368,10 +1437,12 @@ export const fetchCompanyContacts = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/?${query.toString()}`,
       {
         method: 'GET',
+        useQueue: true,
+        useCache: true,
         headers,
       }
     );
@@ -1428,9 +1499,11 @@ export const fetchCompanyContacts = async (
           ? `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/count/?${countQuery.toString()}`
           : `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/count/`;
 
-        const countResp = await authenticatedFetch(countUrl, {
+        const countResp = await axiosAuthenticatedRequest(countUrl, {
           method: 'GET',
           headers: requestId ? { 'X-Request-Id': requestId } : undefined,
+          useQueue: true,
+          useCache: true,
         });
 
         if (countResp.ok) {
@@ -1520,9 +1593,11 @@ export const getCompanyContactsCount = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(url, {
+    const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {
@@ -1553,6 +1628,130 @@ export const getCompanyContactsCount = async (
       isTimeoutError: parsedError.isTimeoutError,
     });
     return 0;
+  }
+};
+
+/**
+ * Get Company Contact UUIDs
+ * 
+ * Get a list of contact UUIDs for a specific company that match the provided filters.
+ * Returns count and list of UUIDs. Useful for bulk operations on company contacts.
+ * 
+ * **Endpoint:** GET /api/v1/companies/company/{company_uuid}/contacts/count/uuids/
+ * 
+ * **Query Parameters:**
+ * This endpoint accepts ALL the same query parameters as `/api/v1/companies/company/{company_uuid}/contacts/count/` endpoint, plus:
+ * - `limit` (integer, optional): Maximum number of UUIDs to return. **If not provided, returns all matching UUIDs (unlimited).** When provided, limits results to the specified number.
+ * 
+ * All filter parameters from the list contacts endpoint are supported:
+ * - All text filters (title, first_name, last_name, email, etc.)
+ * - All exact filters (seniority, department, email_status, etc.)
+ * - All date range filters (created_at_after, created_at_before, updated_at_after, updated_at_before, etc.)
+ * - Search parameter
+ * 
+ * **Response:**
+ * ```json
+ * {
+ *   "count": 45,
+ *   "uuids": ["contact-uuid-1", "contact-uuid-2", "contact-uuid-3", ...]
+ * }
+ * ```
+ * 
+ * **Error Handling:**
+ * - Returns empty array and count 0 if operation fails
+ * - Returns empty array and count 0 if company is not found (404)
+ * 
+ * **Notes:**
+ * - Returns all matching UUIDs by default (unlimited) unless `limit` parameter is provided
+ * - Useful for bulk operations, exports, or when you only need UUIDs without full contact data
+ * - All the same filtering capabilities as the count endpoint
+ * 
+ * @param companyUuid - Company UUID identifier
+ * @param filters - Optional CompanyContactFilters to filter the UUIDs
+ * @param params - Optional parameters including limit and requestId
+ * @returns Promise resolving to object with count and uuids array
+ * 
+ * @example
+ * ```typescript
+ * // Get all contact UUIDs for a company matching filters
+ * const result = await getCompanyContactUuids(
+ *   'company-uuid-123',
+ *   { title: 'engineer', seniority: 'senior' },
+ *   { limit: 500 }
+ * );
+ * 
+ * if (result) {
+ *   console.log('Total:', result.count);
+ *   console.log('UUIDs:', result.uuids);
+ * }
+ * ```
+ */
+export const getCompanyContactUuids = async (
+  companyUuid: string,
+  filters?: CompanyContactFilters,
+  params?: {
+    limit?: number;
+    requestId?: string;
+  }
+): Promise<{ count: number; uuids: string[] }> => {
+  try {
+    if (!companyUuid || typeof companyUuid !== 'string') {
+      throw new Error('Invalid company UUID');
+    }
+
+    const query = buildCompanyContactFilterQuery(filters);
+    
+    // Add limit if provided
+    if (params?.limit !== undefined) {
+      query.set('limit', params.limit.toString());
+    }
+
+    const queryString = query.toString();
+    const url = queryString
+      ? `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/count/uuids/?${queryString}`
+      : `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/count/uuids/`;
+
+    const headers: HeadersInit = {};
+    if (params?.requestId) {
+      headers['X-Request-Id'] = params.requestId;
+    }
+
+    const response = await axiosAuthenticatedRequest(url, {
+      method: 'GET',
+      headers,
+      useQueue: true,
+      useCache: true,
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn('[COMPANY] Company not found for contact UUIDs:', companyUuid);
+        return {
+          count: 0,
+          uuids: [],
+        };
+      }
+      const error = await parseApiError(response, 'Failed to fetch company contact UUIDs');
+      throw error;
+    }
+
+    const data: { count: number; uuids: string[] } = await response.json();
+    return {
+      count: data.count || 0,
+      uuids: data.uuids || [],
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(error, 'Failed to fetch company contact UUIDs');
+    console.error('[COMPANY] Failed to fetch company contact UUIDs:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      count: 0,
+      uuids: [],
+    };
   }
 };
 
@@ -1614,10 +1813,12 @@ export const fetchCompanyContactAttribute = async (
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(
+    const response = await axiosAuthenticatedRequest(
       `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/${attribute}/?${query.toString()}`,
       {
         method: 'GET',
+        useQueue: true,
+        useCache: true,
         headers,
       }
     );

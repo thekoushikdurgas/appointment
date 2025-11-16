@@ -9,8 +9,7 @@ export * from './company';
 export * from './apollo';
 
 export interface Contact {
-  id: number;
-  uuid?: string;
+  uuid: string;
   name: string;
   email: string;
   company: string;
@@ -113,6 +112,8 @@ export interface ExportHistory {
   records: number;
   status: 'Completed' | 'Processing' | 'Failed';
   downloadUrl: string;
+  expiresAt?: string | null;
+  exportId?: string; // Store original export_id for download
 }
 
 export interface Order {

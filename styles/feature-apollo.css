@@ -686,3 +686,237 @@
   color: hsl(var(--primary));
   margin-top: 0.25rem;
 }
+
+/* ============================================
+   APOLLO PAGE - FORM ELEMENTS
+   ============================================ */
+
+.apollo-exclude-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.apollo-add-button {
+  margin-top: 0.5rem;
+}
+
+.apollo-button-group {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.apollo-button-group__item--flex-1 {
+  flex: 1;
+}
+
+.apollo-button-group__item--flex-2 {
+  flex: 2;
+}
+
+.apollo-count-result {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: hsl(var(--muted) / 0.3);
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+}
+
+.apollo-count-result__content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.apollo-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.apollo-results-header__content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.apollo-results-header__selection {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.apollo-table-head--narrow {
+  width: 50px;
+  padding: 0.5rem;
+}
+
+.apollo-table-cell--compact {
+  padding: 0.5rem;
+}
+
+.checkbox-indeterminate-indicator {
+  width: 0.5rem;
+  height: 2px;
+  background-color: hsl(var(--primary-foreground));
+  border-radius: 1px;
+}
+
+/* Indeterminate state styling for checkbox-box */
+.checkbox-input:indeterminate + .checkbox-box {
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+}
+
+.apollo-pagination-more {
+  margin-left: 0.5rem;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+/* ============================================
+   APOLLO COUNT BANNER
+   ============================================ */
+
+.apollo-count-banner {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.1) 0%, hsl(var(--primary) / 0.05) 100%);
+  border: 1px solid hsl(var(--primary) / 0.2);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.1);
+}
+
+.apollo-count-banner--loading {
+  background: hsl(var(--muted) / 0.3);
+  border-color: hsl(var(--border));
+  box-shadow: none;
+}
+
+.apollo-count-banner__content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.apollo-count-banner__icon {
+  width: 2rem;
+  height: 2rem;
+  color: hsl(var(--primary));
+  flex-shrink: 0;
+}
+
+.apollo-count-banner__text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.apollo-count-banner__value {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  color: hsl(var(--primary));
+  line-height: 1;
+}
+
+.apollo-count-banner__label {
+  font-size: var(--font-size-base);
+  color: hsl(var(--muted-foreground));
+  font-weight: var(--font-weight-medium);
+}
+
+/* ============================================
+   APOLLO SPLIT LAYOUT
+   ============================================ */
+
+.apollo-results-split {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-top: 1.5rem;
+}
+
+.apollo-results-left {
+  flex: 0 0 30%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.apollo-results-right {
+  flex: 0 0 70%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Responsive: Stack vertically on smaller screens */
+@media (max-width: 1024px) {
+  .apollo-results-split {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .apollo-results-left,
+  .apollo-results-right {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+
+/* Unified Button */
+.apollo-unified-button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* ============================================
+   APOLLO COUNT DISPLAY (Left Side)
+   ============================================ */
+
+.apollo-count-display {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.08) 0%, hsl(var(--primary) / 0.04) 100%);
+  border: 1px solid hsl(var(--primary) / 0.15);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1px 4px hsl(var(--primary) / 0.08);
+}
+
+.apollo-count-display__content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.apollo-count-display__icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: hsl(var(--primary));
+  flex-shrink: 0;
+}
+
+.apollo-count-display__text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.apollo-count-display__value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: hsl(var(--primary));
+  line-height: 1;
+}
+
+.apollo-count-display__label {
+  font-size: var(--font-size-sm);
+  color: hsl(var(--muted-foreground));
+  font-weight: var(--font-weight-medium);
+}

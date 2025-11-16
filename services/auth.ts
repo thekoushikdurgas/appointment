@@ -25,14 +25,14 @@ import {
   getHybridStorage,
   setHybridStorage,
   removeHybridStorage,
-} from "../utils/cookies";
-import { request, requestWithErrorHandling } from "../utils/request";
+} from "@utils/cookies";
+import { axiosRequest, axiosRequestWithErrorHandling, axiosAuthenticatedRequest } from "@utils/axiosRequest";
 import {
   parseApiError,
   parseExceptionError,
   formatErrorMessage,
   ParsedError,
-} from "../utils/errorHandler";
+} from "@utils/errorHandler";
 
 // Token storage keys
 const TOKEN_KEY = "auth_token";
@@ -186,6 +186,9 @@ export const clearTokens = (): void => {
  * - Throws Error with user-friendly message
  * - Use try/catch in calling code to handle errors
  *
+ * **Timeout Configuration:**
+ * - Default timeout is 60 seconds (configured globally in axiosClient)
+ *
  * @param url - The API endpoint URL (should include API_BASE_URL prefix)
  * @param options - Standard fetch RequestInit options (method, headers, body, etc.)
  * @returns Promise<Response> - The fetch Response object
@@ -208,81 +211,77 @@ export const clearTokens = (): void => {
  */
 export const authenticatedFetch = async (
   url: string,
-  options: RequestInit = {}
-): Promise<Response> => {
-  const token = getToken();
-  const headers = new Headers(options.headers);
+  options: RequestInit & { retries?: number } = {}
+): Promise<any> => {
+  console.log('[AUTH] authenticatedFetch called for:', url);
+  
+  // Extract retries and other options
+  const { retries = 1, ...fetchOptions } = options;
 
-  // Set authorization header if token exists
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
+  // Convert fetch options to Axios config
+  const axiosConfig: any = {
+    method: fetchOptions.method || 'GET',
+    useQueue: true,
+    useCache: true,
+    headers: {},
+  };
 
-  // Make initial request
-  let response: Response;
-  try {
-    response = await request(url, {
-      ...options,
-      headers,
-      timeout: 30000, // 30 second timeout
-      retries: 1, // One retry for network errors
-    });
-  } catch (error) {
-    // Handle network/timeout errors
-    // formatErrorMessage now prioritizes network/timeout errors over status codes
-    const parsedError = parseExceptionError(error);
-    throw new Error(formatErrorMessage(parsedError, "Request failed"));
-  }
-
-  // Handle token expiration (401)
-  if (response.status === 401) {
-    const refreshToken = getRefreshToken();
-    if (refreshToken) {
-      try {
-        const refreshed = await refreshTokenRequest(refreshToken);
-        if (refreshed) {
-          // Get new token
-          const newToken = getToken();
-          if (!newToken) {
-            clearTokens();
-            throw new Error("Session expired. Please login again.");
-          }
-
-          // Retry original request with new token
-          // Fixed: Properly merge headers instead of overwriting
-          const retryHeaders = new Headers(options.headers);
-          retryHeaders.set("Authorization", `Bearer ${newToken}`);
-
-          try {
-            return await request(url, {
-              ...options,
-              headers: retryHeaders,
-              timeout: 30000,
-              retries: 0, // Don't retry the retry
-            });
-          } catch (retryError) {
-            const parsedError = parseExceptionError(retryError);
-            throw new Error(
-              formatErrorMessage(
-                parsedError,
-                "Request failed after token refresh"
-              )
-            );
-          }
-        }
-      } catch (error) {
-        // Refresh failed, clear tokens
-        clearTokens();
-        const parsedError = parseExceptionError(error);
-        throw new Error(formatErrorMessage(parsedError, "Session expired"));
-      }
+  // Convert headers
+  if (fetchOptions.headers) {
+    if (fetchOptions.headers instanceof Headers) {
+      fetchOptions.headers.forEach((value, key) => {
+        axiosConfig.headers[key] = value;
+      });
+    } else if (Array.isArray(fetchOptions.headers)) {
+      fetchOptions.headers.forEach(([key, value]) => {
+        axiosConfig.headers[key] = value;
+      });
     } else {
-      clearTokens();
-      throw new Error("Session expired. Please login again.");
+      Object.assign(axiosConfig.headers, fetchOptions.headers);
     }
   }
 
-  return response;
+  // Convert body
+  if (fetchOptions.body) {
+    if (fetchOptions.body instanceof FormData) {
+      axiosConfig.data = fetchOptions.body;
+      // Don't set Content-Type for FormData, let Axios handle it
+      delete axiosConfig.headers['Content-Type'];
+    } else if (typeof fetchOptions.body === 'string') {
+      try {
+        axiosConfig.data = JSON.parse(fetchOptions.body);
+      } catch {
+        axiosConfig.data = fetchOptions.body;
+      }
+    } else {
+      axiosConfig.data = fetchOptions.body;
+    }
+  }
+
+  console.log('[AUTH] Making axiosAuthenticatedRequest with config:', {
+    url,
+    method: axiosConfig.method,
+    useQueue: axiosConfig.useQueue,
+    useCache: axiosConfig.useCache,
+  });
+  
+  try {
+    const response = await axiosAuthenticatedRequest(url, axiosConfig);
+    console.log('[AUTH] authenticatedFetch response received:', {
+      url,
+      status: response.status,
+      ok: response.ok,
+    });
+    return response;
+  } catch (error) {
+    console.error('[AUTH] authenticatedFetch error:', { url, error });
+    // Handle network/timeout errors
+    const parsedError = parseExceptionError(error);
+    const errorMessage = parsedError.isTimeoutError 
+      ? "Request timed out. Please try again."
+      : formatErrorMessage(parsedError, "Request failed");
+    throw new Error(errorMessage);
+  }
 };
 
 /**
@@ -293,16 +292,16 @@ export const login = async (
   password: string
 ): Promise<ServiceResponse<LoginResponse>> => {
   try {
-    const result = await requestWithErrorHandling<LoginResponse>(
+    const result = await axiosRequestWithErrorHandling<LoginResponse>(
       `${API_BASE_URL}/api/v2/auth/login/`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
-        timeout: 30000,
-        retries: 1,
+        data: { email, password },
+        useQueue: true,
+        useCache: false,
       },
       "Login failed"
     );
@@ -373,16 +372,16 @@ export const register = async (
   password: string
 ): Promise<ServiceResponse<RegisterResponse>> => {
   try {
-    const result = await requestWithErrorHandling<RegisterResponse>(
+    const result = await axiosRequestWithErrorHandling<RegisterResponse>(
       `${API_BASE_URL}/api/v2/auth/register/`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, password }),
-        timeout: 30000,
-        retries: 1,
+        data: { name, email, password },
+        useQueue: true,
+        useCache: false,
       },
       "Registration failed"
     );
@@ -486,27 +485,43 @@ export const getSession = async (silent: boolean = false): Promise<{
   user: SessionResponse["user"];
   token: string;
 } | null> => {
+  console.log('[AUTH] getSession called, silent:', silent);
+  
   try {
     const token = getToken();
+    console.log('[AUTH] getSession token check:', token ? 'Token exists' : 'No token');
+    
     if (!token) {
+      console.log('[AUTH] getSession returning null - no token');
       return null;
     }
 
+    console.log('[AUTH] getSession calling authenticatedFetch for session endpoint');
     const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/auth/session/`, {
       method: "GET",
     });
 
+    console.log('[AUTH] getSession received response:', {
+      ok: response.ok,
+      status: response.status,
+    });
+
     if (!response.ok) {
       if (response.status === 401) {
+        console.log('[AUTH] getSession got 401, clearing tokens');
         clearTokens();
         return null;
       }
 
       const error = await parseApiError(response, "Failed to get session");
+      console.error('[AUTH] getSession API error:', error);
       throw new Error(formatErrorMessage(error, "Failed to get session"));
     }
 
+    console.log('[AUTH] getSession parsing JSON response');
     const data: SessionResponse = await response.json();
+    console.log('[AUTH] getSession successfully parsed, user:', data.user?.id || data.user?.email);
+    
     return {
       user: data.user,
       token,
@@ -515,6 +530,8 @@ export const getSession = async (silent: boolean = false): Promise<{
     // Only log error if not in silent mode (for background checks)
     if (!silent) {
       console.error("[AUTH] Get session error:", error);
+    } else {
+      console.log("[AUTH] Get session error (silent mode):", error);
     }
     clearTokens();
     return null;
@@ -528,16 +545,16 @@ export const refreshTokenRequest = async (
   refreshToken: string
 ): Promise<boolean> => {
   try {
-    const result = await requestWithErrorHandling<RefreshTokenResponse>(
+    const result = await axiosRequestWithErrorHandling<RefreshTokenResponse>(
       `${API_BASE_URL}/api/v2/auth/refresh/`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-        timeout: 10000, // 10 second timeout for refresh
-        retries: 0, // Don't retry refresh token requests
+        data: { refresh_token: refreshToken },
+        useQueue: false, // Don't queue refresh token requests
+        useCache: false,
       },
       "Token refresh failed"
     );

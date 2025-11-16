@@ -186,7 +186,7 @@ Fully implemented with:
 
 ### API Integration
 
-**Base URL:** `http://107.21.188.21:8000/api/v1/companies/`
+**Base URL:** `http://54.87.173.234/api/v1/companies/`
 
 **Authentication:**
 - Read: `Authorization: Bearer <access_token>`
@@ -365,7 +365,7 @@ Required environment variables:
 
 ```bash
 # API Configuration
-NEXT_PUBLIC_API_BASE_URL=http://54.88.182.69:8000
+NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234
 
 # Companies Write Key (for create/update/delete operations)
 NEXT_PUBLIC_COMPANIES_WRITE_KEY=demo-companies-write-key

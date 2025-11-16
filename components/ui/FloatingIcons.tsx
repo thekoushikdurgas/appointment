@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SparklesIcon, ZapIcon, HeartIcon, StarFilledIcon, RocketIcon, LayersIcon } from '../icons/IconComponents';
+import { SparklesIcon, ZapIcon, HeartIcon, StarFilledIcon, RocketIcon, LayersIcon } from '@components/icons/IconComponents';
 
 interface FloatingIcon {
   Icon: React.ComponentType<{ className?: string }>;

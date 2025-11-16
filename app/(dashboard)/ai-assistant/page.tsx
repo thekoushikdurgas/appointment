@@ -3,22 +3,22 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, FunctionDeclaration, Type, Chat, Content } from '@google/genai';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
-import { useAuth } from '../../../hooks/useAuth';
-import { Contact } from '../../../types/index';
+import { useAuth } from '@hooks/useAuth';
+import { Contact } from '@/types/index';
 import { 
   LogoIcon, SparklesIcon, PlusIcon, ChatBubbleIcon, MenuIcon, SendIcon, UsersIcon, 
   DeleteIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, SuccessIcon, 
   ChevronUpDownIcon, XMarkIcon, CopyIcon, RegenerateIcon, EditIcon, AttachIcon,
   EmojiIcon, MicrophoneIcon, SettingsIcon, ExportIcon, ClearIcon
-} from '../../../components/icons/IconComponents';
-import { fetchContacts } from '../../../services/contact';
-import { getChatHistory, getChat, createChat, updateChat, deleteChat, Message, ChatHistoryItem, PaginationMetadata } from '../../../services/aiChat';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { Card, CardContent } from '../../../components/ui/Card';
-import { Select } from '../../../components/ui/Select';
-import { Tooltip } from '../../../components/ui/Tooltip';
-import { useSwipeable } from '../../../hooks/useSwipeable';
+} from '@components/icons/IconComponents';
+import { fetchContacts } from '@services/contact';
+import { getChatHistory, getChat, createChat, updateChat, deleteChat, Message, ChatHistoryItem, PaginationMetadata } from '@services/aiChat';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import { Card, CardContent } from '@components/ui/Card';
+import { Select } from '@components/ui/Select';
+import { Tooltip } from '@components/ui/Tooltip';
+import { useSwipeable } from '@hooks/useSwipeable';
 
 // Type definition for searchContacts function arguments
 interface SearchContactsArgs {
@@ -541,7 +541,7 @@ const AIAssistantPage: React.FC = () => {
         >
           {message.contacts.map((contact, idx) => (
             <motion.div
-              key={contact.id}
+              key={contact.uuid}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 * idx }}
@@ -898,7 +898,7 @@ const AIAssistantPage: React.FC = () => {
           
           {messages.map((msg, index) => (
             <motion.div 
-              key={index}
+              key={`message-${index}-${msg.sender}-${msg.timestamp || msg.text.substring(0, 20)}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}

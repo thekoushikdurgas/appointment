@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { XMarkIcon, ExclamationTriangleIcon } from '../icons/IconComponents';
-import { Button } from '../ui/Button';
+import { XMarkIcon, ExclamationTriangleIcon } from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
 
 interface ConfirmDialogProps {
   isOpen: boolean;

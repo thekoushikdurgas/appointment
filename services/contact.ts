@@ -16,10 +16,10 @@
  * Write operations additionally require the X-Contacts-Write-Key header.
  */
 
-import { Contact, ContactCreate } from '../types/index';
+import { Contact, ContactCreate } from '@/types/index';
 import { API_BASE_URL } from './api';
-import { authenticatedFetch } from './auth';
-import { parseApiError, parseExceptionError, formatErrorMessage, formatErrorForLogging, ParsedError } from '../utils/errorHandler';
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { parseApiError, parseExceptionError, formatErrorMessage, formatErrorForLogging, ParsedError } from '@utils/errorHandler';
 
 // Simple in-memory cache for count requests (5 minute TTL)
 interface CacheEntry {
@@ -362,7 +362,6 @@ export interface ResponseMeta {
  * ContactSimpleItem - Simplified contact data returned when view=simple
  */
 export interface ContactSimpleItem {
-  id: number;
   uuid: string;
   first_name: string;
   last_name: string;
@@ -411,8 +410,7 @@ interface CountResponse {
  * Matches the exact structure returned by the Contacts API.
  */
 interface ApiContact {
-  id: number;
-  uuid?: string;
+  uuid: string;
   first_name?: string;
   last_name?: string;
   title?: string;
@@ -501,14 +499,13 @@ const mapApiToContact = (apiContact: ApiContact | any): Contact => {
   const fullName = `${firstName} ${lastName}`.trim() || 'N/A';
   
   return {
-    id: apiContact.id,
     uuid: apiContact.uuid,
     name: fullName,
     email: apiContact.email || '',
     company: apiContact.company || '',
     phone: phone,
     status: (apiContact.stage || 'Lead') as Contact['status'],
-    avatarUrl: apiContact.photo_url || `https://picsum.photos/seed/${apiContact.id}/40/40`,
+    avatarUrl: apiContact.photo_url || `https://picsum.photos/seed/${apiContact.uuid}/40/40`,
     title: apiContact.title,
     industry: apiContact.industry,
     companySize: apiContact.company_size,
@@ -567,14 +564,13 @@ const mapSimpleItemToContact = (simpleItem: ContactSimpleItem): Contact => {
   const location = simpleItem.location || {};
   
   return {
-    id: simpleItem.id,
     uuid: simpleItem.uuid,
     name: fullName,
     email: '', // Not available in simple view
     company: simpleItem.company_name || '',
     phone: '', // Not available in simple view
     status: 'Lead' as Contact['status'], // Default value, not available in simple view
-    avatarUrl: `https://picsum.photos/seed/${simpleItem.id}/40/40`,
+    avatarUrl: `https://picsum.photos/seed/${simpleItem.uuid}/40/40`,
     title: simpleItem.title,
     city: location.city,
     state: location.state,
@@ -768,9 +764,11 @@ export const fetchContacts = async (params: FetchContactsParams): Promise<FetchC
     }
 
     try {
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/?${query.toString()}`, {
+        const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/?${query.toString()}`, {
           method: 'GET',
           headers,
+          useQueue: true,
+          useCache: true,
         });
 
         if (!response.ok) {
@@ -822,9 +820,11 @@ export const fetchContacts = async (params: FetchContactsParams): Promise<FetchC
               ? `${API_BASE_URL}/api/v1/contacts/count/?${countQuery.toString()}`
               : `${API_BASE_URL}/api/v1/contacts/count/`;
             
-            const countResp = await authenticatedFetch(countUrl, {
+            const countResp = await axiosAuthenticatedRequest(countUrl, {
               method: 'GET',
               headers: requestId ? { 'X-Request-Id': requestId } : undefined,
+              useQueue: true,
+              useCache: true,
             });
 
             if (countResp.ok) {
@@ -836,7 +836,14 @@ export const fetchContacts = async (params: FetchContactsParams): Promise<FetchC
               count = (data as OffsetListResponse).count || 0;
             }
           } catch (e) {
-            console.error('[CONTACT] Failed to fetch contact count:', e);
+            // Handle timeout and other errors gracefully
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            if (errorMessage.includes('timed out') || errorMessage.includes('timeout')) {
+              console.warn('[CONTACT] Count endpoint timed out, using fallback count from list response');
+            } else {
+              console.error('[CONTACT] Failed to fetch contact count:', e);
+            }
+            // Fallback to count from list response if available
             count = (data as OffsetListResponse).count || 0;
           }
         }
@@ -956,7 +963,7 @@ export const fetchFieldValues = async (
         
         const query = new URLSearchParams();
         if (search) query.set('search', search);
-        if (distinct) query.set('distinct', 'true');
+        // distinct parameter removed to prevent timeout issues
         if (company) query.set('company', company);
         if (ordering) query.set('ordering', ordering);
         query.set('limit', String(limit));
@@ -967,9 +974,11 @@ export const fetchFieldValues = async (
             headers['X-Request-Id'] = requestId;
         }
 
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/${field}/?${query.toString()}`, {
+        const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/${field}/?${query.toString()}`, {
           method: 'GET',
           headers,
+          useQueue: true,
+          useCache: true,
         });
 
         if (!response.ok) {
@@ -1100,9 +1109,11 @@ export const fetchKeywords = async (params?: {
             headers['X-Request-Id'] = requestId;
         }
 
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/keywords/?${query.toString()}`, {
+        const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/keywords/?${query.toString()}`, {
           method: 'GET',
           headers,
+          useQueue: true,
+          useCache: true,
         });
 
         if (!response.ok) {
@@ -1125,65 +1136,6 @@ export const fetchKeywords = async (params?: {
             previous: null,
             results: [],
         };
-    }
-};
-
-/**
- * Get a single contact by ID
- * 
- * Retrieves detailed information about a specific contact by its ID.
- * 
- * **Error Handling:**
- * - Returns `null` if contact is not found (404)
- * - Throws error for other failures
- * 
- * @param id - The contact ID
- * @param requestId - Optional X-Request-Id header value for request tracking
- * @returns Promise resolving to Contact object or null if not found
- * 
- * @example
- * ```typescript
- * const contact = await getContactById(123);
- * if (contact) {
- *   console.log(contact.name, contact.email);
- * }
- * ```
- */
-export const getContactById = async (id: number, requestId?: string): Promise<Contact | null> => {
-    try {
-        if (!id || typeof id !== 'number') {
-          throw new Error('Invalid contact ID');
-        }
-
-        const headers: HeadersInit = {};
-        if (requestId) {
-            headers['X-Request-Id'] = requestId;
-        }
-
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/${id}/`, {
-          method: 'GET',
-          headers,
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            return null;
-          }
-          const error = await parseApiError(response, `Failed to fetch contact ${id}`);
-          throw error;
-        }
-
-        const data: ApiContact = await response.json();
-        return mapApiToContact(data);
-    } catch (error) {
-        const parsedError = parseExceptionError(error, `Failed to fetch contact ${id}`);
-        console.error(`[CONTACT] Failed to fetch contact ${id}:`, {
-            message: parsedError.message,
-            statusCode: parsedError.statusCode,
-            isNetworkError: parsedError.isNetworkError,
-            isTimeoutError: parsedError.isTimeoutError,
-        });
-        return null;
     }
 };
 
@@ -1240,9 +1192,11 @@ export const getContactCount = async (filters?: ContactFilters, requestId?: stri
             headers['X-Request-Id'] = requestId;
         }
 
-        const response = await authenticatedFetch(url, {
+        const response = await axiosAuthenticatedRequest(url, {
           method: 'GET',
           headers,
+          useQueue: true,
+          useCache: true,
         });
 
         if (!response.ok) {
@@ -1380,10 +1334,12 @@ export const createContact = async (
     if (contactData.text_search !== undefined) requestBody.text_search = contactData.text_search;
     if (contactData.seniority !== undefined) requestBody.seniority = contactData.seniority;
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/`, {
       method: 'POST',
       headers,
-      body: JSON.stringify(requestBody),
+      data: requestBody,
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -1448,11 +1404,11 @@ export const createContact = async (
  * Get a single contact by UUID
  * 
  * Retrieves detailed information about a specific contact by its UUID.
- * Since the API may not support UUID-based lookup directly, this function
- * fetches all contacts and finds the one matching the UUID.
+ * 
+ * **Endpoint:** GET /api/v1/contacts/{contact_uuid}/
  * 
  * **Error Handling:**
- * - Returns `null` if contact is not found
+ * - Returns `null` if contact is not found (404)
  * - Throws error for other failures
  * 
  * @param uuid - The contact UUID
@@ -1473,45 +1429,28 @@ export const getContactByUuid = async (uuid: string, requestId?: string): Promis
           throw new Error('Invalid contact UUID');
         }
 
-        // First, try to fetch with simple view to get UUID mapping
         const headers: HeadersInit = {};
         if (requestId) {
             headers['X-Request-Id'] = requestId;
         }
 
-        // Fetch contacts with simple view to find the one with matching UUID
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/?view=simple&limit=1000`, {
+        const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/${uuid}/`, {
           method: 'GET',
           headers,
+          useQueue: true,
+          useCache: true,
         });
 
         if (!response.ok) {
+          if (response.status === 404) {
+            return null;
+          }
           const error = await parseApiError(response, `Failed to fetch contact with UUID ${uuid}`);
           throw error;
         }
 
-        const data: CursorListResponse | OffsetListResponse = await response.json();
-        const contacts = (data.results || []).map((item: ApiContact | ContactSimpleItem) => {
-          try {
-            if ('uuid' in item && 'location' in item) {
-              return mapSimpleItemToContact(item as ContactSimpleItem);
-            }
-            return mapApiToContact(item as ApiContact);
-          } catch (error) {
-            console.warn('[CONTACT] Failed to map contact:', item, error);
-            return null;
-          }
-        }).filter((contact): contact is Contact => contact !== null);
-
-        // Find contact with matching UUID
-        const contact = contacts.find(c => c.uuid === uuid);
-        
-        if (!contact) {
-          return null;
-        }
-
-        // If we found it, fetch full details using ID
-        return await getContactById(contact.id, requestId);
+        const data: ApiContact = await response.json();
+        return mapApiToContact(data);
     } catch (error) {
         const parsedError = parseExceptionError(error, `Failed to fetch contact with UUID ${uuid}`);
         console.error(`[CONTACT] Failed to fetch contact with UUID ${uuid}:`, {
@@ -1525,194 +1464,113 @@ export const getContactByUuid = async (uuid: string, requestId?: string): Promis
 };
 
 /**
- * Delete a contact by ID
+ * Get Contact UUIDs
  * 
- * Deletes a contact from the system.
+ * Get a list of contact UUIDs that match the provided filters. Returns count and list of UUIDs.
+ * Useful for bulk operations or exporting specific contact sets.
  * 
- * **Note:** This endpoint may not be supported by the current API.
- * If the API returns 404 or 405, the function will return an appropriate error.
+ * **Endpoint:** GET /api/v1/contacts/count/uuids/
  * 
- * @param id - The contact ID
- * @param requestId - Optional X-Request-Id header value for request tracking
- * @returns Promise resolving to success status and message
+ * **Query Parameters:**
+ * This endpoint accepts ALL the same query parameters as `/api/v1/contacts/count/` endpoint, plus:
+ * - `limit` (integer, optional): Maximum number of UUIDs to return. **If not provided, returns all matching UUIDs (unlimited).** When provided, limits results to the specified number.
+ * 
+ * All filter parameters from `/api/v1/contacts/` are supported:
+ * - All text filters (first_name, last_name, title, company, etc.)
+ * - All exact filters (email_status, stage, seniority, etc.)
+ * - All numeric range filters (employees_min, employees_max, etc.)
+ * - All date range filters (created_at_after, created_at_before, updated_at_after, updated_at_before, etc.)
+ * - All exclude filters (exclude_titles, exclude_seniorities, exclude_departments, exclude_company_locations, exclude_contact_locations, exclude_technologies, exclude_keywords, exclude_industries, exclude_company_ids, etc.)
+ * - Search and distinct parameters
+ * 
+ * **Response:**
+ * ```json
+ * {
+ *   "count": 1234,
+ *   "uuids": ["uuid1", "uuid2", "uuid3", ...]
+ * }
+ * ```
+ * 
+ * **Error Handling:**
+ * - Returns empty array and count 0 if operation fails
+ * 
+ * **Notes:**
+ * - Returns all matching UUIDs by default (unlimited) unless `limit` parameter is provided
+ * - Useful for bulk operations, exports, or when you only need UUIDs without full contact data
+ * - All the same filtering capabilities as the count endpoint
+ * 
+ * @param filters - Optional ContactFilters to filter the UUIDs
+ * @param params - Optional parameters including limit and requestId
+ * @returns Promise resolving to object with count and uuids array
  * 
  * @example
  * ```typescript
- * const result = await deleteContact(123);
- * if (result.success) {
- *   console.log('Contact deleted successfully');
- * } else {
- *   console.error(result.message);
+ * // Get all UUIDs matching filters
+ * const result = await getContactUuids(
+ *   { country: 'United States', employees_min: 50 },
+ *   { limit: 1000 }
+ * );
+ * 
+ * if (result) {
+ *   console.log('Total:', result.count);
+ *   console.log('UUIDs:', result.uuids);
  * }
  * ```
  */
-export const deleteContact = async (id: number, requestId?: string): Promise<{
-  success: boolean;
-  message: string;
-  error?: ParsedError;
-}> => {
+export const getContactUuids = async (
+    filters?: ContactFilters,
+    params?: {
+        limit?: number;
+        requestId?: string;
+    }
+): Promise<{ count: number; uuids: string[] }> => {
     try {
-        if (!id || typeof id !== 'number') {
-          throw new Error('Invalid contact ID');
+        const query = buildFilterQuery(filters);
+        
+        // Add limit if provided
+        if (params?.limit !== undefined) {
+            query.set('limit', params.limit.toString());
         }
+
+        const queryString = query.toString();
+        const url = queryString
+            ? `${API_BASE_URL}/api/v1/contacts/count/uuids/?${queryString}`
+            : `${API_BASE_URL}/api/v1/contacts/count/uuids/`;
 
         const headers: HeadersInit = {};
-        if (requestId) {
-            headers['X-Request-Id'] = requestId;
+        if (params?.requestId) {
+            headers['X-Request-Id'] = params.requestId;
         }
 
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/${id}/`, {
-          method: 'DELETE',
-          headers,
+        const response = await axiosAuthenticatedRequest(url, {
+            method: 'GET',
+            headers,
+            useQueue: true,
+            useCache: true,
         });
 
         if (!response.ok) {
-          if (response.status === 404) {
-            return {
-              success: false,
-              message: 'Contact not found',
-              error: {
-                message: 'Contact not found',
-                statusCode: 404,
-                isNetworkError: false,
-                isTimeoutError: false,
-              },
-            };
-          }
-          if (response.status === 405) {
-            return {
-              success: false,
-              message: 'Delete operation is not supported by the API',
-              error: {
-                message: 'Method not allowed',
-                statusCode: 405,
-                isNetworkError: false,
-                isTimeoutError: false,
-              },
-            };
-          }
-          const error = await parseApiError(response, `Failed to delete contact ${id}`);
-          return {
-            success: false,
-            message: formatErrorMessage(error, 'Failed to delete contact'),
-            error,
-          };
+            const error = await parseApiError(response, 'Failed to fetch contact UUIDs');
+            throw error;
         }
 
+        const data: { count: number; uuids: string[] } = await response.json();
         return {
-          success: true,
-          message: 'Contact deleted successfully',
+            count: data.count || 0,
+            uuids: data.uuids || [],
         };
     } catch (error) {
-        const parsedError = parseExceptionError(error, `Failed to delete contact ${id}`);
-        console.error(`[CONTACT] Failed to delete contact ${id}:`, {
+        const parsedError = parseExceptionError(error, 'Failed to fetch contact UUIDs');
+        console.error('[CONTACT] Failed to fetch contact UUIDs:', {
             message: parsedError.message,
             statusCode: parsedError.statusCode,
             isNetworkError: parsedError.isNetworkError,
             isTimeoutError: parsedError.isTimeoutError,
         });
         return {
-          success: false,
-          message: formatErrorMessage(parsedError, 'Failed to delete contact'),
-          error: parsedError,
+            count: 0,
+            uuids: [],
         };
     }
 };
 
-/**
- * Archive a contact by ID (update status to 'Archived')
- * 
- * Updates a contact's status to 'Archived'.
- * 
- * **Note:** This endpoint may not be supported by the current API.
- * If the API returns 404 or 405, the function will return an appropriate error.
- * 
- * @param id - The contact ID
- * @param requestId - Optional X-Request-Id header value for request tracking
- * @returns Promise resolving to success status and message
- * 
- * @example
- * ```typescript
- * const result = await archiveContact(123);
- * if (result.success) {
- *   console.log('Contact archived successfully');
- * } else {
- *   console.error(result.message);
- * }
- * ```
- */
-export const archiveContact = async (id: number, requestId?: string): Promise<{
-  success: boolean;
-  message: string;
-  error?: ParsedError;
-}> => {
-    try {
-        if (!id || typeof id !== 'number') {
-          throw new Error('Invalid contact ID');
-        }
-
-        const headers: HeadersInit = {
-          'Content-Type': 'application/json',
-        };
-        if (requestId) {
-            headers['X-Request-Id'] = requestId;
-        }
-
-        const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/${id}/`, {
-          method: 'PATCH',
-          headers,
-          body: JSON.stringify({ stage: 'Archived' }),
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            return {
-              success: false,
-              message: 'Contact not found',
-              error: {
-                message: 'Contact not found',
-                statusCode: 404,
-                isNetworkError: false,
-                isTimeoutError: false,
-              },
-            };
-          }
-          if (response.status === 405) {
-            return {
-              success: false,
-              message: 'Archive operation is not supported by the API',
-              error: {
-                message: 'Method not allowed',
-                statusCode: 405,
-                isNetworkError: false,
-                isTimeoutError: false,
-              },
-            };
-          }
-          const error = await parseApiError(response, `Failed to archive contact ${id}`);
-          return {
-            success: false,
-            message: formatErrorMessage(error, 'Failed to archive contact'),
-            error,
-          };
-        }
-
-        return {
-          success: true,
-          message: 'Contact archived successfully',
-        };
-    } catch (error) {
-        const parsedError = parseExceptionError(error, `Failed to archive contact ${id}`);
-        console.error(`[CONTACT] Failed to archive contact ${id}:`, {
-            message: parsedError.message,
-            statusCode: parsedError.statusCode,
-            isNetworkError: parsedError.isNetworkError,
-            isTimeoutError: parsedError.isTimeoutError,
-        });
-        return {
-          success: false,
-          message: formatErrorMessage(parsedError, 'Failed to archive contact'),
-          error: parsedError,
-        };
-    }
-};

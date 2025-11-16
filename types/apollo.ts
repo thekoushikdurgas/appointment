@@ -6,7 +6,7 @@
  */
 
 import { Contact } from './index';
-import { ResponseMeta } from '../services/contact';
+import { ResponseMeta } from '@/services/contact';
 
 /**
  * Apollo URL Structure
@@ -130,6 +130,10 @@ export interface ApolloContactsSearchParams {
   offset?: number;
   cursor?: string | null;
   view?: 'simple' | 'full';
+  include_company_name?: string;
+  exclude_company_name?: string[];
+  include_domain_list?: string[];
+  exclude_domain_list?: string[];
   requestId?: string;
 }
 
@@ -149,6 +153,57 @@ export interface ApolloAnalyzeRequest {
  */
 export interface ApolloContactsRequest {
   url: string;
+}
+
+/**
+ * Apollo Contacts Count Request
+ * 
+ * Request body for /api/v2/apollo/contacts/count endpoint.
+ */
+export interface ApolloContactsCountRequest {
+  url: string;
+}
+
+/**
+ * Apollo Contacts Count Response
+ * 
+ * Response from /api/v2/apollo/contacts/count endpoint.
+ */
+export interface ApolloContactsCountResponse {
+  count: number;
+}
+
+/**
+ * Apollo Contacts UUIDs Request
+ * 
+ * Request body for /api/v2/apollo/contacts/count/uuids endpoint.
+ */
+export interface ApolloContactsUuidsRequest {
+  url: string;
+}
+
+/**
+ * Apollo Contacts UUIDs Response
+ * 
+ * Response from /api/v2/apollo/contacts/count/uuids endpoint.
+ */
+export interface ApolloContactsUuidsResponse {
+  count: number;
+  uuids: string[];
+}
+
+/**
+ * Apollo Contacts UUIDs Parameters
+ * 
+ * Optional parameters for the /api/v2/apollo/contacts/count/uuids endpoint.
+ */
+export interface ApolloContactsUuidsParams {
+  include_company_name?: string;
+  exclude_company_name?: string[];
+  include_domain_list?: string[];
+  exclude_domain_list?: string[];
+  limit?: number;
+  requestId?: string;
 }
 
 /**

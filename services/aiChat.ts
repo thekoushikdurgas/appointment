@@ -1,7 +1,7 @@
-import { authenticatedFetch } from './auth';
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
 import { API_BASE_URL } from './api';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '../utils/errorHandler';
-import { Contact } from '../types/index';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
+import { Contact } from '@/types/index';
 
 /**
  * Message interface with proper typing
@@ -137,8 +137,10 @@ export const getChatHistory = async (params?: {
 
     const queryString = queryParams.toString();
     const url = `${API_BASE_URL}/api/v2/ai-chats/${queryString ? `?${queryString}` : ''}`;
-    const response = await authenticatedFetch(url, {
+    const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {
@@ -220,8 +222,10 @@ export const getChat = async (id: string): Promise<ServiceResponse<ChatData | nu
       };
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'GET',
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {
@@ -320,12 +324,14 @@ export const createChat = async (
       requestBody.messages = messages;
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/ai-chats/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody),
+      data: requestBody,
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -416,12 +422,14 @@ export const updateChat = async (
       updateData.messages = validateMessages(chatData.messages);
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(updateData),
+      data: updateData,
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -513,8 +521,10 @@ export const deleteChat = async (id: string): Promise<ServiceResponse<boolean>> 
       };
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'DELETE',
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {

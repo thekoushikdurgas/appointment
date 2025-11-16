@@ -1,11 +1,7 @@
-// import { authenticatedFetch } from './api'; // TODO: Implement authenticatedFetch
-import { Contact } from '../types';
-
-// Temporary stub for authenticatedFetch until it's properly implemented
-const authenticatedFetch = async (url: string): Promise<any> => {
-  console.warn('authenticatedFetch is not implemented, returning mock data');
-  return { count: 0, values: [], results: [] };
-};
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { API_BASE_URL } from './api';
+import { parseApiError } from '@utils/errorHandler';
+import { Contact } from '@/types';
 
 export interface AnalyticsStats {
   totalContacts: number;
@@ -15,8 +11,8 @@ export interface AnalyticsStats {
   growthRate: number;
 }
 
-export interface ContactsByStatus {
-  status: string;
+export interface ContactsByEmailVerification {
+  status: string;  // "Verified" or "Unverified"
   count: number;
   percentage: number;
 }
@@ -69,8 +65,19 @@ export async function fetchAnalyticsStats(): Promise<AnalyticsStats> {
 
   try {
     // Fetch total contacts
-    const totalResponse = await authenticatedFetch('/api/v1/contacts/count/');
-    const totalContacts = totalResponse.count || 0;
+    const totalResponse = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/count/`, {
+      method: 'GET',
+      useQueue: true,
+      useCache: true,
+    });
+    
+    if (!totalResponse.ok) {
+      const error = await parseApiError(totalResponse, 'Failed to fetch total contacts');
+      throw new Error(error.message);
+    }
+    
+    const totalData = await totalResponse.json();
+    const totalContacts = totalData.count || 0;
 
     // Calculate date for this month
     const now = new Date();
@@ -78,10 +85,22 @@ export async function fetchAnalyticsStats(): Promise<AnalyticsStats> {
     const firstDayISO = firstDayOfMonth.toISOString().split('T')[0];
 
     // Fetch new contacts this month
-    const monthResponse = await authenticatedFetch(
-      `/api/v1/contacts/count/?created_at__gte=${firstDayISO}`
+    const monthResponse = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v1/contacts/count/?created_at__gte=${firstDayISO}`,
+      { 
+        method: 'GET',
+        useQueue: true,
+        useCache: true,
+      }
     );
-    const newContactsThisMonth = monthResponse.count || 0;
+    
+    if (!monthResponse.ok) {
+      const error = await parseApiError(monthResponse, 'Failed to fetch monthly contacts');
+      throw new Error(error.message);
+    }
+    
+    const monthData = await monthResponse.json();
+    const newContactsThisMonth = monthData.count || 0;
 
     // Calculate growth rate (mock calculation)
     const growthRate = totalContacts > 0 ? (newContactsThisMonth / totalContacts) * 100 : 0;
@@ -111,40 +130,80 @@ export async function fetchAnalyticsStats(): Promise<AnalyticsStats> {
 }
 
 /**
- * Fetch contacts grouped by status
+ * Fetch contacts grouped by email verification status
  */
-export async function fetchContactsByStatus(): Promise<ContactsByStatus[]> {
-  const cacheKey = 'contacts-by-status';
-  const cached = getCachedData<ContactsByStatus[]>(cacheKey);
+export async function fetchContactsByEmailVerification(): Promise<ContactsByEmailVerification[]> {
+  const cacheKey = 'contacts-by-email-verification';
+  const cached = getCachedData<ContactsByEmailVerification[]>(cacheKey);
   if (cached) return cached;
 
   try {
-    // Fetch distinct statuses
-    const statusResponse = await authenticatedFetch('/api/v1/contacts/fields/status/distinct/');
-    const statuses = statusResponse.values || [];
+    // Fetch total contacts
+    const totalResponse = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/count/`, {
+      method: 'GET',
+      useQueue: true,
+      useCache: true,
+    });
+    
+    if (!totalResponse.ok) {
+      const error = await parseApiError(totalResponse, 'Failed to fetch total contacts');
+      throw new Error(error.message);
+    }
+    
+    const totalData = await totalResponse.json();
+    const total = totalData.count || 1;
 
-    const totalResponse = await authenticatedFetch('/api/v1/contacts/count/');
-    const total = totalResponse.count || 1;
-
-    // Fetch count for each status
-    const statusData = await Promise.all(
-      statuses.map(async (status: string) => {
-        const countResponse = await authenticatedFetch(
-          `/api/v1/contacts/count/?status=${encodeURIComponent(status)}`
-        );
-        const count = countResponse.count || 0;
-        return {
-          status,
-          count,
-          percentage: parseFloat(((count / total) * 100).toFixed(2)),
-        };
-      })
+    // Fetch verified count
+    const verifiedResponse = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v1/contacts/count/?email_status=Verified`,
+      { 
+        method: 'GET',
+        useQueue: true,
+        useCache: true,
+      }
     );
+    
+    if (!verifiedResponse.ok) {
+      console.warn('Failed to fetch verified email count');
+    }
+    
+    const verifiedData = await verifiedResponse.json();
+    const verifiedCount = verifiedData.count || 0;
 
-    setCachedData(cacheKey, statusData);
-    return statusData;
+    // Fetch unverified count
+    const unverifiedResponse = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v1/contacts/count/?email_status=unverified`,
+      { 
+        method: 'GET',
+        useQueue: true,
+        useCache: true,
+      }
+    );
+    
+    if (!unverifiedResponse.ok) {
+      console.warn('Failed to fetch unverified email count');
+    }
+    
+    const unverifiedData = await unverifiedResponse.json();
+    const unverifiedCount = unverifiedData.count || 0;
+
+    const emailVerificationData = [
+      {
+        status: 'Verified',
+        count: verifiedCount,
+        percentage: parseFloat(((verifiedCount / total) * 100).toFixed(2)),
+      },
+      {
+        status: 'Unverified',
+        count: unverifiedCount,
+        percentage: parseFloat(((unverifiedCount / total) * 100).toFixed(2)),
+      },
+    ];
+
+    setCachedData(cacheKey, emailVerificationData);
+    return emailVerificationData;
   } catch (error) {
-    console.error('Error fetching contacts by status:', error);
+    console.error('Error fetching contacts by email verification:', error);
     return [];
   }
 }
@@ -159,18 +218,61 @@ export async function fetchContactsByIndustry(limit: number = 10): Promise<Conta
 
   try {
     // Fetch distinct industries
-    const industryResponse = await authenticatedFetch('/api/v1/contacts/fields/industry/distinct/');
-    const industries = industryResponse.values || [];
+    const industryResponse = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/industry/?limit=1000&offset=0`, {
+      method: 'GET',
+      useQueue: true,
+      useCache: true,
+    });
+    
+    if (!industryResponse.ok) {
+      const error = await parseApiError(industryResponse, 'Failed to fetch industries');
+      throw new Error(error.message);
+    }
+    
+    const industryResponseData = await industryResponse.json();
+    // Handle different possible response structures
+    let industries: string[] = [];
+    if (Array.isArray(industryResponseData.values)) {
+      industries = industryResponseData.values;
+    } else if (Array.isArray(industryResponseData.results)) {
+      industries = industryResponseData.results;
+    } else if (Array.isArray(industryResponseData)) {
+      industries = industryResponseData;
+    } else if (industryResponseData.values && typeof industryResponseData.values === 'object') {
+      // If values is an object, try to extract array from it
+      industries = Object.values(industryResponseData.values).filter((v): v is string => typeof v === 'string');
+    }
+
+    // Ensure industries is an array before proceeding
+    if (!Array.isArray(industries)) {
+      console.warn('Industries data is not an array:', industryResponseData);
+      industries = [];
+    }
 
     // Fetch count for each industry
     const industryData = await Promise.all(
       industries.slice(0, limit).map(async (industry: string) => {
-        const countResponse = await authenticatedFetch(
-          `/api/v1/contacts/count/?industry=${encodeURIComponent(industry)}`
+        const countResponse = await axiosAuthenticatedRequest(
+          `${API_BASE_URL}/api/v1/contacts/count/?industry=${encodeURIComponent(industry)}`,
+          { 
+            method: 'GET',
+            useQueue: true,
+            useCache: true,
+          }
         );
+        
+        if (!countResponse.ok) {
+          console.warn(`Failed to fetch count for industry ${industry}`);
+          return {
+            industry,
+            count: 0,
+          };
+        }
+        
+        const countData = await countResponse.json();
         return {
           industry,
-          count: countResponse.count || 0,
+          count: countData.count || 0,
         };
       })
     );
@@ -205,13 +307,28 @@ export async function fetchContactGrowth(days: number = 30): Promise<ContactGrow
       const dateStr = date.toISOString().split('T')[0];
 
       // Fetch count up to this date
-      const countResponse = await authenticatedFetch(
-        `/api/v1/contacts/count/?created_at__lte=${dateStr}`
+      const countResponse = await axiosAuthenticatedRequest(
+        `${API_BASE_URL}/api/v1/contacts/count/?created_at__lte=${dateStr}`,
+        { 
+          method: 'GET',
+          useQueue: true,
+          useCache: true,
+        }
       );
 
+      if (!countResponse.ok) {
+        console.warn(`Failed to fetch count for date ${dateStr}`);
+        growthData.push({
+          date: dateStr,
+          count: 0,
+        });
+        continue;
+      }
+
+      const countData = await countResponse.json();
       growthData.push({
         date: dateStr,
-        count: countResponse.count || 0,
+        count: countData.count || 0,
       });
     }
 
@@ -233,18 +350,29 @@ export async function fetchTopCompanies(limit: number = 10): Promise<TopCompany[
 
   try {
     // Fetch contacts with company and employee count, sorted by employee count
-    const response = await authenticatedFetch(
-      `/api/v1/contacts/?ordering=-employee_count&limit=${limit}&fields=company,employee_count`
+    const response = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v1/contacts/?ordering=-employees&limit=${limit}&fields=company,employees`,
+      { 
+        method: 'GET',
+        useQueue: true,
+        useCache: true,
+      }
     );
 
-    const contacts = response.results || [];
+    if (!response.ok) {
+      const error = await parseApiError(response, 'Failed to fetch top companies');
+      throw new Error(error.message);
+    }
+
+    const data = await response.json();
+    const contacts = data.results || [];
 
     // Group by company and aggregate
     const companyMap = new Map<string, TopCompany>();
 
     contacts.forEach((contact: any) => {
       const company = contact.company || 'Unknown';
-      const employeeCount = contact.employee_count || 0;
+      const employeeCount = contact.employees || 0;
 
       if (companyMap.has(company)) {
         const existing = companyMap.get(company)!;

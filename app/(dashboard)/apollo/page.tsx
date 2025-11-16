@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   SearchIcon, 
   XMarkIcon, 
@@ -8,42 +8,124 @@ import {
   ChevronRightIcon,
   CopyIcon,
   CheckIcon,
-  AlertTriangleIcon,
   SuccessIcon,
-  InfoIcon,
   ChevronLeftIcon,
   ChevronRightIcon as ChevronRightPaginationIcon,
   DeleteIcon,
   DownloadIcon,
-} from '../../../components/icons/IconComponents';
-import { Input } from '../../../components/ui/Input';
-import { Button } from '../../../components/ui/Button';
-import { Card, CardContent } from '../../../components/ui/Card';
-import { Toast, ToastContainer, ToastProps } from '../../../components/ui/Toast';
-import { ContactCard } from '../../../components/contacts/ContactCard';
-import { analyzeApolloUrl, searchContactsFromApolloUrl } from '../../../services/apollo';
+  UsersIcon,
+  BuildingIcon,
+  MapPinIcon,
+  CalendarIcon,
+  MailIcon,
+  PhoneIcon,
+  GlobeAltIcon,
+  EditIcon,
+} from '@components/icons/IconComponents';
+import { Input } from '@components/ui/Input';
+import { Textarea } from '@components/ui/Textarea';
+import { Button } from '@components/ui/Button';
+import { Card, CardContent } from '@components/ui/Card';
+import { Toast, ToastContainer, ToastProps } from '@components/ui/Toast';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
+import { Tooltip } from '@components/ui/Tooltip';
+import { Contact } from '@/types/index';
+import { analyzeApolloUrl, searchContactsFromApolloUrl, countContactsFromApolloUrl } from '@services/apollo';
 import { 
   ApolloUrlAnalysisResponse, 
   ApolloContactsResponse,
-} from '../../../types/apollo';
-import { ApolloAnalyzerSkeleton, ApolloContactsSkeleton } from '../../../components/apollo/ApolloSkeletonLoader';
-import { ApolloEmptyState } from '../../../components/apollo/ApolloEmptyState';
-import { ApolloStatsCards, ApolloStats } from '../../../components/apollo/ApolloStatsCards';
+} from '@/types/apollo';
+import { ApolloAnalyzerSkeleton, ApolloContactsSkeleton } from '@components/apollo/ApolloSkeletonLoader';
+import { ApolloEmptyState } from '@components/apollo/ApolloEmptyState';
+import { ApolloStatsCards, ApolloStats } from '@components/apollo/ApolloStatsCards';
+import { ExportModal } from '@components/contacts/ExportModal';
+import { parseMultiValueInput, parseMultipleInputs } from '@utils/apolloFilters';
 
-// Example Apollo URLs for quick testing
-const EXAMPLE_URLS = [
-  {
-    label: 'Simple Search (CEO in California)',
-    url: 'https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California&page=1',
-  },
-  {
-    label: 'Complex Search (Multiple Filters)',
-    url: 'https://app.apollo.io/#/people?contactEmailStatusV2[]=verified&personTitles[]=CEO&personLocations[]=california&organizationNumEmployeesRanges[]=11,50&page=1&sortByField=recommendations_score&sortAscending=false',
-  },
-  {
-    label: 'With Keywords',
-    url: 'https://app.apollo.io/#/people?qOrganizationKeywordTags[]=technology&personLocations[]=United States&organizationNumEmployeesRanges[]=51,100',
-  },
+// Helper Components
+const StatusBadge: React.FC<{ status: Contact['status'] }> = ({ status }) => {
+  const statusClasses = {
+    Lead: "badge badge-status-lead",
+    Customer: "badge badge-status-customer",
+    Archived: "badge badge-status-archived",
+  };
+  const statusTooltips = {
+    Lead: "Potential customer - not yet converted",
+    Customer: "Active customer",
+    Archived: "Inactive or archived contact",
+  };
+  return (
+    <Tooltip content={statusTooltips[status]}>
+      <span className={statusClasses[status]}>{status}</span>
+    </Tooltip>
+  );
+};
+
+const EmailStatusBadge: React.FC<{ status: string | undefined }> = ({ status }) => {
+  if (!status) return <span className="contacts-empty-value">-</span>;
+  
+  const statusClasses: { [key: string]: string } = {
+    valid: "badge badge-email-valid",
+    unknown: "badge badge-email-unknown",
+    invalid: "badge badge-email-invalid",
+  };
+  
+  const statusTooltips: { [key: string]: string } = {
+    valid: "Email address has been verified",
+    unknown: "Email verification status unknown",
+    invalid: "Email address is invalid or bounced",
+  };
+  
+  const statusClass = statusClasses[status] || "badge badge-primary";
+  const formattedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+  const tooltip = statusTooltips[status] || "Email status";
+  
+  return (
+    <Tooltip content={tooltip}>
+      <span className={statusClass}>{formattedStatus}</span>
+    </Tooltip>
+  );
+};
+
+const Highlight: React.FC<{ text: string | undefined; highlight: string }> = ({ text, highlight }) => {
+  const safeText = text || '';
+  if (!highlight.trim()) {
+    return <span>{safeText}</span>;
+  }
+  const escapedHighlight = highlight.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  const regex = new RegExp(`(${escapedHighlight})`, 'gi');
+  const parts = safeText.split(regex);
+  return (
+    <span>
+      {parts.map((part, i) =>
+        regex.test(part) ? (
+          <mark key={i} className="contacts-highlight">
+            {part}
+          </mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </span>
+  );
+};
+
+// Column Configuration
+type ColumnConfig = {
+  id: string;
+  label: string;
+  field: keyof Contact;
+  width?: string;
+};
+
+const defaultColumns: ColumnConfig[] = [
+  { id: 'name', label: 'Name', field: 'name', width: '250px' },
+  { id: 'company', label: 'Company', field: 'company', width: '200px' },
+  { id: 'title', label: 'Title', field: 'title', width: '150px' },
+  { id: 'phone', label: 'Phone', field: 'phone', width: '150px' },
+  { id: 'status', label: 'Status', field: 'status', width: '100px' },
+  { id: 'emailStatus', label: 'Email Status', field: 'emailStatus', width: '120px' },
+  { id: 'city', label: 'Location', field: 'city', width: '150px' },
+  { id: 'createdAt', label: 'Created At', field: 'createdAt', width: '120px' },
 ];
 
 export default function ApolloPage() {
@@ -58,27 +140,45 @@ export default function ApolloPage() {
     successRate: 100,
   });
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'analyzer' | 'search'>('analyzer');
-
-  // Section 1: URL Analyzer State
-  const [analyzeUrl, setAnalyzeUrl] = useState('');
-  const [analyzeLoading, setAnalyzeLoading] = useState(false);
+  // Unified URL state
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  // URL Analyzer State
   const [analyzeResult, setAnalyzeResult] = useState<ApolloUrlAnalysisResponse | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showRawParams, setShowRawParams] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState(false);
 
-  // Section 2: Contact Search State
-  const [searchUrl, setSearchUrl] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
+  // Contact Search State
   const [searchResult, setSearchResult] = useState<ApolloContactsResponse | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'simple' | 'full'>('full');
   const [limit, setLimit] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedUnmappedCategories, setExpandedUnmappedCategories] = useState<Set<string>>(new Set());
+  
+  // Pagination State - using offset instead of cursor
+  const [currentOffset, setCurrentOffset] = useState(0);
+  const [offsetHistory, setOffsetHistory] = useState<number[]>([]); // Stack for previous offsets
+  
+  // Company Name Filtering State
+  const [includeCompanyName, setIncludeCompanyName] = useState('');
+  const [excludeCompanyName, setExcludeCompanyName] = useState<string[]>(['']);
+  
+  // Domain Filtering State
+  const [includeDomainList, setIncludeDomainList] = useState<string[]>(['']);
+  const [excludeDomainList, setExcludeDomainList] = useState<string[]>(['']);
+  
+  // Count State
+  const [contactCount, setContactCount] = useState<number | null>(null);
+  const [isCounting, setIsCounting] = useState(false);
+  
+  // Contact Selection State
+  const [selectedContactUuids, setSelectedContactUuids] = useState<Set<string>>(new Set());
+  
+  // Export State
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Toast helper function
   const showToast = (title: string, description?: string, variant: ToastProps['variant'] = 'default') => {
@@ -116,74 +216,400 @@ export default function ApolloPage() {
     });
   };
 
-  // Handle URL Analysis
-  const handleAnalyze = async () => {
-    if (!analyzeUrl.trim()) {
+
+  // Handle Count Contacts
+  const handleCountContacts = async () => {
+    if (!url.trim()) {
       showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
       return;
     }
 
-    setAnalyzeLoading(true);
-    setAnalyzeError(null);
-    setAnalyzeResult(null);
+    setIsCounting(true);
+    setContactCount(null);
 
-    const result = await analyzeApolloUrl(analyzeUrl);
+    try {
+      // Parse multi-value inputs
+      const parsedIncludeCompanyNames = parseMultiValueInput(includeCompanyName);
+      const parsedExcludeCompanyNames = parseMultipleInputs(excludeCompanyName);
+      const parsedIncludeDomains = parseMultipleInputs(includeDomainList);
+      const parsedExcludeDomains = parseMultipleInputs(excludeDomainList);
+      
+      // For include_company_name, join with comma (API expects comma-separated string)
+      const includeCompanyNameParam = parsedIncludeCompanyNames.length > 0 
+        ? parsedIncludeCompanyNames.join(', ') 
+        : undefined;
+      
+      const countResult = await countContactsFromApolloUrl(url, {
+        include_company_name: includeCompanyNameParam,
+        exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
+        include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
+        exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
+      });
 
-    setAnalyzeLoading(false);
-
-    if (result.success && result.data) {
-      setAnalyzeResult(result.data);
-      const categoryNames = new Set(result.data.categories.map(c => c.name));
-      setExpandedCategories(categoryNames);
-      updateStats(true);
-      showToast(
-        'URL Analyzed Successfully!',
-        `Found ${result.data.statistics.total_parameters} parameters across ${result.data.statistics.categories_used} categories`,
-        'success'
-      );
-    } else {
-      setAnalyzeError(result.message || 'Failed to analyze URL');
-      updateStats(false);
-      showToast('Analysis Failed', result.message || 'Failed to analyze URL', 'error');
+      if (countResult.success && countResult.data !== undefined) {
+        setContactCount(countResult.data);
+        showToast(
+          'Count Complete',
+          `Found ${countResult.data.toLocaleString()} contact(s) matching your criteria`,
+          'success'
+        );
+      } else {
+        showToast('Count Failed', countResult.message || 'Failed to count contacts', 'error');
+      }
+    } catch (error) {
+      console.error('Count error:', error);
+      showToast('Count Failed', 'An error occurred while counting contacts', 'error');
+    } finally {
+      setIsCounting(false);
     }
   };
 
-  // Handle Contact Search
-  const handleSearch = async () => {
-    if (!searchUrl.trim()) {
+  // Handle Search Contacts (separate function for pagination)
+  const handleSearchContacts = async (offset: number = 0, resetPagination: boolean = false) => {
+    if (!url.trim()) {
       showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
       return;
     }
 
-    setSearchLoading(true);
+    setLoading(true);
+    setSearchError(null);
+
+    try {
+      // Parse multi-value inputs
+      const parsedIncludeCompanyNames = parseMultiValueInput(includeCompanyName);
+      const parsedExcludeCompanyNames = parseMultipleInputs(excludeCompanyName);
+      const parsedIncludeDomains = parseMultipleInputs(includeDomainList);
+      const parsedExcludeDomains = parseMultipleInputs(excludeDomainList);
+      
+      // For include_company_name, join with comma (API expects comma-separated string)
+      const includeCompanyNameParam = parsedIncludeCompanyNames.length > 0 
+        ? parsedIncludeCompanyNames.join(', ') 
+        : undefined;
+      
+      const searchParams: any = {
+        limit,
+        offset: resetPagination ? 0 : offset,
+        include_company_name: includeCompanyNameParam,
+        exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
+        include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
+        exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
+      };
+      
+      const searchResult = await searchContactsFromApolloUrl(url, searchParams);
+
+      if (searchResult.success && searchResult.data) {
+        setSearchResult(searchResult.data);
+        if (searchResult.data.unmapped_categories.length > 0) {
+          const unmappedNames = new Set(searchResult.data.unmapped_categories.map(c => c.name));
+          setExpandedUnmappedCategories(unmappedNames);
+        }
+        
+        // Update pagination state
+        if (resetPagination) {
+          // Reset pagination state for new search (first page)
+          setCurrentOffset(0);
+          setOffsetHistory([]);
+          // Clear selection only when starting a new search
+          setSelectedContactUuids(new Set());
+        } else {
+          // Store the offset that was used for this request
+          setCurrentOffset(offset);
+          // Keep selection persistent when navigating between pages
+        }
+      } else {
+        setSearchError(searchResult.message || 'Failed to search contacts');
+      }
+    } catch (error) {
+      setSearchError('Failed to search contacts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle unified Count, Analyze and Search
+  const handleCountAnalyzeAndSearch = async () => {
+    if (!url.trim()) {
+      showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
+      return;
+    }
+
+    // Reset all states
+    setLoading(true);
+    setIsCounting(true);
+    setAnalyzeError(null);
+    setAnalyzeResult(null);
     setSearchError(null);
     setSearchResult(null);
+    setContactCount(null);
     setCurrentPage(1);
+    setCurrentOffset(0);
+    setOffsetHistory([]);
+    setSelectedContactUuids(new Set());
 
-    const result = await searchContactsFromApolloUrl(searchUrl, {
-      limit,
-      offset: 0,
-      view: viewMode,
-    });
+    let countSuccess = false;
+    let analyzeSuccess = false;
+    let searchSuccess = false;
+    let contactsFound = 0;
+    let totalCount = 0;
 
-    setSearchLoading(false);
+    // Parse multi-value inputs (used in all operations)
+    const parsedIncludeCompanyNames = parseMultiValueInput(includeCompanyName);
+    const parsedExcludeCompanyNames = parseMultipleInputs(excludeCompanyName);
+    const parsedIncludeDomains = parseMultipleInputs(includeDomainList);
+    const parsedExcludeDomains = parseMultipleInputs(excludeDomainList);
+    
+    // For include_company_name, join with comma (API expects comma-separated string)
+    const includeCompanyNameParam = parsedIncludeCompanyNames.length > 0 
+      ? parsedIncludeCompanyNames.join(', ') 
+      : undefined;
 
-    if (result.success && result.data) {
-      setSearchResult(result.data);
-      if (result.data.unmapped_categories.length > 0) {
-        const unmappedNames = new Set(result.data.unmapped_categories.map(c => c.name));
-        setExpandedUnmappedCategories(unmappedNames);
+    // Step 1: Count Contacts
+    try {
+      const countResult = await countContactsFromApolloUrl(url, {
+        include_company_name: includeCompanyNameParam,
+        exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
+        include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
+        exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
+      });
+
+      if (countResult.success && countResult.data !== undefined) {
+        setContactCount(countResult.data);
+        totalCount = countResult.data;
+        countSuccess = true;
       }
-      updateStats(true, result.data.results.length);
+    } catch (error) {
+      console.error('Count error:', error);
+    } finally {
+      setIsCounting(false);
+    }
+
+    // Step 2: Analyze URL
+    try {
+      const analyzeResult = await analyzeApolloUrl(url);
+      
+      if (analyzeResult.success && analyzeResult.data) {
+        setAnalyzeResult(analyzeResult.data);
+        const categoryNames = new Set(analyzeResult.data.categories.map(c => c.name));
+        setExpandedCategories(categoryNames);
+        analyzeSuccess = true;
+      } else {
+        setAnalyzeError(analyzeResult.message || 'Failed to analyze URL');
+      }
+    } catch (error) {
+      setAnalyzeError('Failed to analyze URL');
+    }
+
+    // Step 3: Search Contacts
+    try {
+      const searchResult = await searchContactsFromApolloUrl(url, {
+        limit,
+        offset: 0,
+        include_company_name: includeCompanyNameParam,
+        exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
+        include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
+        exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
+      });
+
+      if (searchResult.success && searchResult.data) {
+        setSearchResult(searchResult.data);
+        if (searchResult.data.unmapped_categories.length > 0) {
+          const unmappedNames = new Set(searchResult.data.unmapped_categories.map(c => c.name));
+          setExpandedUnmappedCategories(unmappedNames);
+        }
+        contactsFound = searchResult.data.results.length;
+        searchSuccess = true;
+        
+        // Initialize pagination state - first page starts at offset 0
+        setCurrentOffset(0);
+        setOffsetHistory([]);
+      } else {
+        setSearchError(searchResult.message || 'Failed to search contacts');
+      }
+    } catch (error) {
+      setSearchError('Failed to search contacts');
+    }
+
+    setLoading(false);
+
+    // Update stats and show appropriate toasts
+    const overallSuccess = countSuccess || analyzeSuccess || searchSuccess;
+    updateStats(overallSuccess, contactsFound);
+
+    if (countSuccess && analyzeSuccess && searchSuccess) {
+      showToast(
+        'Complete!',
+        `Found ${totalCount.toLocaleString()} contact(s), analyzed ${analyzeResult?.statistics.total_parameters || 0} parameters, and loaded ${contactsFound} result(s)`,
+        'success'
+      );
+    } else if (countSuccess && analyzeSuccess) {
+      showToast(
+        'Count & Analysis Complete!',
+        `Found ${totalCount.toLocaleString()} contact(s) and analyzed ${analyzeResult?.statistics.total_parameters || 0} parameters`,
+        'success'
+      );
+    } else if (countSuccess && searchSuccess) {
+      showToast(
+        'Count & Search Complete!',
+        `Found ${totalCount.toLocaleString()} contact(s) total and loaded ${contactsFound} result(s)`,
+        'success'
+      );
+    } else if (analyzeSuccess && searchSuccess) {
+      showToast(
+        'Analysis & Search Complete!',
+        `Found ${contactsFound} contact(s) and analyzed ${analyzeResult?.statistics.total_parameters || 0} parameters`,
+        'success'
+      );
+    } else if (countSuccess) {
+      showToast(
+        'Count Complete!',
+        `Found ${totalCount.toLocaleString()} contact(s) matching your criteria`,
+        'success'
+      );
+    } else if (analyzeSuccess) {
+      showToast(
+        'URL Analyzed Successfully!',
+        `Found ${analyzeResult?.statistics.total_parameters || 0} parameters across ${analyzeResult?.statistics.categories_used || 0} categories`,
+        'success'
+      );
+    } else if (searchSuccess) {
       showToast(
         'Search Complete!',
-        `Found ${result.data.results.length} contact(s) matching your criteria`,
+        `Found ${contactsFound} contact(s) matching your criteria`,
         'success'
       );
     } else {
-      setSearchError(result.message || 'Failed to search contacts');
-      updateStats(false);
-      showToast('Search Failed', result.message || 'Failed to search contacts', 'error');
+      showToast('Operation Failed', 'All operations failed. Please check the URL and try again.', 'error');
+    }
+  };
+
+  // Handle combined Analyze and Search (kept for backward compatibility if needed)
+  const handleAnalyzeAndSearch = async () => {
+    if (!url.trim()) {
+      showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
+      return;
+    }
+
+    setLoading(true);
+    setAnalyzeError(null);
+    setAnalyzeResult(null);
+    setSearchError(null);
+    setSearchResult(null);
+    setCurrentPage(1);
+    setCurrentOffset(0);
+    setOffsetHistory([]);
+    setSelectedContactUuids(new Set());
+
+    let analyzeSuccess = false;
+    let searchSuccess = false;
+    let contactsFound = 0;
+
+    // Step 1: Analyze URL
+    try {
+      const analyzeResult = await analyzeApolloUrl(url);
+      
+      if (analyzeResult.success && analyzeResult.data) {
+        setAnalyzeResult(analyzeResult.data);
+        const categoryNames = new Set(analyzeResult.data.categories.map(c => c.name));
+        setExpandedCategories(categoryNames);
+        analyzeSuccess = true;
+      } else {
+        setAnalyzeError(analyzeResult.message || 'Failed to analyze URL');
+      }
+    } catch (error) {
+      setAnalyzeError('Failed to analyze URL');
+    }
+
+    // Step 2: Search Contacts
+    try {
+      // Parse multi-value inputs
+      const parsedIncludeCompanyNames = parseMultiValueInput(includeCompanyName);
+      const parsedExcludeCompanyNames = parseMultipleInputs(excludeCompanyName);
+      const parsedIncludeDomains = parseMultipleInputs(includeDomainList);
+      const parsedExcludeDomains = parseMultipleInputs(excludeDomainList);
+      
+      // For include_company_name, join with comma (API expects comma-separated string)
+      const includeCompanyNameParam = parsedIncludeCompanyNames.length > 0 
+        ? parsedIncludeCompanyNames.join(', ') 
+        : undefined;
+      
+      const searchResult = await searchContactsFromApolloUrl(url, {
+        limit,
+        offset: 0,
+        include_company_name: includeCompanyNameParam,
+        exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
+        include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
+        exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
+      });
+
+      if (searchResult.success && searchResult.data) {
+        setSearchResult(searchResult.data);
+        if (searchResult.data.unmapped_categories.length > 0) {
+          const unmappedNames = new Set(searchResult.data.unmapped_categories.map(c => c.name));
+          setExpandedUnmappedCategories(unmappedNames);
+        }
+        contactsFound = searchResult.data.results.length;
+        searchSuccess = true;
+        setCurrentOffset(0);
+        setOffsetHistory([]);
+      } else {
+        setSearchError(searchResult.message || 'Failed to search contacts');
+      }
+    } catch (error) {
+      setSearchError('Failed to search contacts');
+    }
+
+    setLoading(false);
+
+    // Update stats and show appropriate toasts
+    const overallSuccess = analyzeSuccess || searchSuccess;
+    updateStats(overallSuccess, contactsFound);
+
+    if (analyzeSuccess && searchSuccess) {
+      showToast(
+        'Analysis & Search Complete!',
+        `Found ${contactsFound} contact(s) and analyzed ${analyzeResult?.statistics.total_parameters || 0} parameters`,
+        'success'
+      );
+    } else if (analyzeSuccess) {
+      showToast(
+        'URL Analyzed Successfully!',
+        `Found ${analyzeResult?.statistics.total_parameters || 0} parameters across ${analyzeResult?.statistics.categories_used || 0} categories`,
+        'success'
+      );
+    } else if (searchSuccess) {
+      showToast(
+        'Search Complete!',
+        `Found ${contactsFound} contact(s) matching your criteria`,
+        'success'
+      );
+    } else {
+      showToast('Operation Failed', 'Both analysis and search failed. Please check the URL and try again.', 'error');
+    }
+  };
+
+  // Handle Next Page
+  const handleNextPage = () => {
+    if (!searchResult?.next) return;
+    
+    // Save current offset to history for back navigation
+    setOffsetHistory(prev => [...prev, currentOffset]);
+    
+    // Calculate next offset
+    const nextOffset = currentOffset + limit;
+    handleSearchContacts(nextOffset, false);
+  };
+
+  // Handle Previous Page
+  const handlePreviousPage = () => {
+    if (offsetHistory.length > 0) {
+      // Go back to previous offset from history
+      const previousOffset = offsetHistory[offsetHistory.length - 1];
+      setOffsetHistory(prev => prev.slice(0, -1));
+      handleSearchContacts(previousOffset, false);
+    } else {
+      // Calculate previous offset (go back by limit)
+      const previousOffset = Math.max(0, currentOffset - limit);
+      handleSearchContacts(previousOffset, false);
     }
   };
 
@@ -227,29 +653,65 @@ export default function ApolloPage() {
   };
 
   // Load example URL
-  const loadExample = (url: string, target: 'analyze' | 'search') => {
-    if (target === 'analyze') {
-      setAnalyzeUrl(url);
-      setAnalyzeResult(null);
-      setAnalyzeError(null);
-      setActiveTab('analyzer');
-    } else {
-      setSearchUrl(url);
-      setSearchResult(null);
-      setSearchError(null);
-      setActiveTab('search');
-    }
+  const loadExample = (exampleUrl: string) => {
+    setUrl(exampleUrl);
+    setAnalyzeResult(null);
+    setAnalyzeError(null);
+    setSearchResult(null);
+    setSearchError(null);
     showToast('Example Loaded', 'Example URL loaded successfully', 'info');
   };
 
+  // Selection helper functions
+  const toggleContactSelection = (uuid: string | undefined) => {
+    if (!uuid) return;
+    setSelectedContactUuids(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(uuid)) {
+        newSet.delete(uuid);
+      } else {
+        newSet.add(uuid);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (!searchResult) return;
+    const allUuids = searchResult.results.filter(c => c.uuid).map(c => c.uuid!);
+    if (allUuids.length === 0) return;
+    
+    const allSelected = allUuids.every(uuid => selectedContactUuids.has(uuid));
+    if (allSelected) {
+      setSelectedContactUuids(new Set());
+    } else {
+      setSelectedContactUuids(new Set(allUuids));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedContactUuids(new Set());
+  };
+
+  const isSelectAllChecked = searchResult ? searchResult.results.filter(c => c.uuid).every(c => selectedContactUuids.has(c.uuid!)) : false;
+  const isSelectAllIndeterminate = searchResult ? searchResult.results.filter(c => c.uuid).some(c => selectedContactUuids.has(c.uuid!)) && !isSelectAllChecked : false;
+
   // Clear all results
   const clearAllResults = () => {
-    setAnalyzeUrl('');
+    setUrl('');
     setAnalyzeResult(null);
     setAnalyzeError(null);
-    setSearchUrl('');
     setSearchResult(null);
     setSearchError(null);
+    setIncludeCompanyName('');
+    setExcludeCompanyName(['']);
+    setIncludeDomainList(['']);
+    setExcludeDomainList(['']);
+    setContactCount(null);
+    setSelectedContactUuids(new Set());
+    setCurrentOffset(0);
+    setOffsetHistory([]);
+    setCurrentPage(1);
     showToast('Cleared', 'All results have been cleared', 'info');
   };
 
@@ -275,13 +737,80 @@ export default function ApolloPage() {
     showToast('Exported!', 'Results exported successfully', 'success');
   };
 
+  // Render table cell content
+  const renderCellContent = (column: ColumnConfig, contact: Contact) => {
+    const value = contact[column.field];
+    
+    switch (column.id) {
+      case 'name':
+        return (
+          <div className="contacts-table-name-cell">
+            <div className="contacts-table-name-avatar">
+              <UsersIcon />
+            </div>
+            <div className="contacts-table-name-content">
+              <p className="contacts-table-name-text">
+                {contact.name || '-'}
+              </p>
+              {contact.email && (
+                <p className="contacts-table-name-email">
+                  {contact.email}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      
+      case 'company':
+        return (
+          <div className="contacts-table-company-cell">
+            <BuildingIcon className="contacts-table-company-icon" />
+            {contact.company || '-'}
+          </div>
+        );
+      
+      case 'status':
+        return <StatusBadge status={contact.status} />;
+      
+      case 'emailStatus':
+        return <EmailStatusBadge status={contact.emailStatus} />;
+      
+      case 'city':
+        return (
+          <div className="contacts-table-location-cell">
+            <MapPinIcon className="contacts-table-location-icon" />
+            {contact.city && contact.state ? `${contact.city}, ${contact.state}` : (contact.city || contact.state || contact.country || '-')}
+          </div>
+        );
+      
+      case 'createdAt':
+        return (
+          <div className="contacts-table-date-cell">
+            <CalendarIcon className="contacts-table-date-icon" />
+            {value ? new Date(value as string).toLocaleDateString() : '-'}
+          </div>
+        );
+      
+      case 'phone':
+        return value ? (
+          <div className="contacts-table-phone-cell">
+            <PhoneIcon className="contacts-table-phone-icon" />
+            {value as string}
+          </div>
+        ) : '-';
+      
+      default:
+        return value ? String(value) : '-';
+    }
+  };
+
   return (
     <div className="apollo-page">
       {/* Toast Container */}
       <ToastContainer toasts={toasts} position="top-right" />
 
       {/* Page Header */}
-      <div className="apollo-page-header">
+      {/* <div className="apollo-page-header">
         <div className="apollo-page-header-content">
           <div>
             <h1 className="apollo-page-title">
@@ -292,6 +821,27 @@ export default function ApolloPage() {
             </p>
           </div>
           <div className="apollo-page-actions">
+            {selectedContactUuids.size > 0 && (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setIsExportModalOpen(true)}
+              >
+                <DownloadIcon />
+                Export Contacts ({selectedContactUuids.size})
+              </Button>
+            )}
+            {selectedContactUuids.size > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearSelection}
+                iconOnly
+                aria-label="Clear selection"
+              >
+                <XMarkIcon />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -308,303 +858,501 @@ export default function ApolloPage() {
               disabled={!analyzeResult && !searchResult}
             >
               <DownloadIcon />
-              Export
+              Export JSON
             </Button>
           </div>
         </div>
-
-        {/* Session Stats */}
         <div className="apollo-stats-wrapper">
           <ApolloStatsCards stats={sessionStats} />
         </div>
-      </div>
+      </div> */}
 
-      {/* Example URLs */}
+      {/* Main Content */}
       <Card>
-        <CardContent className="apollo-example-card-content">
-          <div className="apollo-example-header">
-            <InfoIcon className="apollo-example-icon" />
+        <CardContent className="apollo-tab-content">
+          {/* Input Section */}
+          <div className="apollo-input-section">
             <div>
-              <h3 className="apollo-example-title">Example Apollo URLs</h3>
-              <p className="apollo-example-description">
-                Click to load an example URL into either the analyzer or contact search
-              </p>
-            </div>
-          </div>
-          <div className="apollo-example-list">
-            {EXAMPLE_URLS.map((example, index) => (
-              <div
-                key={index}
-                className="apollo-example-item"
-              >
-                <div className="apollo-example-item-content">
-                  <div className="apollo-example-item-label">
-                    {example.label}
-                  </div>
-                  <div className="apollo-example-item-url">
-                    {example.url}
-                  </div>
-                </div>
-                <div className="apollo-example-item-actions">
+              <label className="apollo-input-label">
+                Apollo.io URL
+              </label>
+              <div className="apollo-input-wrapper">
+                <Input
+                  type="text"
+                  placeholder="https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAnalyzeAndSearch()}
+                  className="apollo-input-full-width"
+                />
+                {url && (
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    onClick={() => loadExample(example.url, 'analyze')}
-                  >
-                    Analyze
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => loadExample(example.url, 'search')}
-                  >
-                    Search
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Tabbed Interface */}
-      <div className="apollo-tabbed-interface">
-        {/* Tab Headers */}
-        <div className="apollo-tabs">
-          <button
-            onClick={() => setActiveTab('analyzer')}
-            className={`apollo-tab-button ${activeTab === 'analyzer' ? 'apollo-tab-button--active' : 'apollo-tab-button--inactive'}`}
-          >
-            URL Analyzer
-            {analyzeResult && (
-              <span className="apollo-tab-badge">
-                ✓
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('search')}
-            className={`apollo-tab-button ${activeTab === 'search' ? 'apollo-tab-button--active' : 'apollo-tab-button--inactive'}`}
-          >
-            Contact Search
-            {searchResult && (
-              <span className="apollo-tab-badge">
-                {searchResult.results.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <Card>
-          <CardContent className="apollo-tab-content">
-            {/* Analyzer Tab */}
-            {activeTab === 'analyzer' && (
-              <div>
-                <div className="apollo-section-header">
-                  <h2 className="apollo-section-title">
-                    Apollo URL Analyzer
-                  </h2>
-                  <p className="apollo-section-description">
-                    Parse and analyze Apollo.io search URLs to understand the parameters and filters
-                  </p>
-                </div>
-
-                {/* Input Section */}
-                <div className="apollo-input-section">
-                  <div>
-                    <label className="apollo-input-label">
-                      Apollo.io URL
-                    </label>
-                    <div className="apollo-input-wrapper">
-                      <Input
-                        type="text"
-                        placeholder="https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California"
-                        value={analyzeUrl}
-                        onChange={(e) => setAnalyzeUrl(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAnalyze()}
-                        className="apollo-input-full-width"
-                      />
-                      {analyzeUrl && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setAnalyzeUrl('');
-                            setAnalyzeResult(null);
-                            setAnalyzeError(null);
-                          }}
-                        >
-                          <XMarkIcon />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleAnalyze}
-                    disabled={analyzeLoading || !analyzeUrl.trim()}
-                    style={{ width: '100%' }}
-                  >
-                    {analyzeLoading ? (
-                      <>
-                        <div className="apollo-spinner" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <SearchIcon />
-                        Analyze URL
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Loading State */}
-                {analyzeLoading && <ApolloAnalyzerSkeleton />}
-
-                {/* Error Display */}
-                {!analyzeLoading && analyzeError && (
-                  <ApolloEmptyState
-                    variant="error"
-                    description={analyzeError}
-                    action={{
-                      label: 'Try Again',
-                      onClick: handleAnalyze,
+                    onClick={() => {
+                      setUrl('');
+                      setAnalyzeResult(null);
+                      setAnalyzeError(null);
+                      setSearchResult(null);
+                      setSearchError(null);
                     }}
-                  />
+                  >
+                    <XMarkIcon />
+                  </Button>
                 )}
+              </div>
+            </div>
 
-                {/* Empty State */}
-                {!analyzeLoading && !analyzeResult && !analyzeError && (
-                  <ApolloEmptyState variant="no-analysis" />
-                )}
-
-                {/* Results Display */}
-                {!analyzeLoading && analyzeResult && (
-                  <div className="apollo-results">
-                    {/* Success Message */}
-                    <div className="apollo-success-message">
-                      <SuccessIcon className="apollo-success-icon" />
-                      <div className="apollo-success-content">
-                        <h4 className="apollo-success-title">URL Analyzed Successfully</h4>
-                        <p className="apollo-success-description">
-                          Found {analyzeResult.statistics.total_parameters} parameter(s) across{' '}
-                          {analyzeResult.statistics.categories_used} categor{analyzeResult.statistics.categories_used === 1 ? 'y' : 'ies'}
-                        </p>
-                      </div>
+            {/* Advanced Options */}
+            <div className="apollo-advanced-options">
+              <div>
+                <label htmlFor="apollo-include-company-name" className="apollo-input-label">
+                  Include Company Name
+                </label>
+                <Textarea
+                  id="apollo-include-company-name"
+                  placeholder="e.g., Tech, Software (comma or newline separated)"
+                  value={includeCompanyName}
+                  onChange={(e) => setIncludeCompanyName(e.target.value)}
+                  rows={3}
+                  aria-label="Include company name filter (comma or newline separated)"
+                />
+                {/* <p className="apollo-input-hint">
+                  Include contacts whose company name contains this value (case-insensitive). Supports comma or newline separated values.
+                </p> */}
+              </div>
+              <div>
+                <label className="apollo-input-label">
+                  Exclude Company Names
+                </label>
+                {excludeCompanyName.map((value, index) => (
+                  <div key={`exclude-company-${index}-${value || ''}`} className="apollo-exclude-item">
+                    <Input
+                      type="text"
+                      placeholder="e.g., Competitor Inc (comma or newline separated)"
+                      value={value}
+                      onChange={(e) => {
+                        const newExclude = [...excludeCompanyName];
+                        newExclude[index] = e.target.value;
+                        setExcludeCompanyName(newExclude);
+                      }}
+                      className="input"
+                      aria-label={`Exclude company name ${index + 1} (comma or newline separated)`}
+                    />
+                    {excludeCompanyName.length > 1 && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => copyToClipboard(analyzeResult.url)}
+                        iconOnly
+                        onClick={() => {
+                          const newExclude = excludeCompanyName.filter((_, i) => i !== index);
+                          setExcludeCompanyName(newExclude.length > 0 ? newExclude : ['']);
+                        }}
+                        aria-label="Remove exclude company name"
                       >
-                        {copiedUrl ? (
-                          <CheckIcon className="apollo-copy-icon apollo-copy-icon--success" />
-                        ) : (
-                          <CopyIcon className="apollo-copy-icon" />
-                        )}
+                        <XMarkIcon />
                       </Button>
-                    </div>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExcludeCompanyName([...excludeCompanyName, ''])}
+                  className="apollo-add-button"
+                >
+                  + Add Exclude Company
+                </Button>
+                {/* <p className="apollo-input-hint">
+                  Exclude contacts whose company name matches any provided value (case-insensitive)
+                </p> */}
+              </div>
+              
+              {/* Domain Filtering */}
+              <div>
+                <label className="apollo-input-label">
+                  Include Domains
+                </label>
+                {includeDomainList.map((domain, index) => (
+                  <div key={`include-domain-${index}-${domain || ''}`} className="apollo-exclude-item">
+                    <Input
+                      type="text"
+                      placeholder="e.g., example.com, test.com (comma or newline separated)"
+                      value={domain}
+                      onChange={(e) => {
+                        const newInclude = [...includeDomainList];
+                        newInclude[index] = e.target.value;
+                        setIncludeDomainList(newInclude);
+                      }}
+                      className="input"
+                      aria-label={`Include domain ${index + 1} (comma or newline separated)`}
+                    />
+                    {includeDomainList.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        onClick={() => {
+                          const newInclude = includeDomainList.filter((_, i) => i !== index);
+                          setIncludeDomainList(newInclude.length > 0 ? newInclude : ['']);
+                        }}
+                        aria-label="Remove include domain"
+                      >
+                        <XMarkIcon />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIncludeDomainList([...includeDomainList, ''])}
+                  className="apollo-add-button"
+                >
+                  + Add Include Domain
+                </Button>
+              </div>
+              <div>
+                <label className="apollo-input-label">
+                  Exclude Domains
+                </label>
+                {excludeDomainList.map((domain, index) => (
+                  <div key={`exclude-domain-${index}-${domain || ''}`} className="apollo-exclude-item">
+                    <Input
+                      type="text"
+                      placeholder="e.g., spam.com (comma or newline separated)"
+                      value={domain}
+                      onChange={(e) => {
+                        const newExclude = [...excludeDomainList];
+                        newExclude[index] = e.target.value;
+                        setExcludeDomainList(newExclude);
+                      }}
+                      className="input"
+                      aria-label={`Exclude domain ${index + 1} (comma or newline separated)`}
+                    />
+                    {excludeDomainList.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        onClick={() => {
+                          const newExclude = excludeDomainList.filter((_, i) => i !== index);
+                          setExcludeDomainList(newExclude.length > 0 ? newExclude : ['']);
+                        }}
+                        aria-label="Remove exclude domain"
+                      >
+                        <XMarkIcon />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setExcludeDomainList([...excludeDomainList, ''])}
+                  className="apollo-add-button"
+                >
+                  + Add Exclude Domain
+                </Button>
+              </div>
+            </div>
 
-                    {/* URL Structure */}
-                    <div className="apollo-section">
-                      <h3 className="apollo-section-subtitle">URL Structure</h3>
-                      <div className="apollo-url-structure">
-                        <div className="apollo-url-structure-item">
-                          <span className="apollo-url-structure-label">Base URL:</span>
-                          <span className="apollo-url-structure-value">
-                            {analyzeResult.url_structure.base_url}
+            <Button
+              onClick={handleCountAnalyzeAndSearch}
+              disabled={(loading || isCounting) || !url.trim()}
+              className="apollo-unified-button"
+            >
+              {(loading || isCounting) ? (
+                <>
+                  <div className="apollo-spinner" />
+                  {isCounting ? 'Counting...' : loading ? 'Analyzing & Searching...' : 'Processing...'}
+                </>
+              ) : (
+                <>
+                  <SearchIcon />
+                  Count, Analyze & Search
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Count Result Display - At Top */}
+          {/* {contactCount !== null && (
+            <div className="apollo-count-banner">
+              <div className="apollo-count-banner__content">
+                <UsersIcon className="apollo-count-banner__icon" />
+                <div className="apollo-count-banner__text">
+                  <strong className="apollo-count-banner__value">
+                    {contactCount.toLocaleString()}
+                  </strong>
+                  <span className="apollo-count-banner__label">
+                    contact{contactCount !== 1 ? 's' : ''} found matching your criteria
+                  </span>
+                </div>
+              </div>
+            </div>
+          )} */}
+
+          {/* Loading State */}
+          {(loading || isCounting) && (
+            <>
+              {isCounting && (
+                <div className="apollo-count-banner apollo-count-banner--loading">
+                  <div className="apollo-count-banner__content">
+                    <div className="apollo-spinner" />
+                    <span>Counting contacts...</span>
+                  </div>
+                </div>
+              )}
+              {loading && (
+                <div className="apollo-results-split">
+                  <div className="apollo-results-left">
+                    <ApolloAnalyzerSkeleton />
+                  </div>
+                  <div className="apollo-results-right">
+                    <ApolloContactsSkeleton />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Results Section - Split Layout */}
+          {!loading && !isCounting && (
+            <>
+              {/* Split Container for Analysis (Left) and Search (Right) */}
+              {(analyzeResult || searchResult || analyzeError || searchError) && (
+                <div className="apollo-results-split">
+                  {/* Left Side - Analysis Results */}
+                  <div className="apollo-results-left">
+                    {/* Analyzer Error Display */}
+                    {analyzeError && (
+                      <ApolloEmptyState
+                        variant="error"
+                        description={analyzeError}
+                        action={{
+                          label: 'Try Again',
+                          onClick: handleCountAnalyzeAndSearch,
+                        }}
+                      />
+                    )}
+
+                    {/* Analyzer Results Display */}
+                    {analyzeResult && (
+                <div className="apollo-results">
+                  {/* <div className="apollo-section-header">
+                    <h2 className="apollo-section-title">
+                      URL Analysis Results
+                    </h2>
+                  </div> */}
+
+                  {/* Contact Count Display */}
+                  {contactCount !== null && (
+                    <div className="apollo-count-display">
+                      <div className="apollo-count-display__content">
+                        <UsersIcon className="apollo-count-display__icon" />
+                        <div className="apollo-count-display__text">
+                          <strong className="apollo-count-display__value">
+                            {contactCount.toLocaleString()}
+                          </strong>
+                          <span className="apollo-count-display__label">
+                            contact{contactCount !== 1 ? 's' : ''} found
                           </span>
                         </div>
-                        {analyzeResult.url_structure.hash_path && (
-                          <div className="apollo-url-structure-item">
-                            <span className="apollo-url-structure-label">Hash Path:</span>
-                            <span className="apollo-url-structure-value">
-                              {analyzeResult.url_structure.hash_path}
-                            </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Parameter Categories */}
+                  <div className="apollo-section">
+                    <h3 className="apollo-section-subtitle">Parameter Categories</h3>
+                    <div className="apollo-categories-list">
+                      {analyzeResult.categories.map((category, catIdx) => (
+                        <div
+                          key={`category-${category.name || catIdx}`}
+                          className="apollo-category-card"
+                        >
+                          <button
+                            onClick={() => toggleCategory(category.name)}
+                            className="apollo-category-header"
+                          >
+                            <div className="apollo-category-header-content">
+                              {expandedCategories.has(category.name) ? (
+                                <ChevronDownIcon className="apollo-category-icon" />
+                              ) : (
+                                <ChevronRightIcon className="apollo-category-icon" />
+                              )}
+                              <span className="apollo-category-name">{category.name}</span>
+                              <span className="apollo-category-count">
+                                ({category.total_parameters} parameter{category.total_parameters !== 1 ? 's' : ''})
+                              </span>
+                            </div>
+                          </button>
+
+                          {expandedCategories.has(category.name) && (
+                            <div className="apollo-category-content">
+                              {category.parameters.map((param, idx) => (
+                                <div key={`${category.name}-param-${param.name || idx}`} className="apollo-parameter-item">
+                                  <div className="apollo-parameter-name">{param.name}</div>
+                                  <div className="apollo-parameter-description">
+                                    {param.description}
+                                  </div>
+                                  <div className="apollo-parameter-values">
+                                    {param.values.map((value, vIdx) => (
+                                      <span
+                                        key={`${category.name}-param-${param.name || idx}-value-${value || vIdx}`}
+                                        className="apollo-parameter-value"
+                                      >
+                                        {value}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Raw Parameters */}
+                  {/* <div className="apollo-section">
+                    <button
+                      onClick={() => setShowRawParams(!showRawParams)}
+                      className="apollo-raw-toggle"
+                    >
+                      {showRawParams ? (
+                        <ChevronDownIcon className="apollo-raw-toggle-icon" />
+                      ) : (
+                        <ChevronRightIcon className="apollo-raw-toggle-icon" />
+                      )}
+                      Raw Parameters (JSON)
+                    </button>
+
+                    {showRawParams && (
+                      <div className="apollo-raw-content">
+                        <pre className="apollo-raw-pre">
+                          {JSON.stringify(analyzeResult.raw_parameters, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div> */}
+
+                  {/* Parameter Mapping Summary */}
+                  {searchResult && (
+                    <div className="apollo-section">
+                      <div className="apollo-mapping-summary">
+                        <h4 className="apollo-mapping-summary-title">Parameter Mapping Summary</h4>
+                        <div className="apollo-mapping-stats">
+                          <div className="apollo-mapping-stat">
+                            <div className="apollo-mapping-stat-value apollo-mapping-stat-value--primary">
+                              {searchResult.mapping_summary.total_apollo_parameters}
+                            </div>
+                            <div className="apollo-mapping-stat-label">Total Parameters</div>
                           </div>
-                        )}
-                        {analyzeResult.url_structure.query_string && (
-                          <div className="apollo-url-structure-item">
-                            <span className="apollo-url-structure-label">Query String:</span>
-                            <div className="apollo-url-structure-query">
-                              {analyzeResult.url_structure.query_string}
+                          <div className="apollo-mapping-stat">
+                            <div className="apollo-mapping-stat-value apollo-mapping-stat-value--success">
+                              {searchResult.mapping_summary.mapped_parameters}
+                            </div>
+                            <div className="apollo-mapping-stat-label">Mapped</div>
+                          </div>
+                          <div className="apollo-mapping-stat">
+                            <div className="apollo-mapping-stat-value apollo-mapping-stat-value--warning">
+                              {searchResult.mapping_summary.unmapped_parameters}
+                            </div>
+                            <div className="apollo-mapping-stat-label">Unmapped</div>
+                          </div>
+                        </div>
+                        {searchResult.mapping_summary.mapped_parameter_names.length > 0 && (
+                          <div className="apollo-mapping-tags">
+                            <div className="apollo-mapping-tags-label">
+                              Mapped Parameters:
+                            </div>
+                            <div className="apollo-mapping-tags-list">
+                              {searchResult.mapping_summary.mapped_parameter_names.map((name, idx) => (
+                                <span
+                                  key={`mapped-param-${name || idx}`}
+                                  className="apollo-mapping-tag"
+                                >
+                                  {name}
+                                </span>
+                              ))}
                             </div>
                           </div>
                         )}
                       </div>
                     </div>
+                  )}
+                </div>
+                    )}
+                  </div>
 
-                    {/* Statistics */}
-                    <div className="apollo-section">
-                      <h3 className="apollo-section-subtitle">Statistics</h3>
-                      <div className="apollo-stats-grid">
-                        <div className="apollo-stat-card">
-                          <div className="apollo-stat-value">
-                            {analyzeResult.statistics.total_parameters}
-                          </div>
-                          <div className="apollo-stat-label">Total Parameters</div>
-                        </div>
-                        <div className="apollo-stat-card">
-                          <div className="apollo-stat-value">
-                            {analyzeResult.statistics.total_parameter_values}
-                          </div>
-                          <div className="apollo-stat-label">Total Values</div>
-                        </div>
-                        <div className="apollo-stat-card">
-                          <div className="apollo-stat-value">
-                            {analyzeResult.statistics.categories_used}
-                          </div>
-                          <div className="apollo-stat-label">Categories Used</div>
-                        </div>
-                        <div className="apollo-stat-card">
-                          <div className="apollo-stat-value">
-                            {analyzeResult.categories.reduce((sum, cat) => sum + cat.total_parameters, 0)}
-                          </div>
-                          <div className="apollo-stat-label">Categorized Params</div>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Right Side - Search Results */}
+                  <div className="apollo-results-right">
+                    {/* Search Error Display */}
+                    {searchError && (
+                      <ApolloEmptyState
+                        variant="error"
+                        description={searchError}
+                        action={{
+                          label: 'Try Again',
+                          onClick: handleCountAnalyzeAndSearch,
+                        }}
+                      />
+                    )}
 
-                    {/* Parameter Categories */}
+                    {/* Search Results Display */}
+                    {searchResult && (
+                      <div className="apollo-results">
+                        {/* <div className="apollo-section-header">
+                          <h2 className="apollo-section-title">
+                            Contact Search Results
+                          </h2>
+                        </div> */}
+
+                        {/* Unmapped Parameters */}
+                  {searchResult.unmapped_categories.length > 0 && (
                     <div className="apollo-section">
-                      <h3 className="apollo-section-subtitle">Parameter Categories</h3>
-                      <div className="apollo-categories-list">
-                        {analyzeResult.categories.map((category) => (
+                      <h4 className="apollo-section-subtitle">Unmapped Parameters</h4>
+                      <div className="apollo-unmapped-list">
+                        {searchResult.unmapped_categories.map((category, catIdx) => (
                           <div
-                            key={category.name}
-                            className="apollo-category-card"
+                            key={`unmapped-category-${category.name || catIdx}`}
+                            className="apollo-unmapped-card"
                           >
                             <button
-                              onClick={() => toggleCategory(category.name)}
-                              className="apollo-category-header"
+                              onClick={() => toggleUnmappedCategory(category.name)}
+                              className="apollo-unmapped-header"
                             >
-                              <div className="apollo-category-header-content">
-                                {expandedCategories.has(category.name) ? (
-                                  <ChevronDownIcon className="apollo-category-icon" />
+                              <div className="apollo-unmapped-header-content">
+                                {expandedUnmappedCategories.has(category.name) ? (
+                                  <ChevronDownIcon className="apollo-unmapped-icon" />
                                 ) : (
-                                  <ChevronRightIcon className="apollo-category-icon" />
+                                  <ChevronRightIcon className="apollo-unmapped-icon" />
                                 )}
-                                <span className="apollo-category-name">{category.name}</span>
-                                <span className="apollo-category-count">
+                                <span className="apollo-unmapped-name">{category.name}</span>
+                                <span className="apollo-unmapped-count">
                                   ({category.total_parameters} parameter{category.total_parameters !== 1 ? 's' : ''})
                                 </span>
                               </div>
                             </button>
 
-                            {expandedCategories.has(category.name) && (
-                              <div className="apollo-category-content">
+                            {expandedUnmappedCategories.has(category.name) && (
+                              <div className="apollo-unmapped-content">
                                 {category.parameters.map((param, idx) => (
-                                  <div key={idx} className="apollo-parameter-item">
-                                    <div className="apollo-parameter-name">{param.name}</div>
-                                    <div className="apollo-parameter-description">
-                                      {param.description}
+                                  <div key={`${category.name}-param-${param.name || idx}`} className="apollo-unmapped-parameter">
+                                    <div className="apollo-unmapped-parameter-name">
+                                      {param.name}
                                     </div>
-                                    <div className="apollo-parameter-values">
+                                    <div className="apollo-unmapped-parameter-reason">
+                                      Reason: {param.reason}
+                                    </div>
+                                    <div className="apollo-unmapped-parameter-values">
                                       {param.values.map((value, vIdx) => (
                                         <span
-                                          key={vIdx}
-                                          className="apollo-parameter-value"
+                                          key={`${category.name}-param-${param.name || idx}-value-${value || vIdx}`}
+                                          className="apollo-unmapped-parameter-value"
                                         >
                                           {value}
                                         </span>
@@ -618,311 +1366,276 @@ export default function ApolloPage() {
                         ))}
                       </div>
                     </div>
+                  )}
 
-                    {/* Raw Parameters */}
-                    <div className="apollo-section">
-                      <button
-                        onClick={() => setShowRawParams(!showRawParams)}
-                        className="apollo-raw-toggle"
-                      >
-                        {showRawParams ? (
-                          <ChevronDownIcon className="apollo-raw-toggle-icon" />
-                        ) : (
-                          <ChevronRightIcon className="apollo-raw-toggle-icon" />
-                        )}
-                        Raw Parameters (JSON)
-                      </button>
-
-                      {showRawParams && (
-                        <div className="apollo-raw-content">
-                          <pre className="apollo-raw-pre">
-                            {JSON.stringify(analyzeResult.raw_parameters, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Search Tab */}
-            {activeTab === 'search' && (
-              <div>
-                <div className="apollo-section-header">
-                  <h2 className="apollo-section-title">
-                    Contact Search from Apollo URL
-                  </h2>
-                  <p className="apollo-section-description">
-                    Search your contact database using Apollo.io URL parameters
-                  </p>
-                </div>
-
-                {/* Input Section */}
-                <div className="apollo-input-section">
-                  <div>
-                    <label className="apollo-input-label">
-                      Apollo.io URL
-                    </label>
-                    <div className="apollo-input-wrapper">
-                      <Input
-                        type="text"
-                        placeholder="https://app.apollo.io/#/people?personTitles[]=CEO&personLocations[]=California"
-                        value={searchUrl}
-                        onChange={(e) => setSearchUrl(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                        className="apollo-input-full-width"
-                      />
-                      {searchUrl && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSearchUrl('');
-                            setSearchResult(null);
-                            setSearchError(null);
-                          }}
-                        >
-                          <XMarkIcon />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Advanced Options */}
-                  <div className="apollo-advanced-options">
-                    <div>
-                      <label htmlFor="apollo-view-mode" className="apollo-input-label">
-                        View Mode
-                      </label>
-                      <select
-                        id="apollo-view-mode"
-                        value={viewMode}
-                        onChange={(e) => setViewMode(e.target.value as 'simple' | 'full')}
-                        className="input"
-                        aria-label="View mode selection"
-                      >
-                        <option value="full">Full Details</option>
-                        <option value="simple">Simple View</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="apollo-results-per-page" className="apollo-input-label">
-                        Results Per Page
-                      </label>
-                      <select
-                        id="apollo-results-per-page"
-                        value={limit}
-                        onChange={(e) => setLimit(Number(e.target.value))}
-                        className="input"
-                        aria-label="Results per page"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={handleSearch}
-                    disabled={searchLoading || !searchUrl.trim()}
-                    style={{ width: '100%' }}
-                  >
-                    {searchLoading ? (
-                      <>
-                        <div className="apollo-spinner" />
-                        Searching...
-                      </>
-                    ) : (
-                      <>
-                        <SearchIcon />
-                        Search Contacts
-                      </>
-                    )}
-                  </Button>
-                </div>
-
-                {/* Loading State */}
-                {searchLoading && <ApolloContactsSkeleton />}
-
-                {/* Error Display */}
-                {!searchLoading && searchError && (
-                  <ApolloEmptyState
-                    variant="error"
-                    description={searchError}
-                    action={{
-                      label: 'Try Again',
-                      onClick: handleSearch,
-                    }}
-                  />
-                )}
-
-                {/* Empty State */}
-                {!searchLoading && !searchResult && !searchError && (
-                  <ApolloEmptyState variant="no-analysis" />
-                )}
-
-                {/* Results Display */}
-                {!searchLoading && searchResult && (
-                  <div className="apollo-results">
-                    {/* Mapping Summary */}
-                    <div className="apollo-mapping-summary">
-                      <h4 className="apollo-mapping-summary-title">Parameter Mapping Summary</h4>
-                      <div className="apollo-mapping-stats">
-                        <div className="apollo-mapping-stat">
-                          <div className="apollo-mapping-stat-value apollo-mapping-stat-value--primary">
-                            {searchResult.mapping_summary.total_apollo_parameters}
-                          </div>
-                          <div className="apollo-mapping-stat-label">Total Parameters</div>
-                        </div>
-                        <div className="apollo-mapping-stat">
-                          <div className="apollo-mapping-stat-value apollo-mapping-stat-value--success">
-                            {searchResult.mapping_summary.mapped_parameters}
-                          </div>
-                          <div className="apollo-mapping-stat-label">Mapped</div>
-                        </div>
-                        <div className="apollo-mapping-stat">
-                          <div className="apollo-mapping-stat-value apollo-mapping-stat-value--warning">
-                            {searchResult.mapping_summary.unmapped_parameters}
-                          </div>
-                          <div className="apollo-mapping-stat-label">Unmapped</div>
-                        </div>
-                      </div>
-                      {searchResult.mapping_summary.mapped_parameter_names.length > 0 && (
-                        <div className="apollo-mapping-tags">
-                          <div className="apollo-mapping-tags-label">
-                            Mapped Parameters:
-                          </div>
-                          <div className="apollo-mapping-tags-list">
-                            {searchResult.mapping_summary.mapped_parameter_names.map((name, idx) => (
-                              <span
-                                key={idx}
-                                className="apollo-mapping-tag"
-                              >
-                                {name}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Unmapped Parameters */}
-                    {searchResult.unmapped_categories.length > 0 && (
-                      <div className="apollo-section">
-                        <h4 className="apollo-section-subtitle">Unmapped Parameters</h4>
-                        <div className="apollo-unmapped-list">
-                          {searchResult.unmapped_categories.map((category) => (
-                            <div
-                              key={category.name}
-                              className="apollo-unmapped-card"
+                  {/* Contact Results */}
+                  <div className="apollo-section">
+                    <div className="apollo-results-header">
+                      {/* <h4 className="apollo-results-title">
+                        Contact Results ({searchResult.results.length})
+                      </h4> */}
+                      <div className="apollo-results-header__content">
+                        {selectedContactUuids.size > 0 && (
+                          <div className="apollo-results-header__selection">
+                            <strong>{selectedContactUuids.size}</strong>
+                            <span>contact{selectedContactUuids.size !== 1 ? 's' : ''} selected</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={clearSelection}
                             >
-                              <button
-                                onClick={() => toggleUnmappedCategory(category.name)}
-                                className="apollo-unmapped-header"
-                              >
-                                <div className="apollo-unmapped-header-content">
-                                  {expandedUnmappedCategories.has(category.name) ? (
-                                    <ChevronDownIcon className="apollo-unmapped-icon" />
-                                  ) : (
-                                    <ChevronRightIcon className="apollo-unmapped-icon" />
-                                  )}
-                                  <span className="apollo-unmapped-name">{category.name}</span>
-                                  <span className="apollo-unmapped-count">
-                                    ({category.total_parameters} parameter{category.total_parameters !== 1 ? 's' : ''})
-                                  </span>
-                                </div>
-                              </button>
-
-                              {expandedUnmappedCategories.has(category.name) && (
-                                <div className="apollo-unmapped-content">
-                                  {category.parameters.map((param, idx) => (
-                                    <div key={idx} className="apollo-unmapped-parameter">
-                                      <div className="apollo-unmapped-parameter-name">
-                                        {param.name}
-                                      </div>
-                                      <div className="apollo-unmapped-parameter-reason">
-                                        Reason: {param.reason}
-                                      </div>
-                                      <div className="apollo-unmapped-parameter-values">
-                                        {param.values.map((value, vIdx) => (
-                                          <span
-                                            key={vIdx}
-                                            className="apollo-unmapped-parameter-value"
-                                          >
-                                            {value}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                              Clear
+                            </Button>
+                          </div>
+                        )}
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => setIsExportModalOpen(true)}
+                          leftIcon={<DownloadIcon />}
+                          disabled={searchResult.results.length === 0}
+                        >
+                          {selectedContactUuids.size > 0 
+                            ? `Export (${selectedContactUuids.size})` 
+                            : 'Add Export'}
+                        </Button>
                       </div>
-                    )}
-
-                    {/* Contact Results */}
-                    <div className="apollo-section">
-                      <div className="apollo-results-header">
-                        <h4 className="apollo-results-title">
-                          Contact Results ({searchResult.results.length})
-                        </h4>
-                      </div>
-
-                      {searchResult.results.length === 0 ? (
-                        <ApolloEmptyState
-                          variant="no-contacts"
-                          action={{
-                            label: 'View Unmapped Parameters',
-                            onClick: () => {
-                              // Scroll to unmapped section
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            },
-                          }}
-                        />
-                      ) : (
-                        <div className="apollo-contacts-grid">
-                          {searchResult.results.map((contact) => (
-                            <ContactCard key={contact.id} contact={contact} />
-                          ))}
-                        </div>
-                      )}
                     </div>
 
-                    {/* Pagination Info */}
-                    {(searchResult.next || searchResult.previous) && (
-                      <div className="apollo-pagination">
-                        <div className="apollo-pagination-info">
-                          Showing {searchResult.results.length} contact(s)
-                        </div>
-                        <div className="apollo-pagination-actions">
-                          {searchResult.previous && (
-                            <Button variant="outline" size="sm" disabled>
-                              <ChevronLeftIcon />
-                              Previous
-                            </Button>
-                          )}
-                          {searchResult.next && (
-                            <Button variant="outline" size="sm" disabled>
+                    {searchResult.results.length === 0 ? (
+                      <ApolloEmptyState
+                        variant="no-contacts"
+                        action={{
+                          label: 'View Unmapped Parameters',
+                          onClick: () => {
+                            // Scroll to unmapped section
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          },
+                        }}
+                      />
+                    ) : (
+                      <Table responsive>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="apollo-table-head--narrow">
+                              <div className="checkbox-input-wrapper">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelectAllChecked}
+                                  ref={(input) => {
+                                    if (input) input.indeterminate = isSelectAllIndeterminate;
+                                  }}
+                                  onChange={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelectAll();
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  aria-label="Select all contacts"
+                                  className="checkbox-input"
+                                />
+                                <div 
+                                  className="checkbox-box"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleSelectAll();
+                                  }}
+                                >
+                                  {isSelectAllChecked && (
+                                    <CheckIcon className="checkbox-icon" />
+                                  )}
+                                  {isSelectAllIndeterminate && !isSelectAllChecked && (
+                                    <div className="checkbox-indeterminate-indicator" />
+                                  )}
+                                </div>
+                              </div>
+                            </TableHead>
+                            {defaultColumns.map(column => (
+                              <TableHead
+                                key={column.id}
+                                style={column.width ? { minWidth: column.width } : undefined}
+                              >
+                                {column.label}
+                              </TableHead>
+                            ))}
+                            <TableHead className="table-head-actions">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {searchResult.results.map((contact, index) => {
+                            const isSelected = contact.uuid ? selectedContactUuids.has(contact.uuid) : false;
+                            return (
+                              <TableRow 
+                                key={contact.uuid || `contact-${index}`}
+                                onClick={(e) => {
+                                  // Don't open if clicking on checkbox or checkbox wrapper
+                                  if ((e.target as HTMLElement).closest('.checkbox-input-wrapper, .checkbox-input, .checkbox-box')) {
+                                    return;
+                                  }
+                                  if (contact.uuid) {
+                                    window.open(`/contacts/${contact.uuid}`, '_blank', 'noopener,noreferrer');
+                                  }
+                                }}
+                                className={`contacts-table-row-interactive ${isSelected ? 'contacts-table-row-selected' : ''}`}
+                                title="Click to view contact details in new tab"
+                              >
+                                <TableCell 
+                                  className="apollo-table-cell--compact"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <div className="checkbox-input-wrapper">
+                                    <input
+                                      type="checkbox"
+                                      checked={isSelected}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        toggleContactSelection(contact.uuid);
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      aria-label={`Select ${contact.name || 'contact'}`}
+                                      className="checkbox-input"
+                                    />
+                                    <div 
+                                      className="checkbox-box"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleContactSelection(contact.uuid);
+                                      }}
+                                    >
+                                      {isSelected && (
+                                        <CheckIcon className="checkbox-icon" />
+                                      )}
+                                    </div>
+                                  </div>
+                                </TableCell>
+                                {defaultColumns.map(column => (
+                                  <TableCell
+                                    key={column.id}
+                                    className={column.id !== 'name' ? 'contacts-table-cell-nowrap' : ''}
+                                    style={column.width ? { minWidth: column.width } : undefined}
+                                  >
+                                    {renderCellContent(column, contact)}
+                                  </TableCell>
+                                ))}
+                                <TableCell className="table-cell-actions">
+                                  <Tooltip content="Edit contact">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      iconOnly
+                                      onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        alert('Edit functionality is not supported by the current API.');
+                                      }}
+                                      aria-label="Edit contact"
+                                      className="icon-hover-scale"
+                                    >
+                                      <EditIcon />
+                                    </Button>
+                                  </Tooltip>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+
+                  {/* Pagination Info */}
+                  {(searchResult.next || searchResult.previous || offsetHistory.length > 0 || currentOffset > 0) && (
+                    <div className="apollo-pagination">
+                      <div className="apollo-pagination-info">
+                        Showing <strong>{searchResult.results.length}</strong> contact(s)
+                        {searchResult.next && (
+                          <span className="apollo-pagination-more">
+                            {' '}(More available)
+                          </span>
+                        )}
+                        {!searchResult.next && !searchResult.previous && offsetHistory.length === 0 && currentOffset === 0 && (
+                          <span className="apollo-pagination-more">
+                            {' '}(All results shown)
+                          </span>
+                        )}
+                      </div>
+                      <div className="apollo-pagination-actions">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handlePreviousPage}
+                          disabled={(currentOffset === 0 && offsetHistory.length === 0) || loading}
+                        >
+                          <ChevronLeftIcon />
+                          Previous
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={handleNextPage}
+                          disabled={!searchResult.next || loading}
+                        >
+                          {loading ? (
+                            <>
+                              <div className="apollo-spinner" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
                               Next
                               <ChevronRightPaginationIcon />
-                            </Button>
+                            </>
                           )}
-                        </div>
+                        </Button>
                       </div>
-                    )}
+                    </div>
+                  )}
                   </div>
                 )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          )}
+
+          {/* Empty State - Show when no results at all */}
+          {!loading && !isCounting && !analyzeResult && !analyzeError && !searchResult && !searchError && (
+            <ApolloEmptyState variant="no-analysis" />
+          )}
+        </>
+      )}
+        </CardContent>
+      </Card>
+      
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        selectedContactUuids={Array.from(selectedContactUuids)}
+        exportType="contacts"
+        currentPageData={searchResult?.results || []}
+        filters={{}}
+        totalCount={contactCount || searchResult?.results.length || 0}
+        navigateToHistory={true}
+        onExportComplete={() => {
+          clearSelection();
+        }}
+        apolloUrl={url || undefined}
+        apolloParams={{
+          include_company_name: (() => {
+            const parsed = parseMultiValueInput(includeCompanyName);
+            return parsed.length > 0 ? parsed.join(', ') : undefined;
+          })(),
+          exclude_company_name: (() => {
+            const parsed = parseMultipleInputs(excludeCompanyName);
+            return parsed.length > 0 ? parsed : undefined;
+          })(),
+          include_domain_list: (() => {
+            const parsed = parseMultipleInputs(includeDomainList);
+            return parsed.length > 0 ? parsed : undefined;
+          })(),
+          exclude_domain_list: (() => {
+            const parsed = parseMultipleInputs(excludeDomainList);
+            return parsed.length > 0 ? parsed : undefined;
+          })(),
+        }}
+      />
     </div>
   );
 }

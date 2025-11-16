@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MOCK_PLANS } from '../../../../utils/constants';
-import { Plan } from '../../../../types/index';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../../../components/ui/Card';
-import { Button } from '../../../../components/ui/Button';
-import { Tooltip } from '../../../../components/ui/Tooltip';
-import { CollapsibleSection } from '../../../../components/ui/CollapsibleSection';
-import { BottomSheet } from '../../../../components/ui/BottomSheet';
-import { FullScreenOverlay } from '../../../../components/ui/FullScreenOverlay';
-import { CreditCardIcon, CheckIcon, DollarIcon, PlansIcon, StarIcon, XMarkIcon, SparklesIcon } from '../../../../components/icons/IconComponents';
+import { MOCK_PLANS } from '@utils/constants';
+import { Plan } from '@/types/index';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@components/ui/Card';
+import { Button } from '@components/ui/Button';
+import { Tooltip } from '@components/ui/Tooltip';
+import { CollapsibleSection } from '@components/ui/CollapsibleSection';
+import { BottomSheet } from '@components/ui/BottomSheet';
+import { FullScreenOverlay } from '@components/ui/FullScreenOverlay';
+import { CreditCardIcon, CheckIcon, DollarIcon, PlansIcon, StarIcon, XMarkIcon, SparklesIcon } from '@components/icons/IconComponents';
 
 const ConfirmationModal: React.FC<{
   plan: Plan | null;
@@ -165,7 +165,7 @@ const BillingSettings: React.FC = () => {
               </div>
               <ul className="settings-billing-current-plan-features-list">
                 {currentPlan.features.map((feature, index) => (
-                  <li key={index} className="settings-billing-current-plan-feature-item">
+                  <li key={`current-plan-feature-${index}-${feature}`} className="settings-billing-current-plan-feature-item">
                     <div className="settings-billing-current-plan-feature-icon-wrapper">
                       <CheckIcon className="settings-billing-current-plan-feature-icon" />
                     </div>
@@ -191,9 +191,9 @@ const BillingSettings: React.FC = () => {
         </div>
 
         <div className="settings-billing-plans-grid">
-          {plans.map((plan) => (
+          {plans.map((plan, planIdx) => (
             <Card
-              key={plan.name}
+              key={`plan-${plan.name || planIdx}`}
               variant="glass-frosted"
               className={`settings-billing-plan-card ${plan.isCurrent ? 'settings-billing-plan-card--current' : 'settings-billing-plan-card--available'}`}
               onClick={() => !plan.isCurrent && handleChoosePlan(plan)}
@@ -227,7 +227,7 @@ const BillingSettings: React.FC = () => {
                 <ul className="settings-billing-plan-card-features">
                   {plan.features.map((feature, featureIndex) => (
                     <Tooltip 
-                      key={featureIndex}
+                      key={`plan-${plan.name}-feature-${featureIndex}-${feature}`}
                       content={`Included in ${plan.name} plan`}
                       side="left"
                     >
@@ -271,9 +271,9 @@ const BillingSettings: React.FC = () => {
           icon={<PlansIcon className="settings-billing-plans-header-icon" />}
         >
           <div className="settings-billing-plans-mobile-content">
-            {plans.map((plan) => (
+            {plans.map((plan, planIdx) => (
               <Card
-                key={plan.name}
+                key={`plan-${plan.name || planIdx}`}
                 variant="glass-frosted"
                 className={`settings-billing-plan-card settings-billing-plan-card--mobile ${plan.isCurrent ? 'settings-billing-plan-card--current' : 'settings-billing-plan-card--available'}`}
               >
@@ -305,7 +305,7 @@ const BillingSettings: React.FC = () => {
                 <CardContent>
                   <ul className="settings-billing-plan-card-features settings-billing-plan-card-features--mobile">
                     {plan.features.map((feature, featureIndex) => (
-                      <li key={featureIndex} className="settings-billing-plan-card-feature-item settings-billing-plan-card-feature-item--mobile">
+                      <li key={`plan-${plan.name}-feature-${featureIndex}-${feature}`} className="settings-billing-plan-card-feature-item settings-billing-plan-card-feature-item--mobile">
                         <div className="settings-billing-plan-card-feature-icon-wrapper settings-billing-plan-card-feature-icon-wrapper--mobile">
                           <CheckIcon className="settings-billing-plan-card-feature-icon settings-billing-plan-card-feature-icon--mobile" />
                         </div>

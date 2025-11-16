@@ -38,10 +38,10 @@
  * ```
  */
 
-import { User } from '../types/index';
-import { authenticatedFetch } from './auth';
+import { User } from '@/types/index';
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
 import { API_BASE_URL } from './api';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '../utils/errorHandler';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
 
 /**
  * API user profile response interface
@@ -144,13 +144,24 @@ const mapApiToUser = (apiUser: any, sessionUser?: any): User => {
  * Get current user profile
  */
 export const getUserProfile = async (sessionUser?: any): Promise<User | null> => {
+  console.log('[USER] getUserProfile called for user:', sessionUser?.id || sessionUser?.email);
+  
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/profile/`, {
+    console.log('[USER] Making axiosAuthenticatedRequest to fetch profile');
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/users/profile/`, {
       method: 'GET',
+      useQueue: true,
+      useCache: true,
+    });
+
+    console.log('[USER] getUserProfile response received:', {
+      ok: response.ok,
+      status: response.status,
     });
 
     if (!response.ok) {
       if (response.status === 401) {
+        console.log('[USER] getUserProfile got 401, returning null');
         return null;
       }
       const error = await parseApiError(response, 'Failed to fetch user profile');
@@ -158,8 +169,17 @@ export const getUserProfile = async (sessionUser?: any): Promise<User | null> =>
       return null;
     }
 
+    console.log('[USER] getUserProfile parsing JSON response');
     const data: ApiUserProfile = await response.json();
-    return mapApiToUser(data, sessionUser);
+    console.log('[USER] getUserProfile data received:', {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+    });
+    
+    const mappedUser = mapApiToUser(data, sessionUser);
+    console.log('[USER] getUserProfile successfully mapped user');
+    return mappedUser;
   } catch (error) {
     const parsedError = parseExceptionError(error, 'Failed to fetch user profile');
     console.error('[USER] Get user profile error:', {
@@ -187,12 +207,14 @@ export const updateUserProfile = async (profileData: Partial<User>): Promise<Ser
     if (profileData.avatarUrl !== undefined) apiData.avatar_url = profileData.avatarUrl;
     if (profileData.role !== undefined) apiData.role = profileData.role;
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/profile/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/users/profile/`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(apiData),
+      data: apiData,
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -270,9 +292,14 @@ export const uploadUserAvatar = async (file: File): Promise<ServiceResponse<{ us
     const formData = new FormData();
     formData.append('avatar', file);
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/profile/avatar/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/users/profile/avatar/`, {
       method: 'POST',
-      body: formData,
+      data: formData,
+      headers: {
+        // Don't set Content-Type for FormData, let Axios handle it
+      },
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -321,11 +348,13 @@ export const uploadUserAvatar = async (file: File): Promise<ServiceResponse<{ us
  */
 export const promoteToAdmin = async (): Promise<ServiceResponse<User>> => {
   try {
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v2/users/promote-to-admin/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/users/promote-to-admin/`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
       },
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {

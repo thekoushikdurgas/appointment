@@ -27,7 +27,6 @@ export interface CompanyMetadata {
  * Fields are in camelCase to match JavaScript/TypeScript conventions.
  */
 export interface Company {
-  id: number;
   uuid: string;
   name: string;
   employeesCount?: number;
@@ -86,7 +85,6 @@ export interface CompanyUpdate extends CompanyCreate {}
  * Used internally for API response mapping.
  */
 export interface ApiCompany {
-  id: number;
   uuid: string;
   name?: string;
   employees_count?: number;
@@ -318,7 +316,6 @@ export interface CompanyContactMetadata {
  * Fields are in camelCase to match JavaScript/TypeScript conventions.
  */
 export interface CompanyContact {
-  id: number;
   uuid: string;
   firstName?: string;
   lastName?: string;
@@ -344,7 +341,6 @@ export interface CompanyContact {
  * Used internally for API response mapping.
  */
 export interface ApiCompanyContact {
-  id: number;
   uuid: string;
   first_name?: string;
   last_name?: string;

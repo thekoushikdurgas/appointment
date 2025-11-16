@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IdentificationIcon, PaintBrushIcon, CreditCardIcon, UsersIcon, ShieldCheckIcon, BellIcon, SettingsIcon, ArrowDownIcon, ChevronRightIcon, LoadingSpinner } from '../../../components/icons/IconComponents';
-import { Card } from '../../../components/ui/Card';
-import { ScrollProgress, useScrollProgress } from '../../../components/ui/ScrollProgress';
-import { Tooltip } from '../../../components/ui/Tooltip';
-import { useSettingsSwipe } from '../../../hooks/useSettingsSwipe';
+import { IdentificationIcon, PaintBrushIcon, CreditCardIcon, UsersIcon, ShieldCheckIcon, BellIcon, SettingsIcon, ArrowDownIcon, ChevronRightIcon, LoadingSpinner } from '@components/icons/IconComponents';
+import { Card } from '@components/ui/Card';
+import { ScrollProgress, useScrollProgress } from '@components/ui/ScrollProgress';
+import { Tooltip } from '@components/ui/Tooltip';
+import { useSettingsSwipe } from '@hooks/useSettingsSwipe';
 
 const settingsTabs: { id: string; label: string; icon: React.ReactElement<{ className?: string }>; path: string; description: string }[] = [
   { id: 'Profile', label: 'Profile', icon: <IdentificationIcon />, path: '/settings/profile', description: 'Manage your personal information' },

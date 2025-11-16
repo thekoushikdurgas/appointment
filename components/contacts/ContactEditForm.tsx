@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Contact } from '../../types';
-import { Input } from '../ui/Input';
-import { Textarea } from '../ui/Textarea';
-import { Select } from '../ui/Select';
-import { Button } from '../ui/Button';
-import { XMarkIcon, CheckIcon } from '../icons/IconComponents';
+import { Contact } from '@/types';
+import { Input } from '@components/ui/Input';
+import { Textarea } from '@components/ui/Textarea';
+import { Select } from '@components/ui/Select';
+import { Button } from '@components/ui/Button';
+import { XMarkIcon, CheckIcon } from '@components/icons/IconComponents';
 
 interface ContactEditFormProps {
   contact: Contact;

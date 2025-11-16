@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useSwipeGesture } from '../../hooks/useSwipeGesture';
-import { EditIcon, TrashIcon, ArchiveIcon, CheckCircleIcon } from '../icons/IconComponents';
-import { Tooltip } from '../ui/Tooltip';
+import { useSwipeGesture } from '@hooks/useSwipeGesture';
+import { EditIcon, TrashIcon, ArchiveIcon, CheckCircleIcon } from '@components/icons/IconComponents';
+import { Tooltip } from '@components/ui/Tooltip';
 
 interface SwipeAction {
   icon: React.ReactNode;
@@ -146,7 +146,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
           }}
         >
           {leftActions.map((action, index) => (
-            <Tooltip key={index} content={action.label}>
+            <Tooltip key={`left-action-${action.label || index}`} content={action.label}>
               <button
                 onClick={() => {
                   action.onClick();
@@ -172,7 +172,7 @@ export const SwipeableRow: React.FC<SwipeableRowProps> = ({
           }}
         >
           {rightActions.map((action, index) => (
-            <Tooltip key={index} content={action.label}>
+            <Tooltip key={`right-action-${action.label || index}`} content={action.label}>
               <button
                 onClick={() => {
                   action.onClick();

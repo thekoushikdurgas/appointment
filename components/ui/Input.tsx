@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Tooltip } from './Tooltip';
-import { ErrorIconSmall, InfoIconSmall } from '../icons/IconComponents';
+import { ErrorIconSmall, InfoIconSmall } from '@components/icons/IconComponents';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;

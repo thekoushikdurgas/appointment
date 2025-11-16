@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Card } from '../ui/Card';
-import { TrendIndicator } from '../icons/IconComponents';
+import { Card } from '@components/ui/Card';
+import { TrendIndicator } from '@components/icons/IconComponents';
 
 export interface StatCardProps {
   title: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangleIcon } from '../icons/IconComponents';
+import { AlertTriangleIcon } from '@components/icons/IconComponents';
 
 interface FieldErrorProps {
   error?: string;

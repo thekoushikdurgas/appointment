@@ -8,12 +8,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Company, CompanyCreate, CompanyUpdate } from '../../types/company';
-import { Modal } from '../ui/Modal';
-import { Input } from '../ui/Input';
-import { Textarea } from '../ui/Textarea';
-import { Button } from '../ui/Button';
-import { SaveIcon, CancelIcon } from '../icons/IconComponents';
+import { Company, CompanyCreate, CompanyUpdate } from '@/types/company';
+import { Modal } from '@components/ui/Modal';
+import { Input } from '@components/ui/Input';
+import { Textarea } from '@components/ui/Textarea';
+import { Button } from '@components/ui/Button';
+import { SaveIcon, CancelIcon } from '@components/icons/IconComponents';
 
 interface CompanyFormModalProps {
   isOpen: boolean;

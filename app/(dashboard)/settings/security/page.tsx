@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { authenticatedFetch } from '../../../../services/auth';
-import { API_BASE_URL } from '../../../../services/api';
-import { parseApiError, formatErrorMessage } from '../../../../utils/errorHandler';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../../../components/ui/Card';
-import { Input } from '../../../../components/ui/Input';
-import { Button } from '../../../../components/ui/Button';
-import { Tooltip } from '../../../../components/ui/Tooltip';
-import { CollapsibleSection } from '../../../../components/ui/CollapsibleSection';
-import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, SuccessIcon, CheckCircleIcon } from '../../../../components/icons/IconComponents';
+import { authenticatedFetch } from '@services/auth';
+import { API_BASE_URL } from '@services/api';
+import { parseApiError, formatErrorMessage } from '@utils/errorHandler';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
+import { Input } from '@components/ui/Input';
+import { Button } from '@components/ui/Button';
+import { Tooltip } from '@components/ui/Tooltip';
+import { CollapsibleSection } from '@components/ui/CollapsibleSection';
+import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, SuccessIcon, CheckCircleIcon } from '@components/icons/IconComponents';
 
 interface FormErrors {
   password?: string;
@@ -214,7 +214,7 @@ const SecuritySettings: React.FC = () => {
                                   <div className="settings-security-password-requirements">
                                     {passwordRequirements.map((req, i) => (
                                       <div
-                                        key={i}
+                                        key={`password-req-${i}-${req.label}`}
                                         className={`settings-security-password-requirement ${req.met ? 'settings-security-password-requirement--met' : ''}`}
                                       >
                                         <CheckCircleIcon className={`settings-security-password-requirement-icon ${req.met ? 'settings-security-password-requirement-icon--met' : ''}`} />
@@ -305,7 +305,7 @@ const SecuritySettings: React.FC = () => {
                               <div className="settings-security-password-requirements">
                                 {passwordRequirements.map((req, i) => (
                                   <div
-                                    key={i}
+                                    key={`password-req-${i}-${req.label}`}
                                     className={`settings-security-password-requirement ${req.met ? 'settings-security-password-requirement--met' : ''}`}
                                   >
                                     <CheckCircleIcon className={`settings-security-password-requirement-icon ${req.met ? 'settings-security-password-requirement-icon--met' : ''}`} />

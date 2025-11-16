@@ -3,17 +3,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Contact } from '../../../../types';
-import { getContactByUuid, deleteContact, archiveContact } from '../../../../services/contact';
-import { Button } from '../../../../components/ui/Button';
-import { Tooltip } from '../../../../components/ui/Tooltip';
-import { ConfirmDialog } from '../../../../components/contacts/ConfirmDialog';
-import { ContactEditForm } from '../../../../components/contacts/ContactEditForm';
+import { Contact } from '@/types';
+import { getContactByUuid } from '@services/contact';
+import { Button } from '@components/ui/Button';
+import { Tooltip } from '@components/ui/Tooltip';
+import { ConfirmDialog } from '@components/contacts/ConfirmDialog';
+import { ContactEditForm } from '@components/contacts/ContactEditForm';
 import {
   ArrowLeftIcon,
   EditIcon,
-  TrashIcon,
-  ArchiveIcon,
   MailIcon,
   PhoneIcon,
   OfficeBuildingIcon,
@@ -37,10 +35,6 @@ const ContactDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isArchiving, setIsArchiving] = useState(false);
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -93,50 +87,6 @@ const ContactDetailPage: React.FC = () => {
     setIsEditMode(false);
   };
 
-  const handleDelete = async () => {
-    if (!contact) return;
-
-    try {
-      setIsDeleting(true);
-      const result = await deleteContact(contact.id);
-      
-      if (result.success) {
-        alert('Contact deleted successfully');
-        handleBack();
-      } else {
-        alert(result.message || 'Failed to delete contact');
-      }
-    } catch (err) {
-      console.error('Error deleting contact:', err);
-      alert('An error occurred while deleting the contact');
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteDialogOpen(false);
-    }
-  };
-
-  const handleArchive = async () => {
-    if (!contact) return;
-
-    try {
-      setIsArchiving(true);
-      const result = await archiveContact(contact.id);
-      
-      if (result.success) {
-        alert('Contact archived successfully');
-        // Update local state
-        setContact({ ...contact, status: 'Archived' });
-      } else {
-        alert(result.message || 'Failed to archive contact');
-      }
-    } catch (err) {
-      console.error('Error archiving contact:', err);
-      alert('An error occurred while archiving the contact');
-    } finally {
-      setIsArchiving(false);
-      setIsArchiveDialogOpen(false);
-    }
-  };
 
   // Loading state
   if (isLoading) {
@@ -236,31 +186,6 @@ const ContactDetailPage: React.FC = () => {
               >
                 <EditIcon />
                 Edit
-              </Button>
-            </Tooltip>
-            <Tooltip content="Archive Contact">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsArchiveDialogOpen(true)}
-                disabled={contact.status === 'Archived'}
-                aria-label="Archive contact"
-                className="contact-detail-action-btn"
-              >
-                <ArchiveIcon />
-                Archive
-              </Button>
-            </Tooltip>
-            <Tooltip content="Delete Contact">
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsDeleteDialogOpen(true)}
-                aria-label="Delete contact"
-                className="contact-detail-action-btn"
-              >
-                <TrashIcon />
-                Delete
               </Button>
             </Tooltip>
           </div>
@@ -587,12 +512,6 @@ const ContactDetailPage: React.FC = () => {
                   </div>
                 </div>
               )}
-              <div className="contact-detail-info-item">
-                <div className="contact-detail-info-item-content">
-                  <p className="contact-detail-info-label">Contact ID</p>
-                  <p className="contact-detail-info-value contact-detail-info-value--mono">{contact.id}</p>
-                </div>
-              </div>
               {contact.uuid && (
                 <div className="contact-detail-info-item">
                   <div className="contact-detail-info-item-content">
@@ -606,30 +525,6 @@ const ContactDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Confirmation Dialogs */}
-      <ConfirmDialog
-        isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete Contact"
-        message={`Are you sure you want to delete ${contact.name}? This action cannot be undone.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="danger"
-        isLoading={isDeleting}
-      />
-
-      <ConfirmDialog
-        isOpen={isArchiveDialogOpen}
-        onClose={() => setIsArchiveDialogOpen(false)}
-        onConfirm={handleArchive}
-        title="Archive Contact"
-        message={`Are you sure you want to archive ${contact.name}? You can restore it later.`}
-        confirmText="Archive"
-        cancelText="Cancel"
-        variant="warning"
-        isLoading={isArchiving}
-      />
     </div>
   );
 };

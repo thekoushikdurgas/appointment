@@ -8,17 +8,17 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CompanyContactFilters } from '../../types/company';
+import { CompanyContactFilters } from '@/types/company';
 import { 
   XMarkIcon, 
   FilterIcon,
   ChevronDownIcon,
   ChevronUpIcon
-} from '../icons/IconComponents';
-import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
-import { Badge } from '../ui/Badge';
+} from '@components/icons/IconComponents';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import { Select } from '@components/ui/Select';
+import { Badge } from '@components/ui/Badge';
 
 interface CompanyContactFilterDrawerProps {
   isOpen: boolean;
@@ -126,7 +126,7 @@ const MultiInput: React.FC<MultiInputProps> = ({
         <div className="company-contact-filter-drawer__multi-input-badges">
           {values.map((value, idx) => (
             <Badge
-              key={idx}
+              key={`filter-value-${idx}-${value || ''}`}
               variant="glass"
               className="company-contact-filter-drawer__multi-input-badge"
             >

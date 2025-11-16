@@ -7,8 +7,8 @@
 'use client';
 
 import React from 'react';
-import { Button } from '../ui/Button';
-import { SearchIcon, AlertTriangleIcon, InfoIcon, GlobeAltIcon } from '../icons/IconComponents';
+import { Button } from '@components/ui/Button';
+import { SearchIcon, AlertTriangleIcon, InfoIcon, GlobeAltIcon } from '@components/icons/IconComponents';
 
 export interface ApolloEmptyStateProps {
   variant: 'no-analysis' | 'no-contacts' | 'error';

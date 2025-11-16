@@ -1,5 +1,5 @@
-import { request } from '../utils/request';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '../utils/errorHandler';
+import { axiosRequest } from '@utils/axiosRequest';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
 
 /**
  * Get the API base URL from environment variable
@@ -7,7 +7,7 @@ import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } f
  * Backend must support CORS for browser requests to work.
  */
 const getApiBaseUrl = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.88.182.69:8000';
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234';
   // Remove trailing slash if present to avoid double slashes
   return backendUrl.replace(/\/$/, '');
 };
@@ -54,19 +54,19 @@ export interface ApiInfoResponse {
 }
 
 /**
- * Get API information and available endpoints with timeout handling
+ * Get API information and available endpoints
  * 
  * NOTE: This is a public endpoint and does not require authentication.
  * Using `request` instead of `authenticatedFetch` is intentional.
  */
-export const getApiInfo = async (timeout: number = 10000): Promise<ApiInfoResponse> => {
+export const getApiInfo = async (): Promise<ApiInfoResponse> => {
     try {
         // Root endpoint is at the base URL
         // Public endpoint - no authentication required
-        const response = await request(`${API_BASE_URL}/`, {
+        const response = await axiosRequest(`${API_BASE_URL}/`, {
           method: 'GET',
-          timeout,
-          retries: 1,
+          useQueue: true,
+          useCache: true,
         });
 
         if (!response.ok) {

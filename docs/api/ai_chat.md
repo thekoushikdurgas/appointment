@@ -4,14 +4,10 @@ Complete API documentation for AI chat conversation endpoints, including listing
 
 ## Base URL
 
-```txt
-http://54.88.182.69:8000
-```
-
 For production, use:
 
 ```txt
-http://107.21.188.21:8000
+http://54.87.173.234:8000
 ```
 
 ## Authentication
@@ -69,7 +65,7 @@ Get a list of all AI chat conversations for the current user with pagination.
 ```json
 {
   "count": 10,
-  "next": "http://107.21.188.21:8000/api/v2/ai-chats/?limit=25&offset=25",
+  "next": "http://54.87.173.234:8000/api/v2/ai-chats/?limit=25&offset=25",
   "previous": null,
   "results": [
     {

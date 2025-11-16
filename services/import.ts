@@ -1,6 +1,6 @@
-import { authenticatedFetch } from './auth';
+import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
 import { API_BASE_URL } from './api';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '../utils/errorHandler';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
 
 /**
  * Import job status values
@@ -66,9 +66,11 @@ export const getImportInfo = async (requestId?: string): Promise<ServiceResponse
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/import/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/import/`, {
       method: 'GET',
       headers,
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {
@@ -161,10 +163,14 @@ export const uploadContactsCSV = async (file: File, requestId?: string): Promise
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/import/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/import/`, {
       method: 'POST',
-      body: formData,
-      headers,
+      data: formData,
+      headers: {
+        // Don't set Content-Type for FormData, let Axios handle it
+      },
+      useQueue: true,
+      useCache: false,
     });
 
     if (!response.ok) {
@@ -255,9 +261,11 @@ export const getImportJobStatus = async (jobId: string, includeErrors?: boolean,
       url += '?include_errors=true';
     }
 
-    const response = await authenticatedFetch(url, {
+    const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {
@@ -386,9 +394,11 @@ export const getImportErrors = async (jobId: string, requestId?: string): Promis
       headers['X-Request-Id'] = requestId;
     }
 
-    const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/contacts/import/${jobId}/errors/`, {
+    const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/import/${jobId}/errors/`, {
       method: 'GET',
       headers,
+      useQueue: true,
+      useCache: true,
     });
 
     if (!response.ok) {

@@ -5,27 +5,28 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, 
   PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area 
 } from 'recharts';
-import { useTheme } from '../../../hooks/useTheme';
-import { StatCard } from '../../../components/dashboard/StatCard';
-import { ChartCard } from '../../../components/dashboard/ChartCard';
-import { DataTable, Column } from '../../../components/dashboard/DataTable';
-import { AnalyticsPanel } from '../../../components/dashboard/AnalyticsPanel';
-import { Button } from '../../../components/ui/Button';
-import { Badge } from '../../../components/ui/Badge';
-import { Input } from '../../../components/ui/Input';
+import { useTheme } from '@hooks/useTheme';
+import { StatCard } from '@components/dashboard/StatCard';
+import { ChartCard } from '@components/dashboard/ChartCard';
+import { DataTable, Column } from '@components/dashboard/DataTable';
+import { AnalyticsPanel } from '@components/dashboard/AnalyticsPanel';
+import { Button } from '@components/ui/Button';
+import { Badge } from '@components/ui/Badge';
+import { Input } from '@components/ui/Input';
 import { 
   ContactsIcon, UsersIcon, PlansIcon, TrendingUpIcon, 
   DollarIcon, DownloadIcon, RefreshIcon, SearchIcon 
-} from '../../../components/icons/IconComponents';
+} from '@components/icons/IconComponents';
 import { 
   fetchAnalyticsStats, 
-  fetchContactsByStatus, 
+  fetchContactsByEmailVerification, 
   fetchContactsByIndustry,
   fetchTopCompanies,
   exportToCSV 
-} from '../../../services/analytics';
-import { fetchContacts } from '../../../services/contact';
-import type { Contact } from '../../../types';
+} from '@services/analytics';
+import { fetchContacts } from '@services/contact';
+import type { Contact } from '@/types';
+import { ExportModal } from '@components/contacts/ExportModal';
 
 // Mock data for additional tables
 const MOCK_ORDERS = [
@@ -55,10 +56,12 @@ const Dashboard: React.FC = () => {
     growthRate: 0,
   });
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [statusData, setStatusData] = useState<any[]>([]);
+  const [emailVerificationData, setEmailVerificationData] = useState<any[]>([]);
   const [industryData, setIndustryData] = useState<any[]>([]);
   const [topCompanies, setTopCompanies] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedContactUuids, setSelectedContactUuids] = useState<Set<string>>(new Set());
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -68,17 +71,17 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     try {
       // Fetch all data in parallel
-      const [statsData, contactsData, statusResponse, industryResponse, companiesData] = await Promise.all([
+      const [statsData, contactsData, emailVerificationResponse, industryResponse, companiesData] = await Promise.all([
         fetchAnalyticsStats(),
         fetchContacts({ limit: 10, sortColumn: 'created_at', sortDirection: 'desc' }),
-        fetchContactsByStatus(),
+        fetchContactsByEmailVerification(),
         fetchContactsByIndustry(5),
         fetchTopCompanies(5),
       ]);
 
       setStats(statsData);
       setContacts(contactsData.contacts || []);
-      setStatusData(statusResponse);
+      setEmailVerificationData(emailVerificationResponse);
       setIndustryData(industryResponse);
       setTopCompanies(companiesData);
     } catch (error) {
@@ -89,7 +92,11 @@ const Dashboard: React.FC = () => {
   };
 
   const handleExportContacts = () => {
-    exportToCSV(contacts, 'contacts-export');
+    if (selectedContactUuids.size > 0) {
+      setShowExportModal(true);
+    } else {
+      exportToCSV(contacts, 'contacts-export');
+    }
   };
 
   const handleExportOrders = () => {
@@ -217,37 +224,45 @@ const Dashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="dashboard-charts-grid">
         <ChartCard 
-          title="Contact Status Distribution" 
-          subtitle="Breakdown by status"
+          title="Email Verification Distribution" 
+          subtitle="Verified vs Unverified Emails"
           variant="glass"
           loading={loading}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie 
-                data={statusData} 
-                dataKey="count" 
-                nameKey="status" 
-                cx="50%" 
-                cy="50%" 
-                outerRadius={100}
-                label={({ name, percentage }) => `${name}: ${percentage}%`}
-                labelLine={{ stroke: tickColor }}
-              >
-                {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                ))}
-              </Pie>
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card) / 0.9)',
-                  borderColor: 'hsl(var(--border))',
-                  borderRadius: '12px',
-                  backdropFilter: 'blur(12px)',
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          {emailVerificationData.length > 0 ? (
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={300} minHeight={300}>
+                <PieChart>
+                  <Pie 
+                    data={emailVerificationData} 
+                    dataKey="count" 
+                    nameKey="status" 
+                    cx="50%" 
+                    cy="50%" 
+                    outerRadius={100}
+                    label={({ name, percentage }) => `${name}: ${percentage}%`}
+                    labelLine={{ stroke: tickColor }}
+                  >
+                    {emailVerificationData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card) / 0.9)',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '12px',
+                      backdropFilter: 'blur(12px)',
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="chart-empty-state">
+              No data available
+            </div>
+          )}
         </ChartCard>
 
         <ChartCard 
@@ -256,29 +271,37 @@ const Dashboard: React.FC = () => {
           variant="glass"
           loading={loading}
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={industryData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
-              <XAxis 
-                dataKey="industry" 
-                stroke={tickColor}
-                style={{ fontSize: '11px' }}
-                angle={-45}
-                textAnchor="end"
-                height={80}
-              />
-              <YAxis stroke={tickColor} style={{ fontSize: '12px' }} />
-              <RechartsTooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card) / 0.9)',
-                  borderColor: 'hsl(var(--border))',
-                  borderRadius: '12px',
-                  backdropFilter: 'blur(12px)',
-                }}
-              />
-              <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {industryData.length > 0 ? (
+            <div className="chart-container">
+              <ResponsiveContainer width="100%" height={300} minHeight={300}>
+                <BarChart data={industryData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" />
+                  <XAxis 
+                    dataKey="industry" 
+                    stroke={tickColor}
+                    style={{ fontSize: '11px' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis stroke={tickColor} style={{ fontSize: '12px' }} />
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card) / 0.9)',
+                      borderColor: 'hsl(var(--border))',
+                      borderRadius: '12px',
+                      backdropFilter: 'blur(12px)',
+                    }}
+                  />
+                  <Bar dataKey="count" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="chart-empty-state">
+              No data available
+            </div>
+          )}
         </ChartCard>
       </div>
 
@@ -287,14 +310,31 @@ const Dashboard: React.FC = () => {
         title="Recent Contacts"
         variant="glass"
         actions={
-          <Input
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            leftIcon={<SearchIcon />}
-            variant="glass"
-            style={{ width: '16rem' }}
-          />
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {selectedContactUuids.size > 0 && (
+              <span style={{ fontSize: '0.875rem', color: 'hsl(var(--muted-foreground))' }}>
+                {selectedContactUuids.size} selected
+              </span>
+            )}
+            <Input
+              placeholder="Search contacts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftIcon={<SearchIcon />}
+              variant="glass"
+              className="dashboard-search-input"
+            />
+            {selectedContactUuids.size > 0 && (
+              <Button
+                variant="glass-primary"
+                size="sm"
+                leftIcon={<DownloadIcon />}
+                onClick={handleExportContacts}
+              >
+                Export ({selectedContactUuids.size})
+              </Button>
+            )}
+          </div>
         }
       >
         <DataTable
@@ -307,6 +347,10 @@ const Dashboard: React.FC = () => {
           hoverable
           loading={loading}
           emptyMessage="No contacts found"
+          enableSelection={true}
+          selectedIds={selectedContactUuids}
+          onSelectionChange={setSelectedContactUuids}
+          getRowId={(contact) => contact.uuid}
         />
       </AnalyticsPanel>
 
@@ -317,7 +361,7 @@ const Dashboard: React.FC = () => {
           <div className="dashboard-additional-section-content">
             {topCompanies.map((company, index) => (
               <div 
-                key={index} 
+                key={`top-company-${index}-${company.name || ''}`} 
                 className="top-companies-item"
               >
                 <div className="top-companies-item-content">
@@ -387,6 +431,26 @@ const Dashboard: React.FC = () => {
           striped
         />
       </AnalyticsPanel>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => {
+          setShowExportModal(false);
+          setSelectedContactUuids(new Set());
+        }}
+        selectedContactUuids={Array.from(selectedContactUuids)}
+        exportType="contacts"
+        currentPageData={contacts.filter(c => 
+          searchQuery === '' || 
+          `${c.name} ${c.email} ${c.company}`.toLowerCase().includes(searchQuery.toLowerCase())
+        )}
+        totalCount={contacts.length}
+        navigateToHistory={true}
+        onExportComplete={() => {
+          setSelectedContactUuids(new Set());
+        }}
+      />
     </div>
   );
 };

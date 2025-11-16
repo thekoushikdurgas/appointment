@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card } from '../ui/Card';
-import { SortIndicator } from '../icons/IconComponents';
+import { Card } from '@components/ui/Card';
+import { SortIndicator, CheckIcon } from '@components/icons/IconComponents';
 
 export interface Column<T> {
   key: string;
@@ -22,6 +22,11 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
   className?: string;
+  enableSelection?: boolean;
+  selectedIds?: Set<string>;
+  onSelectionChange?: (selectedIds: Set<string>) => void;
+  getRowId?: (row: T) => string | undefined;
+  selectAllLabel?: string;
 }
 
 export function DataTable<T extends Record<string, any>>({
@@ -34,6 +39,11 @@ export function DataTable<T extends Record<string, any>>({
   emptyMessage = 'No data available',
   onRowClick,
   className,
+  enableSelection = false,
+  selectedIds = new Set<string>(),
+  onSelectionChange,
+  getRowId = (row: T) => row.uuid,
+  selectAllLabel = 'Select all',
 }: DataTableProps<T>) {
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -64,6 +74,50 @@ export function DataTable<T extends Record<string, any>>({
     });
   }, [data, sortColumn, sortDirection]);
 
+  // Selection handlers
+  const handleRowSelection = (row: T) => {
+    if (!enableSelection || !onSelectionChange) return;
+    
+    const rowId = getRowId(row);
+    if (!rowId) return;
+
+    const newSelection = new Set(selectedIds);
+    if (newSelection.has(rowId)) {
+      newSelection.delete(rowId);
+    } else {
+      newSelection.add(rowId);
+    }
+    onSelectionChange(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    if (!enableSelection || !onSelectionChange) return;
+
+    const allRowIds = sortedData
+      .map(row => getRowId(row))
+      .filter((id): id is string => Boolean(id));
+
+    const allSelected = allRowIds.length > 0 && allRowIds.every(id => selectedIds.has(id));
+    
+    if (allSelected) {
+      // Deselect all
+      onSelectionChange(new Set());
+    } else {
+      // Select all
+      onSelectionChange(new Set(allRowIds));
+    }
+  };
+
+  // Calculate select all state
+  const allRowIds = React.useMemo(() => {
+    return sortedData
+      .map(row => getRowId(row))
+      .filter((id): id is string => Boolean(id));
+  }, [sortedData, getRowId]);
+
+  const isSelectAllChecked = allRowIds.length > 0 && allRowIds.every(id => selectedIds.has(id));
+  const isSelectAllIndeterminate = allRowIds.some(id => selectedIds.has(id)) && !isSelectAllChecked;
+
   const cardClassName = `data-table-wrapper${className ? ' ' + className : ''}`;
   
   return (
@@ -76,14 +130,49 @@ export function DataTable<T extends Record<string, any>>({
         <table className="data-table">
           <thead>
             <tr className="data-table__header-row">
+              {enableSelection && (
+                <th className="data-table__header-cell data-table__header-cell--checkbox">
+                  <div className="checkbox-input-wrapper">
+                    <input
+                      type="checkbox"
+                      checked={isSelectAllChecked}
+                      ref={(input) => {
+                        if (input) input.indeterminate = isSelectAllIndeterminate;
+                      }}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleSelectAll();
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={selectAllLabel}
+                      className="checkbox-input"
+                    />
+                    <div 
+                      className="checkbox-box"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectAll();
+                      }}
+                    >
+                      {isSelectAllChecked && (
+                        <CheckIcon className="checkbox-icon" />
+                      )}
+                      {isSelectAllIndeterminate && !isSelectAllChecked && (
+                        <div className="checkbox-indeterminate-indicator" />
+                      )}
+                    </div>
+                  </div>
+                </th>
+              )}
               {columns.map((column) => {
                 const thClassName = `data-table__header-cell${column.sortable ? ' data-table__header-cell--sortable' : ''}`;
+                const thStyle = column.width ? { width: column.width } : undefined;
                 return (
                 <th
                   key={column.key}
                   className={thClassName}
                   onClick={() => column.sortable && handleSort(column.key)}
-                  style={column.width ? { width: column.width } : undefined}
+                  style={thStyle}
                 >
                   <div className="data-table__header-content">
                     <span>{column.label}</span>
@@ -107,7 +196,7 @@ export function DataTable<T extends Record<string, any>>({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} className="data-table__loading-cell">
+                <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="data-table__loading-cell">
                   <div className="data-table__loading-content">
                     <div className="data-table__spinner" />
                     <p className="data-table__loading-text">Loading data...</p>
@@ -116,19 +205,49 @@ export function DataTable<T extends Record<string, any>>({
               </tr>
             ) : sortedData.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="data-table__empty-cell">
+                <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="data-table__empty-cell">
                   {emptyMessage}
                 </td>
               </tr>
             ) : (
               sortedData.map((row, rowIndex) => {
-                const trClassName = `data-table__body-row${striped && rowIndex % 2 === 1 ? ' data-table__body-row--striped' : ''}${hoverable ? ' data-table__body-row--hoverable' : ''}${onRowClick ? ' data-table__body-row--clickable' : ''}`;
+                const rowId = getRowId(row);
+                const isSelected = rowId ? selectedIds.has(rowId) : false;
+                const trClassName = `data-table__body-row${striped && rowIndex % 2 === 1 ? ' data-table__body-row--striped' : ''}${hoverable ? ' data-table__body-row--hoverable' : ''}${onRowClick ? ' data-table__body-row--clickable' : ''}${isSelected ? ' data-table__body-row--selected' : ''}`;
                 return (
                 <tr
-                  key={rowIndex}
+                  key={rowId || `row-${rowIndex}`}
                   className={trClassName}
                   onClick={() => onRowClick?.(row)}
                 >
+                  {enableSelection && (
+                    <td className="data-table__cell data-table__cell--checkbox" onClick={(e) => e.stopPropagation()}>
+                      <div className="checkbox-input-wrapper">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleRowSelection(row);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          aria-label={`Select row ${rowIndex + 1}`}
+                          className="checkbox-input"
+                        />
+                        <div 
+                          className="checkbox-box"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowSelection(row);
+                          }}
+                        >
+                          {isSelected && (
+                            <CheckIcon className="checkbox-icon" />
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  )}
                   {columns.map((column) => (
                     <td key={column.key} className="data-table__cell">
                       {column.render

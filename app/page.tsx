@@ -2,12 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LogoIcon, ContactsIcon, UsersIcon, DashboardIcon, UploadIcon, ShieldCheckIcon, PlansIcon, ArrowRightIcon, ChartIcon, SparklesIcon, RocketIcon, TrendingUpIcon } from '../components/icons/IconComponents';
-import { useAuth } from '../hooks/useAuth';
+import { LogoIcon, ContactsIcon, UsersIcon, DashboardIcon, UploadIcon, ShieldCheckIcon, PlansIcon, ArrowRightIcon, ChartIcon, SparklesIcon, RocketIcon, TrendingUpIcon } from '@components/icons/IconComponents';
+import { useAuth } from '@hooks/useAuth';
 import { useRouter } from 'next/navigation';
-import { Button } from '../components/ui/Button';
-import { GlassCard } from '../components/ui/GlassCard';
-import { FloatingIcons } from '../components/ui/FloatingIcons';
+import { Button } from '@components/ui/Button';
+import { GlassCard } from '@components/ui/GlassCard';
+import { FloatingIcons } from '@components/ui/FloatingIcons';
 
 // Header Component
 const WelcomeHeader: React.FC = () => {
@@ -66,7 +66,7 @@ const FeatureCard: React.FC<{
     hoverLift
     animate
     className="landing-feature-card"
-    style={{ animationDelay: `${delay}ms` }}
+    style={{ '--animation-delay': `${delay}ms` } as React.CSSProperties}
   >
     <div className="landing-feature-icon-wrapper">
       {React.cloneElement(icon, { className: 'landing-feature-icon' })}
@@ -131,10 +131,6 @@ const WelcomePage: React.FC = () => {
         {/* Hero Section with Parallax */}
         <section 
           className="landing-hero relative parallax-layer-slow"
-          style={{
-            transform: `translateY(${scrollY * 0.3}px)`,
-            transition: 'transform 0.1s ease-out'
-          }}
         >
           <div className="landing-hero-content">
             <div className="landing-hero-icon-wrapper">
@@ -146,11 +142,11 @@ const WelcomePage: React.FC = () => {
             <h1 className="landing-title">
               Your <span className="landing-title-highlight" data-text="Nexus">Nexus</span> for Client Relationships
             </h1>
-            <p className="landing-description" style={{ animationDelay: '0.2s' }}>
+            <p className="landing-description" style={{ '--animation-delay': '0.2s' } as React.CSSProperties}>
               Streamline your contact management, track interactions, and grow your business with NexusCRM. 
               All your contacts, in one organized place with powerful AI-driven insights.
             </p>
-            <div className="landing-cta" style={{ animationDelay: '0.4s' }}>
+            <div className="landing-cta" style={{ '--animation-delay': '0.4s' } as React.CSSProperties}>
               <Button
                 asChild
                 variant="glass-heavy"
@@ -176,25 +172,25 @@ const WelcomePage: React.FC = () => {
             </div>
 
             {/* Stats Section */}
-            <div className="landing-stats" style={{ animationDelay: '0.6s' }}>
+            <div className="landing-stats" style={{ '--animation-delay': '0.6s' } as React.CSSProperties}>
               <GlassCard variant="heavy" padding="md" className="landing-stat-card">
                 <div className="landing-stat-content">
                   <TrendingUpIcon className="landing-stat-icon landing-stat-icon--success" />
-                  <p className="landing-stat-value" style={{ animationDelay: '0.9s' }}>10K+</p>
+                  <p className="landing-stat-value" style={{ '--animation-delay': '0.9s' } as React.CSSProperties}>10K+</p>
                 </div>
                 <p className="landing-stat-label">Active Users</p>
               </GlassCard>
               <GlassCard variant="heavy" padding="md" className="landing-stat-card">
                 <div className="landing-stat-content">
                   <ContactsIcon className="landing-stat-icon landing-stat-icon--primary" />
-                  <p className="landing-stat-value" style={{ animationDelay: '1.1s' }}>1M+</p>
+                  <p className="landing-stat-value" style={{ '--animation-delay': '1.1s' } as React.CSSProperties}>1M+</p>
                 </div>
                 <p className="landing-stat-label">Contacts Managed</p>
               </GlassCard>
               <GlassCard variant="heavy" padding="md" className="landing-stat-card">
                 <div className="landing-stat-content">
                   <ShieldCheckIcon className="landing-stat-icon landing-stat-icon--info" />
-                  <p className="landing-stat-value" style={{ animationDelay: '1.3s' }}>99.9%</p>
+                  <p className="landing-stat-value" style={{ '--animation-delay': '1.3s' } as React.CSSProperties}>99.9%</p>
                 </div>
                 <p className="landing-stat-label">Uptime</p>
               </GlassCard>
@@ -206,19 +202,15 @@ const WelcomePage: React.FC = () => {
         <section 
           id="features" 
           className="landing-features parallax-layer-medium"
-          style={{
-            transform: `translateY(${scrollY * 0.1}px)`,
-            transition: 'transform 0.1s ease-out'
-          }}
         >
           <div className="landing-features-header">
             <div className="landing-features-badge glass-heavy animate-fade-in">
               Key Features
             </div>
-            <h2 className="landing-features-title animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <h2 className="landing-features-title animate-fade-in" style={{ '--animation-delay': '0.1s' } as React.CSSProperties}>
               Streamline Your Workflow
             </h2>
-            <p className="landing-features-description animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <p className="landing-features-description animate-fade-in" style={{ '--animation-delay': '0.2s' } as React.CSSProperties}>
               Everything you need in a modern, integrated platform.
             </p>
           </div>
@@ -265,13 +257,13 @@ const WelcomePage: React.FC = () => {
         {/* CTA Section */}
         <section className="landing-cta-section">
           <GlassCard variant="heavy" padding="lg" glow className="landing-cta-card">
-            <h2 className="landing-cta-title" style={{ animationDelay: '0.1s' }}>
+            <h2 className="landing-cta-title" style={{ '--animation-delay': '0.1s' } as React.CSSProperties}>
               Ready to Transform Your Business?
             </h2>
-            <p className="landing-cta-description" style={{ animationDelay: '0.2s' }}>
+            <p className="landing-cta-description" style={{ '--animation-delay': '0.2s' } as React.CSSProperties}>
               Join thousands of businesses already using NexusCRM to manage their customer relationships effectively.
             </p>
-            <div className="landing-cta-actions" style={{ animationDelay: '0.3s' }}>
+            <div className="landing-cta-actions" style={{ '--animation-delay': '0.3s' } as React.CSSProperties}>
               <Button
                 asChild
                 variant="glass-heavy"

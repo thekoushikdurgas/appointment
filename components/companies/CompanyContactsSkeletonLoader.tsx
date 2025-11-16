@@ -18,9 +18,23 @@ interface CompanyContactsSkeletonLoaderProps {
 /**
  * Shimmer animation component
  */
-const Shimmer: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
-  <div className={`company-contacts-skeleton-shimmer company-skeleton${className ? ' ' + className : ''}`} style={style} />
-);
+const Shimmer: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => {
+  // Convert style object to CSS custom properties if needed
+  const customStyle = style ? Object.entries(style).reduce((acc, [key, value]) => {
+    if (key === 'height') {
+      acc['--shimmer-height' as keyof React.CSSProperties] = value;
+    } else if (key === 'width') {
+      acc['--shimmer-width' as keyof React.CSSProperties] = value;
+    } else {
+      acc[key as keyof React.CSSProperties] = value;
+    }
+    return acc;
+  }, {} as React.CSSProperties) : undefined;
+  
+  return (
+    <div className={`company-contacts-skeleton-shimmer company-skeleton${className ? ' ' + className : ''}`} style={customStyle} />
+  );
+};
 
 /**
  * Table Row Skeleton

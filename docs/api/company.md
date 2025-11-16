@@ -5,7 +5,7 @@ Complete API documentation for company management endpoints, including listing, 
 ## Base URL
 
 ```txt
-http://107.21.188.21:8000
+http://54.87.173.234:8000
 ```
 
 **API Version:** All endpoints are under `/api/v1/companies/`
@@ -123,7 +123,7 @@ These filters exclude companies matching any of the provided values:
 
 #### Pagination Parameters
 
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Number of results per page. **If not provided, returns all matching companies (unlimited).** When provided, limits results to the specified number (capped at MAX_PAGE_SIZE).
 - `offset` (integer): Offset for pagination
 - `page` (integer): 1-indexed page number (converts to offset)
 - `page_size` (integer): Page size override (max 100, default: 25)
@@ -139,7 +139,7 @@ These filters exclude companies matching any of the provided values:
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/companies/?cursor=...",
+  "next": "http://54.87.173.234:8000/api/v1/companies/?cursor=...",
   "previous": null,
   "results": [
     {
@@ -203,9 +203,9 @@ GET /api/v1/companies/?keywords=saas&technologies=AWS&ordering=-total_funding
 
 ---
 
-### GET /api/v1/companies/{id}/ - Retrieve Company
+### GET /api/v1/companies/{uuid}/ - Retrieve Company
 
-Get detailed information about a specific company by ID.
+Get detailed information about a specific company by UUID.
 
 **Headers:**
 
@@ -213,7 +213,7 @@ Get detailed information about a specific company by ID.
 
 **Path Parameters:**
 
-- `id` (integer): Company ID
+- `uuid` (string): Company UUID
 
 **Response:**
 
@@ -261,6 +261,14 @@ Get detailed information about a specific company by ID.
 - `401 Unauthorized`: Authentication required
 - `404 Not Found`: Company not found
 
+**Example Requests:**
+
+```bash
+# Retrieve by UUID
+curl -X GET "http://54.87.173.234:8000/api/v1/companies/398cce44-233d-5f7c-aea1-e4a6a79df10c/" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
 ---
 
 ### GET /api/v1/companies/count/ - Get Company Count
@@ -298,6 +306,69 @@ GET /api/v1/companies/count/
 GET /api/v1/companies/count/?industries=Technology&employees_min=100
 GET /api/v1/companies/count/?city=San Francisco&annual_revenue_min=10000000
 ```
+
+---
+
+### GET /api/v1/companies/count/uuids/ - Get Company UUIDs
+
+Get a list of company UUIDs that match the provided filters. Returns count and list of UUIDs. Useful for bulk operations or exporting specific company sets.
+
+**Headers:**
+
+- `X-Request-Id` (optional): Request tracking ID
+
+**Query Parameters:**
+
+**This endpoint accepts ALL the same query parameters as `/api/v1/companies/count/` endpoint, plus an additional parameter:**
+
+- `limit` (integer, optional): Maximum number of UUIDs to return. **If not provided, returns all matching UUIDs (unlimited).** When provided, limits results to the specified number.
+
+All filter parameters from `/api/v1/companies/` are supported:
+
+- All text filters (name, search, etc.)
+- All numeric range filters (employees_min, employees_max, annual_revenue_min, annual_revenue_max, total_funding_min, total_funding_max, etc.)
+- All array filters (industries, keywords, technologies, etc.)
+- All exclude filters (exclude_industries, exclude_keywords, exclude_technologies, exclude_locations, etc.)
+- All location filters (city, state, country, address, company_location, etc.)
+- All contact information filters (phone_number, website, linkedin_url, facebook_url, twitter_url, etc.)
+- All date range filters (created_at_after, created_at_before, updated_at_after, updated_at_before, etc.)
+- Distinct parameter
+
+**Response:**
+
+**Success (200 OK):**
+
+```json
+{
+  "count": 567,
+  "uuids": [
+    "398cce44-233d-5f7c-aea1-e4a6a79df10c",
+    "498cce44-233d-5f7c-aea1-e4a6a79df10d",
+    "598cce44-233d-5f7c-aea1-e4a6a79df10e"
+  ]
+}
+```
+
+**Status Codes:**
+
+- `200 OK`: Success
+- `401 Unauthorized`: Authentication required
+- `500 Internal Server Error`: Error retrieving UUIDs
+
+**Example Requests:**
+
+```txt
+GET /api/v1/companies/count/uuids/
+GET /api/v1/companies/count/uuids/?industries=Technology&employees_min=100
+GET /api/v1/companies/count/uuids/?search=software&limit=500
+```
+
+**Notes:**
+
+- Returns only UUIDs, not full company data (efficient for bulk operations)
+- **Accepts all the same filter parameters as `/api/v1/companies/count/` endpoint**
+- Useful for exporting specific company sets or bulk updates
+- When `limit` is not provided, returns all matching UUIDs (unlimited)
 
 ---
 
@@ -344,7 +415,7 @@ All fields are optional:
 
 **Success (201 Created):**
 
-Returns a `CompanyDetail` object (same structure as GET /api/v1/companies/{id}/).
+Returns a `CompanyDetail` object (same structure as GET /api/v1/companies/{uuid}/).
 
 **Error (403 Forbidden):**
 
@@ -363,7 +434,7 @@ Returns a `CompanyDetail` object (same structure as GET /api/v1/companies/{id}/)
 
 ---
 
-### PUT /api/v1/companies/{id}/ - Update Company
+### PUT /api/v1/companies/{company_uuid}/ - Update Company
 
 Update an existing company. Requires admin authentication and the `X-Companies-Write-Key` header.
 
@@ -375,7 +446,7 @@ Update an existing company. Requires admin authentication and the `X-Companies-W
 
 **Path Parameters:**
 
-- `id` (integer): Company ID
+- `company_uuid` (string): Company UUID
 
 **Request Body:**
 
@@ -419,7 +490,7 @@ Returns the updated `CompanyDetail` object.
 
 ---
 
-### DELETE /api/v1/companies/{id}/ - Delete Company
+### DELETE /api/v1/companies/{company_uuid}/ - Delete Company
 
 Delete a company. Requires admin authentication and the `X-Companies-Write-Key` header.
 
@@ -431,7 +502,7 @@ Delete a company. Requires admin authentication and the `X-Companies-Write-Key` 
 
 **Path Parameters:**
 
-- `id` (integer): Company ID
+- `company_uuid` (string): Company UUID
 
 **Response:**
 
@@ -465,7 +536,7 @@ These endpoints return distinct values for specific company attributes. Useful f
 - `search` (string): Search term to filter results (case-insensitive)
 - `distinct` (boolean): If `true`, returns only distinct values (default: `true`)
 - `separated` (boolean): If `true`, expands array columns into individual records (for industries, keywords, technologies)
-- `limit` (integer): Number of results per page (max 100, default: 25)
+- `limit` (integer, optional): Maximum number of results. **If not provided, returns all matching values (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer): Offset for pagination
 - `ordering` (string): Sort order. Valid values: `value`, `-value`, `count`, `-count`
 
@@ -801,11 +872,13 @@ List and filter contacts belonging to a specific company.
 **Authentication:** Required (Bearer token)
 
 **Path Parameters:**
+
 - `company_uuid` (string, required): Company UUID identifier
 
 **Query Parameters:**
 
 *Contact Identity Filters:*
+
 - `first_name` (string): Case-insensitive substring match against Contact.first_name
 - `last_name` (string): Case-insensitive substring match against Contact.last_name
 - `title` (string): Case-insensitive substring match against Contact.title
@@ -816,6 +889,7 @@ List and filter contacts belonging to a specific company.
 - `contact_location` (string): Contact text-search column covering person-level location metadata
 
 *Contact Metadata Filters:*
+
 - `work_direct_phone` (string): Substring match against ContactMetadata.work_direct_phone
 - `home_phone` (string): Substring match against ContactMetadata.home_phone
 - `mobile_phone` (string): Substring match against Contact.mobile_phone
@@ -830,23 +904,27 @@ List and filter contacts belonging to a specific company.
 - `stage` (string): Substring match against ContactMetadata.stage
 
 *Exclusion Filters:*
+
 - `exclude_titles` (array[string]): Exclude contacts whose title matches any provided value
 - `exclude_contact_locations` (array[string]): Exclude contacts whose contact location matches
 - `exclude_seniorities` (array[string]): Exclude contacts whose seniority matches
 - `exclude_departments` (array[string]): Exclude contacts whose departments include any value
 
 *Temporal Filters:*
+
 - `created_at_after` (datetime): Filter contacts created after timestamp (inclusive)
 - `created_at_before` (datetime): Filter contacts created before timestamp (inclusive)
 - `updated_at_after` (datetime): Filter contacts updated after timestamp (inclusive)
 - `updated_at_before` (datetime): Filter contacts updated before timestamp (inclusive)
 
 *Search and Ordering:*
+
 - `search` (string): General-purpose search term applied across contact text columns
 - `ordering` (string): Sort field (e.g., `first_name`, `-created_at`, `title`)
 
 *Pagination:*
-- `limit` (integer, >=1): Number of items per page
+
+- `limit` (integer, optional): Number of items per page. **If not provided, returns all matching contacts (unlimited).** When provided, limits results to the specified number.
 - `offset` (integer, >=0): Zero-based offset into result set
 - `cursor` (string): Opaque cursor token for pagination
 - `page` (integer, >=1): 1-indexed page number
@@ -857,7 +935,7 @@ List and filter contacts belonging to a specific company.
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/contacts/?title=engineer&seniority=senior&limit=25&offset=25",
+  "next": "http://54.87.173.234:8000/api/v1/companies/company/abc-123-uuid/contacts/?title=engineer&seniority=senior&limit=25&offset=25",
   "previous": null,
   "results": [
     {
@@ -889,6 +967,7 @@ List and filter contacts belonging to a specific company.
 ```
 
 **Pagination Notes:**
+
 - `next`: Full URL to fetch the next page of results (null if no more results)
 - `previous`: Full URL to fetch the previous page of results (null if on first page)
 - `results`: Array of contact items
@@ -898,8 +977,8 @@ When using cursor-based pagination (by providing a `cursor` parameter), the URLs
 
 ```json
 {
-  "next": "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/contacts/?cursor=eyJvZmZzZXQiOjI1fQ==",
-  "previous": "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/contacts/?cursor=eyJvZmZzZXQiOjB9",
+  "next": "http://54.87.173.234:8000/api/v1/companies/company/abc-123-uuid/contacts/?cursor=eyJvZmZzZXQiOjI1fQ==",
+  "previous": "http://54.87.173.234:8000/api/v1/companies/company/abc-123-uuid/contacts/?cursor=eyJvZmZzZXQiOjB9",
   "results": [...]
 }
 ```
@@ -907,7 +986,7 @@ When using cursor-based pagination (by providing a `cursor` parameter), the URLs
 **Example Request:**
 
 ```bash
-curl -X GET "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/contacts/?title=engineer&seniority=senior&limit=25" \
+curl -X GET "http://54.87.173.234:8000/api/v1/companies/company/abc-123-uuid/contacts/?title=engineer&seniority=senior&limit=25" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
@@ -922,6 +1001,7 @@ curl -X GET "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/con
 **Authentication:** Required (Bearer token)
 
 **Path Parameters:**
+
 - `company_uuid` (string, required): Company UUID identifier
 
 **Query Parameters:** Same as List Contacts endpoint (all filter parameters supported)
@@ -937,9 +1017,58 @@ curl -X GET "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/con
 **Example Request:**
 
 ```bash
-curl -X GET "http://107.21.188.21:8000/api/v1/companies/company/abc-123-uuid/contacts/count/?title=engineer" \
+curl -X GET "http://54.87.173.234:8000/api/v1/companies/company/abc-123-uuid/contacts/count/?title=engineer" \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
+
+---
+
+### Get Contact UUIDs for Company
+
+**Endpoint:** `GET /api/v1/companies/company/{company_uuid}/contacts/count/uuids/`
+
+**Description:** Return a list of contact UUIDs for a specific company that match the provided filters. Returns count and list of UUIDs. Useful for bulk operations on company contacts.
+
+**Authentication:** Required (Bearer token)
+
+**Path Parameters:**
+
+- `company_uuid` (string, required): Company UUID identifier
+
+**Query Parameters:**
+
+**This endpoint accepts ALL the same query parameters as `/api/v1/companies/company/{company_uuid}/contacts/count/` endpoint, plus an additional parameter:**
+
+- `limit` (integer, optional): Maximum number of UUIDs to return. **If not provided, returns all matching UUIDs (unlimited).** When provided, limits results to the specified number.
+
+All filter parameters from the list contacts endpoint are supported (title, first_name, last_name, email, seniority, department, search, etc.).
+
+**Response:** `200 OK`
+
+```json
+{
+  "count": 45,
+  "uuids": [
+    "contact-uuid-1",
+    "contact-uuid-2",
+    "contact-uuid-3"
+  ]
+}
+```
+
+**Example Request:**
+
+```bash
+curl -X GET "http://54.87.173.234:8000/api/v1/companies/company/abc-123-uuid/contacts/count/uuids/?title=engineer" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+```
+
+**Notes:**
+
+- Returns only UUIDs, not full contact data (efficient for bulk operations)
+- Supports all the same filters as the list contacts endpoint
+- Useful for exporting specific contact sets or bulk updates
+- When `limit` is not provided, returns all matching UUIDs (unlimited)
 
 ---
 
@@ -956,9 +1085,11 @@ Retrieve distinct values for specific contact attributes within a company.
 **Authentication:** Required (Bearer token)
 
 **Path Parameters:**
+
 - `company_uuid` (string, required): Company UUID identifier
 
 **Query Parameters:**
+
 - All CompanyContactFilterParams for filtering base contacts
 - `distinct` (boolean, default: true): Return unique values
 - `limit` (integer, default: 25): Maximum number of results
