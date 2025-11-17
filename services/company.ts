@@ -43,6 +43,7 @@ import {
 } from '@/types/company';
 import { API_BASE_URL } from './api';
 import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { NEXT_PUBLIC_COMPANIES_WRITE_KEY } from '@utils/config';
 import {
   parseApiError,
   parseExceptionError,
@@ -797,19 +798,10 @@ export const fetchDistinctValues = async (
 };
 
 /**
- * Get the companies write key from environment variable
+ * Get the companies write key (hard-coded)
  */
 const getCompaniesWriteKey = (): string | null => {
-  if (typeof window === 'undefined') {
-    // Server-side: use process.env
-    return process.env.NEXT_PUBLIC_COMPANIES_WRITE_KEY || null;
-  }
-  // Client-side: use window.env or process.env
-  return (
-    (window as any).env?.NEXT_PUBLIC_COMPANIES_WRITE_KEY ||
-    process.env.NEXT_PUBLIC_COMPANIES_WRITE_KEY ||
-    null
-  );
+  return NEXT_PUBLIC_COMPANIES_WRITE_KEY;
 };
 
 /**

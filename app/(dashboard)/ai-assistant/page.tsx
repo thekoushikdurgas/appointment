@@ -13,6 +13,7 @@ import {
 } from '@components/icons/IconComponents';
 import { fetchContacts } from '@services/contact';
 import { getChatHistory, getChat, createChat, updateChat, deleteChat, Message, ChatHistoryItem, PaginationMetadata } from '@services/aiChat';
+import { NEXT_PUBLIC_GEMINI_API_KEY } from '@utils/config';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Card, CardContent } from '@components/ui/Card';
@@ -154,7 +155,7 @@ const AIAssistantPage: React.FC = () => {
   const initializeChatSession = async (history: Content[] = []) => {
     if (!user) return;
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+      const apiKey = NEXT_PUBLIC_GEMINI_API_KEY;
       if (!apiKey) {
         throw new Error('Gemini API key not configured');
       }

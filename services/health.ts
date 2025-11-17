@@ -1,6 +1,7 @@
 import { API_BASE_URL } from './api';
 import { axiosRequest } from '@utils/axiosRequest';
 import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
+import { API_BASE_URL as API_BASE_URL_CONFIG } from '@utils/config';
 
 /**
  * Health check response interface
@@ -32,8 +33,8 @@ export interface HealthCheckResult {
  * Get the base host URL (without API version prefix)
  */
 const getBaseHost = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234:8000';
-  return backendUrl;
+  // Add http:// protocol to the base URL
+  return `http://${API_BASE_URL_CONFIG}`;
 };
 
 /**

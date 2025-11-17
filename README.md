@@ -24,15 +24,7 @@ A comprehensive, modern web-based contact management system built with Next.js, 
 npm install
 ```
 
-2. Create a `.env.local` file in the root directory:
-
-```env
-NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
-API_KEY=your_gemini_api_key
-NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234:8000
-```
-
-3. Run the development server:
+2. Run the development server:
 
 ```bash
 npm run dev
@@ -92,11 +84,17 @@ npm start
 - File-based routing with Next.js conventions
 - Server-side rendering capabilities (though most pages are client components)
 - Next.js Image component support (can be added where needed)
-- Environment variables use `NEXT_PUBLIC_` prefix for client-side access
 
-## Environment Variables
+## Configuration
 
-All environment variables should be prefixed with `NEXT_PUBLIC_` if they need to be accessed in client components. The API key for Gemini is accessed via `process.env.NEXT_PUBLIC_GEMINI_API_KEY` or `process.env.API_KEY` (configured in next.config.js).
+All configuration values are hard-coded in `utils/config.ts`. The following values are configured:
+
+- `API_BASE_URL`: Backend API base URL (without protocol)
+- `NEXT_PUBLIC_CONTACTS_WRITE_KEY`: Contacts write operations key
+- `NEXT_PUBLIC_COMPANIES_WRITE_KEY`: Companies write operations key
+- `NEXT_PUBLIC_GEMINI_API_KEY`: Google Gemini API key
+
+To modify these values, edit `utils/config.ts` directly.
 
 ## License
 

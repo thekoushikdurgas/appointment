@@ -20,6 +20,7 @@ import { Contact, ContactCreate } from '@/types/index';
 import { API_BASE_URL } from './api';
 import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
 import { parseApiError, parseExceptionError, formatErrorMessage, formatErrorForLogging, ParsedError } from '@utils/errorHandler';
+import { NEXT_PUBLIC_CONTACTS_WRITE_KEY } from '@utils/config';
 
 // Simple in-memory cache for count requests (5 minute TTL)
 interface CacheEntry {
@@ -1224,17 +1225,10 @@ export const getContactCount = async (filters?: ContactFilters, requestId?: stri
 };
 
 /**
- * Get the contacts write key from environment variable
+ * Get the contacts write key (hard-coded)
  */
 const getContactsWriteKey = (): string | null => {
-  if (typeof window === 'undefined') {
-    // Server-side: use process.env
-    return process.env.NEXT_PUBLIC_CONTACTS_WRITE_KEY || null;
-  }
-  // Client-side: use window.env or process.env
-  return (window as any).env?.NEXT_PUBLIC_CONTACTS_WRITE_KEY || 
-         process.env.NEXT_PUBLIC_CONTACTS_WRITE_KEY || 
-         null;
+  return NEXT_PUBLIC_CONTACTS_WRITE_KEY;
 };
 
 /**

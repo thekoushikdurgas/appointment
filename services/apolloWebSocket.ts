@@ -19,7 +19,7 @@
  */
 
 import { getToken } from './auth';
-import { API_BASE_URL } from './api';
+import { API_BASE_URL as API_BASE_URL_CONFIG } from '@utils/config';
 import {
   ApolloUrlAnalysisResponse,
   ApolloContactsResponse,
@@ -190,24 +190,12 @@ const mapApiToContact = (apiContact: ApiContact): Contact => {
 };
 
 /**
- * Convert HTTP base URL to WebSocket URL
+ * Convert API base URL to WebSocket URL
  */
 const getWebSocketUrl = (): string => {
-  const baseUrl = API_BASE_URL || 'http://54.87.173.234:8000';
-  
-  try {
-    const url = new URL(baseUrl);
-    const protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Preserve host (hostname + port) instead of just hostname
-    const host = url.host; // This includes both hostname and port
-    
-    // Construct WebSocket URL with protocol and host
-    return `${protocol}//${host}`;
-  } catch (e) {
-    // Fallback: convert http/https to ws/wss and preserve the rest
-    const wsUrl = baseUrl.replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
-    return wsUrl;
-  }
+  // API_BASE_URL_CONFIG is without protocol (e.g., "54.87.173.234:8000")
+  // Add ws:// protocol for WebSocket connection
+  return `ws://${API_BASE_URL_CONFIG}`;
 };
 
 /**
@@ -501,6 +489,8 @@ export class ApolloWebSocketClient {
         const url = this.getWebSocketUrlWithToken();
         this.setConnectionState('connecting');
         
+        console.log('[APOLLO_WS] Attempting WebSocket connection to:', url.replace(/token=[^&]+/, 'token=***'));
+        
         this.ws = new WebSocket(url);
         
         this.ws.onopen = () => {
@@ -513,7 +503,9 @@ export class ApolloWebSocketClient {
         this.ws.onerror = (error) => {
           this.handleError(error);
           this.connectionPromise = null;
-          reject(new Error('WebSocket connection failed'));
+          const wsUrl = this.ws?.url || url;
+          const errorMsg = `WebSocket connection failed to ${wsUrl.replace(/token=[^&]+/, 'token=***')}. Check server availability and network connectivity.`;
+          reject(new Error(errorMsg));
         };
         
         this.ws.onclose = (event) => {
@@ -525,14 +517,17 @@ export class ApolloWebSocketClient {
           // If this was an unexpected closure during initial connection attempt, reject the promise
           // This helps surface connection errors to the caller
           if (wasConnecting && this.shouldReconnect && event.code !== 1000) {
-            reject(new Error(`WebSocket connection closed during connection: ${event.code} ${event.reason || 'No reason provided'}`));
+            const wsUrl = this.ws?.url || url;
+            const errorMsg = `WebSocket connection closed during handshake (code: ${event.code}, reason: ${event.reason || 'No reason provided'}). URL: ${wsUrl.replace(/token=[^&]+/, 'token=***')}`;
+            reject(new Error(errorMsg));
           }
           // Note: handleClose will handle reconnection if shouldReconnect is true
         };
       } catch (error) {
         this.setConnectionState('error');
         this.connectionPromise = null;
-        reject(error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error during WebSocket connection setup';
+        reject(new Error(`Failed to create WebSocket connection: ${errorMsg}`));
       }
     });
 

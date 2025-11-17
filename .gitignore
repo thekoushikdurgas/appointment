@@ -40,3 +40,7 @@ next-env.d.ts
 *.sln
 *.sw?
 
+# Environment files (not used - config is hard-coded in utils/config.ts)
+.env*
+!.env.example
+

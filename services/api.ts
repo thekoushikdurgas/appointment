@@ -1,17 +1,18 @@
 import { axiosRequest } from '@utils/axiosRequest';
 import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
+import { API_BASE_URL as API_BASE_URL_CONFIG } from '@utils/config';
 
 /**
- * Get the API base URL from environment variable
+ * Get the API base URL with protocol for HTTP requests
  * Always returns the full backend URL for direct API calls.
  * Backend must support CORS for browser requests to work.
  */
 const getApiBaseUrl = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234:8000';
-  // Remove trailing slash if present to avoid double slashes
-  return backendUrl.replace(/\/$/, '');
+  // Add http:// protocol to the base URL
+  return `http://${API_BASE_URL_CONFIG}`.replace(/\/$/, '');
 };
 
+// Export API_BASE_URL with protocol for use in other files
 export const API_BASE_URL = getApiBaseUrl();
 
 /**
