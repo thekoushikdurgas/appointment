@@ -216,7 +216,7 @@ Test the `/api/v2/apollo/contacts` endpoint:
 ## Manual Testing Checklist
 
 ### Pre-Testing Setup
-1. Ensure backend API is running (http://54.87.173.234 or production)
+1. Ensure backend API is running (http://54.87.173.234:8000 or production)
 2. Ensure you have valid authentication credentials
 3. Clear browser cache and cookies
 4. Open browser developer tools (Console, Network tabs)

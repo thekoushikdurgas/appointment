@@ -14,7 +14,7 @@ import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } f
  * This is duplicated here to avoid circular dependency with services/api.ts
  */
 const getApiBaseUrl = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234';
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234:8000';
   // Remove trailing slash if present to avoid double slashes
   return backendUrl.replace(/\/$/, '');
 };

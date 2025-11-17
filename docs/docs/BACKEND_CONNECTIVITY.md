@@ -10,13 +10,13 @@ The NexusCRM application requires connectivity to a backend API server for all a
 
 The backend API base URL is configured via the `NEXT_PUBLIC_API_BASE_URL` environment variable.
 
-**Default**: `http://54.87.173.234`
+**Default**: `http://54.87.173.234:8000`
 
 **Configuration Location**: `services/api.ts`
 
 ```typescript
 const getApiBaseUrl = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234';
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234:8000';
   return backendUrl.replace(/\/$/, '');
 };
 ```
@@ -26,7 +26,7 @@ const getApiBaseUrl = (): string => {
 Create a `.env.local` file in the project root:
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234
+NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234:8000
 ```
 
 Or set it in your deployment environment.
@@ -141,10 +141,10 @@ if (healthStatus.isHealthy) {
 
 ```bash
 # Test backend connectivity
-curl http://54.87.173.234/health/
+curl http://54.87.173.234:8000/health/
 
 # Or test from browser
-# Open: http://54.87.173.234/health/
+# Open: http://54.87.173.234:8000/health/
 ```
 
 ### 2. Check Environment Variables

@@ -180,6 +180,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         { path: "/contacts", icon: <ContactsIcon />, label: "Contacts" },
         { path: "/companies", icon: <BuildingIcon />, label: "Companies" },
         { path: "/apollo", icon: <GlobeAltIcon />, label: "Apollo Tools" },
+        { path: "/apollo-websocket", icon: <StatusOnlineIcon />, label: "Apollo WebSocket" },
         { path: "/orders", icon: <OrdersIcon />, label: "Orders" },
         { path: "/history", icon: <HistoryIcon />, label: "History" },
       ],

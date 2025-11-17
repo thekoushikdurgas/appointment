@@ -30,7 +30,7 @@ import { Toast, ToastContainer, ToastProps } from '@components/ui/Toast';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
 import { Tooltip } from '@components/ui/Tooltip';
 import { Contact } from '@/types/index';
-import { analyzeApolloUrl, searchContactsFromApolloUrl, countContactsFromApolloUrl } from '@services/apollo';
+import { useApolloWebSocket } from '@/hooks/useApolloWebSocket';
 import { 
   ApolloUrlAnalysisResponse, 
   ApolloContactsResponse,
@@ -109,6 +109,54 @@ const Highlight: React.FC<{ text: string | undefined; highlight: string }> = ({ 
   );
 };
 
+// Connection Status Badge Component
+const ConnectionStatusBadge: React.FC<{ 
+  connectionState: 'connecting' | 'connected' | 'disconnected' | 'error';
+  onReconnect?: () => void;
+}> = ({ connectionState, onReconnect }) => {
+  const statusConfig = {
+    connecting: {
+      label: 'Connecting...',
+      className: 'apollo-ws-status apollo-ws-status--connecting',
+      icon: '⏳',
+    },
+    connected: {
+      label: 'Connected',
+      className: 'apollo-ws-status apollo-ws-status--connected',
+      icon: '🟢',
+    },
+    disconnected: {
+      label: 'Disconnected',
+      className: 'apollo-ws-status apollo-ws-status--disconnected',
+      icon: '⚪',
+    },
+    error: {
+      label: 'Connection Error',
+      className: 'apollo-ws-status apollo-ws-status--error',
+      icon: '🔴',
+    },
+  };
+
+  const config = statusConfig[connectionState];
+
+  return (
+    <div className={config.className}>
+      <span className="apollo-ws-status-icon">{config.icon}</span>
+      <span className="apollo-ws-status-label">{config.label}</span>
+      {(connectionState === 'disconnected' || connectionState === 'error') && onReconnect && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onReconnect}
+          className="apollo-ws-status-reconnect"
+        >
+          Reconnect
+        </Button>
+      )}
+    </div>
+  );
+};
+
 // Column Configuration
 type ColumnConfig = {
   id: string;
@@ -128,7 +176,18 @@ const defaultColumns: ColumnConfig[] = [
   { id: 'createdAt', label: 'Created At', field: 'createdAt', width: '120px' },
 ];
 
-export default function ApolloPage() {
+export default function ApolloWebSocketPage() {
+  // WebSocket hook
+  const {
+    connectionState,
+    isConnected,
+    isConnecting,
+    analyze: wsAnalyze,
+    searchContacts: wsSearchContacts,
+    countContacts: wsCountContacts,
+    connect: wsConnect,
+  } = useApolloWebSocket(true);
+
   // Toast state
   const [toasts, setToasts] = useState<ToastProps[]>([]);
 
@@ -216,11 +275,15 @@ export default function ApolloPage() {
     });
   };
 
-
   // Handle Count Contacts
   const handleCountContacts = async () => {
     if (!url.trim()) {
       showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
+      return;
+    }
+
+    if (!isConnected) {
+      showToast('Not Connected', 'WebSocket connection is not available. Please wait for connection.', 'error');
       return;
     }
 
@@ -239,26 +302,22 @@ export default function ApolloPage() {
         ? parsedIncludeCompanyNames.join(', ') 
         : undefined;
       
-      const countResult = await countContactsFromApolloUrl(url, {
+      const count = await wsCountContacts(url, {
         include_company_name: includeCompanyNameParam,
         exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
         include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
         exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
       });
 
-      if (countResult.success && countResult.data !== undefined) {
-        setContactCount(countResult.data);
-        showToast(
-          'Count Complete',
-          `Found ${countResult.data.toLocaleString()} contact(s) matching your criteria`,
-          'success'
-        );
-      } else {
-        showToast('Count Failed', countResult.message || 'Failed to count contacts', 'error');
-      }
-    } catch (error) {
+      setContactCount(count);
+      showToast(
+        'Count Complete',
+        `Found ${count.toLocaleString()} contact(s) matching your criteria`,
+        'success'
+      );
+    } catch (error: any) {
       console.error('Count error:', error);
-      showToast('Count Failed', 'An error occurred while counting contacts', 'error');
+      showToast('Count Failed', error?.message || 'An error occurred while counting contacts', 'error');
     } finally {
       setIsCounting(false);
     }
@@ -268,6 +327,11 @@ export default function ApolloPage() {
   const handleSearchContacts = async (offset: number = 0, resetPagination: boolean = false) => {
     if (!url.trim()) {
       showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
+      return;
+    }
+
+    if (!isConnected) {
+      showToast('Not Connected', 'WebSocket connection is not available. Please wait for connection.', 'error');
       return;
     }
 
@@ -295,32 +359,25 @@ export default function ApolloPage() {
         exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
       };
       
-      const searchResult = await searchContactsFromApolloUrl(url, searchParams);
+      const result = await wsSearchContacts(url, searchParams);
 
-      if (searchResult.success && searchResult.data) {
-        setSearchResult(searchResult.data);
-        if (searchResult.data.unmapped_categories.length > 0) {
-          const unmappedNames = new Set(searchResult.data.unmapped_categories.map(c => c.name));
-          setExpandedUnmappedCategories(unmappedNames);
-        }
-        
-        // Update pagination state
-        if (resetPagination) {
-          // Reset pagination state for new search (first page)
-          setCurrentOffset(0);
-          setOffsetHistory([]);
-          // Clear selection only when starting a new search
-          setSelectedContactUuids(new Set());
-        } else {
-          // Store the offset that was used for this request
-          setCurrentOffset(offset);
-          // Keep selection persistent when navigating between pages
-        }
-      } else {
-        setSearchError(searchResult.message || 'Failed to search contacts');
+      setSearchResult(result);
+      if (result.unmapped_categories.length > 0) {
+        const unmappedNames = new Set(result.unmapped_categories.map(c => c.name));
+        setExpandedUnmappedCategories(unmappedNames);
       }
-    } catch (error) {
-      setSearchError('Failed to search contacts');
+      
+      // Update pagination state
+      if (resetPagination) {
+        setCurrentOffset(0);
+        setOffsetHistory([]);
+        setSelectedContactUuids(new Set());
+      } else {
+        setCurrentOffset(offset);
+      }
+    } catch (error: any) {
+      setSearchError(error?.message || 'Failed to search contacts');
+      showToast('Search Failed', error?.message || 'Failed to search contacts', 'error');
     } finally {
       setLoading(false);
     }
@@ -330,6 +387,11 @@ export default function ApolloPage() {
   const handleCountAnalyzeAndSearch = async () => {
     if (!url.trim()) {
       showToast('Invalid Input', 'Please enter an Apollo.io URL', 'warning');
+      return;
+    }
+
+    if (!isConnected) {
+      showToast('Not Connected', 'WebSocket connection is not available. Please wait for connection.', 'error');
       return;
     }
 
@@ -365,19 +427,17 @@ export default function ApolloPage() {
 
     // Step 1: Count Contacts
     try {
-      const countResult = await countContactsFromApolloUrl(url, {
+      const count = await wsCountContacts(url, {
         include_company_name: includeCompanyNameParam,
         exclude_company_name: parsedExcludeCompanyNames.length > 0 ? parsedExcludeCompanyNames : undefined,
         include_domain_list: parsedIncludeDomains.length > 0 ? parsedIncludeDomains : undefined,
         exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
       });
 
-      if (countResult.success && countResult.data !== undefined) {
-        setContactCount(countResult.data);
-        totalCount = countResult.data;
-        countSuccess = true;
-      }
-    } catch (error) {
+      setContactCount(count);
+      totalCount = count;
+      countSuccess = true;
+    } catch (error: any) {
       console.error('Count error:', error);
     } finally {
       setIsCounting(false);
@@ -385,23 +445,19 @@ export default function ApolloPage() {
 
     // Step 2: Analyze URL
     try {
-      const analyzeResult = await analyzeApolloUrl(url);
+      const result = await wsAnalyze(url);
       
-      if (analyzeResult.success && analyzeResult.data) {
-        setAnalyzeResult(analyzeResult.data);
-        const categoryNames = new Set(analyzeResult.data.categories.map(c => c.name));
-        setExpandedCategories(categoryNames);
-        analyzeSuccess = true;
-      } else {
-        setAnalyzeError(analyzeResult.message || 'Failed to analyze URL');
-      }
-    } catch (error) {
-      setAnalyzeError('Failed to analyze URL');
+      setAnalyzeResult(result);
+      const categoryNames = new Set(result.categories.map(c => c.name));
+      setExpandedCategories(categoryNames);
+      analyzeSuccess = true;
+    } catch (error: any) {
+      setAnalyzeError(error?.message || 'Failed to analyze URL');
     }
 
     // Step 3: Search Contacts
     try {
-      const searchResult = await searchContactsFromApolloUrl(url, {
+      const result = await wsSearchContacts(url, {
         limit,
         offset: 0,
         include_company_name: includeCompanyNameParam,
@@ -410,23 +466,18 @@ export default function ApolloPage() {
         exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
       });
 
-      if (searchResult.success && searchResult.data) {
-        setSearchResult(searchResult.data);
-        if (searchResult.data.unmapped_categories.length > 0) {
-          const unmappedNames = new Set(searchResult.data.unmapped_categories.map(c => c.name));
-          setExpandedUnmappedCategories(unmappedNames);
-        }
-        contactsFound = searchResult.data.results.length;
-        searchSuccess = true;
-        
-        // Initialize pagination state - first page starts at offset 0
-        setCurrentOffset(0);
-        setOffsetHistory([]);
-      } else {
-        setSearchError(searchResult.message || 'Failed to search contacts');
+      setSearchResult(result);
+      if (result.unmapped_categories.length > 0) {
+        const unmappedNames = new Set(result.unmapped_categories.map(c => c.name));
+        setExpandedUnmappedCategories(unmappedNames);
       }
-    } catch (error) {
-      setSearchError('Failed to search contacts');
+      contactsFound = result.results.length;
+      searchSuccess = true;
+      
+      setCurrentOffset(0);
+      setOffsetHistory([]);
+    } catch (error: any) {
+      setSearchError(error?.message || 'Failed to search contacts');
     }
 
     setLoading(false);
@@ -489,6 +540,11 @@ export default function ApolloPage() {
       return;
     }
 
+    if (!isConnected) {
+      showToast('Not Connected', 'WebSocket connection is not available. Please wait for connection.', 'error');
+      return;
+    }
+
     setLoading(true);
     setAnalyzeError(null);
     setAnalyzeResult(null);
@@ -505,18 +561,14 @@ export default function ApolloPage() {
 
     // Step 1: Analyze URL
     try {
-      const analyzeResult = await analyzeApolloUrl(url);
+      const result = await wsAnalyze(url);
       
-      if (analyzeResult.success && analyzeResult.data) {
-        setAnalyzeResult(analyzeResult.data);
-        const categoryNames = new Set(analyzeResult.data.categories.map(c => c.name));
-        setExpandedCategories(categoryNames);
-        analyzeSuccess = true;
-      } else {
-        setAnalyzeError(analyzeResult.message || 'Failed to analyze URL');
-      }
-    } catch (error) {
-      setAnalyzeError('Failed to analyze URL');
+      setAnalyzeResult(result);
+      const categoryNames = new Set(result.categories.map(c => c.name));
+      setExpandedCategories(categoryNames);
+      analyzeSuccess = true;
+    } catch (error: any) {
+      setAnalyzeError(error?.message || 'Failed to analyze URL');
     }
 
     // Step 2: Search Contacts
@@ -532,7 +584,7 @@ export default function ApolloPage() {
         ? parsedIncludeCompanyNames.join(', ') 
         : undefined;
       
-      const searchResult = await searchContactsFromApolloUrl(url, {
+      const result = await wsSearchContacts(url, {
         limit,
         offset: 0,
         include_company_name: includeCompanyNameParam,
@@ -541,21 +593,17 @@ export default function ApolloPage() {
         exclude_domain_list: parsedExcludeDomains.length > 0 ? parsedExcludeDomains : undefined,
       });
 
-      if (searchResult.success && searchResult.data) {
-        setSearchResult(searchResult.data);
-        if (searchResult.data.unmapped_categories.length > 0) {
-          const unmappedNames = new Set(searchResult.data.unmapped_categories.map(c => c.name));
-          setExpandedUnmappedCategories(unmappedNames);
-        }
-        contactsFound = searchResult.data.results.length;
-        searchSuccess = true;
-        setCurrentOffset(0);
-        setOffsetHistory([]);
-      } else {
-        setSearchError(searchResult.message || 'Failed to search contacts');
+      setSearchResult(result);
+      if (result.unmapped_categories.length > 0) {
+        const unmappedNames = new Set(result.unmapped_categories.map(c => c.name));
+        setExpandedUnmappedCategories(unmappedNames);
       }
-    } catch (error) {
-      setSearchError('Failed to search contacts');
+      contactsFound = result.results.length;
+      searchSuccess = true;
+      setCurrentOffset(0);
+      setOffsetHistory([]);
+    } catch (error: any) {
+      setSearchError(error?.message || 'Failed to search contacts');
     }
 
     setLoading(false);
@@ -591,10 +639,7 @@ export default function ApolloPage() {
   const handleNextPage = () => {
     if (!searchResult?.next) return;
     
-    // Save current offset to history for back navigation
     setOffsetHistory(prev => [...prev, currentOffset]);
-    
-    // Calculate next offset
     const nextOffset = currentOffset + limit;
     handleSearchContacts(nextOffset, false);
   };
@@ -602,12 +647,10 @@ export default function ApolloPage() {
   // Handle Previous Page
   const handlePreviousPage = () => {
     if (offsetHistory.length > 0) {
-      // Go back to previous offset from history
       const previousOffset = offsetHistory[offsetHistory.length - 1];
       setOffsetHistory(prev => prev.slice(0, -1));
       handleSearchContacts(previousOffset, false);
     } else {
-      // Calculate previous offset (go back by limit)
       const previousOffset = Math.max(0, currentOffset - limit);
       handleSearchContacts(previousOffset, false);
     }
@@ -728,7 +771,7 @@ export default function ApolloPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `apollo-results-${Date.now()}.json`;
+    a.download = `apollo-websocket-results-${Date.now()}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -809,67 +852,21 @@ export default function ApolloPage() {
       {/* Toast Container */}
       <ToastContainer toasts={toasts} position="top-right" />
 
-      {/* Page Header */}
-      {/* <div className="apollo-page-header">
-        <div className="apollo-page-header-content">
-          <div>
-            <h1 className="apollo-page-title">
-              Apollo.io URL Tools
-            </h1>
-            <p className="apollo-page-description">
-              Analyze Apollo.io URLs and search your contact database using Apollo search criteria
-            </p>
-          </div>
-          <div className="apollo-page-actions">
-            {selectedContactUuids.size > 0 && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setIsExportModalOpen(true)}
-              >
-                <DownloadIcon />
-                Export Contacts ({selectedContactUuids.size})
-              </Button>
-            )}
-            {selectedContactUuids.size > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearSelection}
-                iconOnly
-                aria-label="Clear selection"
-              >
-                <XMarkIcon />
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearAllResults}
-              disabled={!analyzeResult && !searchResult}
-            >
-              <DeleteIcon />
-              Clear All
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportResults}
-              disabled={!analyzeResult && !searchResult}
-            >
-              <DownloadIcon />
-              Export JSON
-            </Button>
-          </div>
-        </div>
-        <div className="apollo-stats-wrapper">
-          <ApolloStatsCards stats={sessionStats} />
-        </div>
-      </div> */}
-
       {/* Main Content */}
       <Card>
         <CardContent className="apollo-tab-content">
+          {/* Connection Status Indicator */}
+          <div className="apollo-ws-status-container">
+            <ConnectionStatusBadge 
+              connectionState={connectionState}
+              onReconnect={() => {
+                wsConnect().catch((error) => {
+                  showToast('Reconnect Failed', error?.message || 'Failed to reconnect', 'error');
+                });
+              }}
+            />
+          </div>
+
           {/* Input Section */}
           <div className="apollo-input-section">
             <div>
@@ -917,9 +914,6 @@ export default function ApolloPage() {
                   rows={3}
                   aria-label="Include company name filter (comma or newline separated)"
                 />
-                {/* <p className="apollo-input-hint">
-                  Include contacts whose company name contains this value (case-insensitive). Supports comma or newline separated values.
-                </p> */}
               </div>
               <div>
                 <label htmlFor="apollo-exclude-company-name" className="apollo-input-label">
@@ -933,9 +927,6 @@ export default function ApolloPage() {
                   rows={3}
                   aria-label="Exclude company name filter (comma or newline separated)"
                 />
-                {/* <p className="apollo-input-hint">
-                  Exclude contacts whose company name matches any provided value (case-insensitive). Supports comma or newline separated values.
-                </p> */}
               </div>
               
               {/* Domain Filtering */}
@@ -969,7 +960,7 @@ export default function ApolloPage() {
 
             <Button
               onClick={handleCountAnalyzeAndSearch}
-              disabled={(loading || isCounting) || !url.trim()}
+              disabled={(loading || isCounting || !isConnected) || !url.trim()}
               className="apollo-unified-button"
             >
               {(loading || isCounting) ? (
@@ -985,23 +976,6 @@ export default function ApolloPage() {
               )}
             </Button>
           </div>
-
-          {/* Count Result Display - At Top */}
-          {/* {contactCount !== null && (
-            <div className="apollo-count-banner">
-              <div className="apollo-count-banner__content">
-                <UsersIcon className="apollo-count-banner__icon" />
-                <div className="apollo-count-banner__text">
-                  <strong className="apollo-count-banner__value">
-                    {contactCount.toLocaleString()}
-                  </strong>
-                  <span className="apollo-count-banner__label">
-                    contact{contactCount !== 1 ? 's' : ''} found matching your criteria
-                  </span>
-                </div>
-              </div>
-            </div>
-          )} */}
 
           {/* Loading State */}
           {(loading || isCounting) && (
@@ -1050,12 +1024,6 @@ export default function ApolloPage() {
                     {/* Analyzer Results Display */}
                     {analyzeResult && (
                 <div className="apollo-results">
-                  {/* <div className="apollo-section-header">
-                    <h2 className="apollo-section-title">
-                      URL Analysis Results
-                    </h2>
-                  </div> */}
-
                   {/* Contact Count Display */}
                   {contactCount !== null && (
                     <div className="apollo-count-display">
@@ -1126,29 +1094,6 @@ export default function ApolloPage() {
                     </div>
                   </div>
 
-                  {/* Raw Parameters */}
-                  {/* <div className="apollo-section">
-                    <button
-                      onClick={() => setShowRawParams(!showRawParams)}
-                      className="apollo-raw-toggle"
-                    >
-                      {showRawParams ? (
-                        <ChevronDownIcon className="apollo-raw-toggle-icon" />
-                      ) : (
-                        <ChevronRightIcon className="apollo-raw-toggle-icon" />
-                      )}
-                      Raw Parameters (JSON)
-                    </button>
-
-                    {showRawParams && (
-                      <div className="apollo-raw-content">
-                        <pre className="apollo-raw-pre">
-                          {JSON.stringify(analyzeResult.raw_parameters, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div> */}
-
                   {/* Parameter Mapping Summary */}
                   {searchResult && (
                     <div className="apollo-section">
@@ -1215,12 +1160,6 @@ export default function ApolloPage() {
                     {/* Search Results Display */}
                     {searchResult && (
                       <div className="apollo-results">
-                        {/* <div className="apollo-section-header">
-                          <h2 className="apollo-section-title">
-                            Contact Search Results
-                          </h2>
-                        </div> */}
-
                         {/* Unmapped Parameters */}
                   {searchResult.unmapped_categories.length > 0 && (
                     <div className="apollo-section">
@@ -1281,9 +1220,6 @@ export default function ApolloPage() {
                   {/* Contact Results */}
                   <div className="apollo-section">
                     <div className="apollo-results-header">
-                      {/* <h4 className="apollo-results-title">
-                        Contact Results ({searchResult.results.length})
-                      </h4> */}
                       <div className="apollo-results-header__content">
                         {selectedContactUuids.size > 0 && (
                           <div className="apollo-results-header__selection">
@@ -1318,7 +1254,6 @@ export default function ApolloPage() {
                         action={{
                           label: 'View Unmapped Parameters',
                           onClick: () => {
-                            // Scroll to unmapped section
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                           },
                         }}
@@ -1377,7 +1312,6 @@ export default function ApolloPage() {
                               <TableRow 
                                 key={contact.uuid || `contact-${index}`}
                                 onClick={(e) => {
-                                  // Don't open if clicking on checkbox or checkbox wrapper
                                   if ((e.target as HTMLElement).closest('.checkbox-input-wrapper, .checkbox-input, .checkbox-box')) {
                                     return;
                                   }
@@ -1549,3 +1483,4 @@ export default function ApolloPage() {
     </div>
   );
 }
+

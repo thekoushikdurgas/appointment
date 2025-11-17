@@ -119,7 +119,7 @@ nano .env.production
 **Required environment variables:**
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234
+NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234:8000
 NEXT_PUBLIC_CONTACTS_WRITE_KEY=your_contacts_write_key
 NEXT_PUBLIC_COMPANIES_WRITE_KEY=your_companies_write_key
 NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
@@ -175,7 +175,7 @@ curl http://localhost:3000
 Copy the Nginx configuration template:
 
 ```bash
-sudo cp ~/nexuscrm/deploy/ec2-nginx.conf /etc/nginx/sites-available/nexuscrm
+sudo cp ~/appointment/deploy/ec2-nginx.conf /etc/nginx/sites-available/nexuscrm
 ```
 
 ### Step 3.2: Enable the Nginx Site
@@ -512,7 +512,7 @@ pm2 start ecosystem.config.js --env production
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL | `http://54.87.173.234` |
+| `NEXT_PUBLIC_API_BASE_URL` | Backend API base URL | `http://54.87.173.234:8000` |
 | `NEXT_PUBLIC_CONTACTS_WRITE_KEY` | Contacts write operations key | `demo-write-key` |
 | `NEXT_PUBLIC_COMPANIES_WRITE_KEY` | Companies write operations key | `demo-companies-write-key` |
 | `NEXT_PUBLIC_GEMINI_API_KEY` | Google Gemini API key | `your_gemini_api_key` |
@@ -557,8 +557,8 @@ htop                        # Monitor system resources
 ### File Locations
 
 - Application: `/home/ubuntu/nexuscrm`
-- Environment: `/home/ubuntu/nexuscrm/.env.production`
-- PM2 Logs: `/home/ubuntu/nexuscrm/logs/`
+- Environment: `/home/ubuntu/appointment/.env.production`
+- PM2 Logs: `/home/ubuntu/appointment/logs/`
 - Nginx Config: `/etc/nginx/sites-available/nexuscrm`
 - Nginx Logs: `/var/log/nginx/nexuscrm-*.log`
 

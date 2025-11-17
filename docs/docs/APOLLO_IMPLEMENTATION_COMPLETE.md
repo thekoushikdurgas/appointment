@@ -157,8 +157,8 @@ export * from './apollo';
 
 ### API Integration
 **Base URL:** 
-- Development: `http://54.87.173.234`
-- Production: `http://54.87.173.234`
+- Development: `http://54.87.173.234:8000`
+- Production: `http://54.87.173.234:8000`
 
 **Authentication:**
 - All endpoints require JWT Bearer token

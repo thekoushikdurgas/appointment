@@ -1,132 +1,695 @@
 [HMR] connected
-forward-logs-shared.ts:95 [AUTH] AuthProvider mounted. Checking for initial session.
-forward-logs-shared.ts:95 [AUTH] Initial session fetch complete.
-forward-logs-shared.ts:95 [AUTH] No active session found.
-forward-logs-shared.ts:95 [AUTH] Initial auth loading finished.
+AuthContext.tsx:58 [AUTH] AuthProvider mounted. Checking for initial session.
+auth.ts:488 [AUTH] getSession called, silent: true
+auth.ts:492 [AUTH] getSession token check: No token
+auth.ts:495 [AUTH] getSession returning null - no token
+AuthContext.tsx:62 [AUTH] Initial session fetch complete.
+AuthContext.tsx:68 [AUTH] No active session found.
+AuthContext.tsx:73 [AUTH] Initial auth loading finished.
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 488ms
+forward-logs-shared.ts:95 [Fast Refresh] done in 224ms
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 10661ms
+forward-logs-shared.ts:95 [Fast Refresh] done in 5499ms
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 462ms
+forward-logs-shared.ts:95 [Fast Refresh] done in 362ms
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 228ms
-forward-logs-shared.ts:95 [AUTH] Attempting login for: thekoushikdurgas@gmail.com
-forward-logs-shared.ts:95 [AUTH] Login successful for thekoushikdurgas@gmail.com. Fetching profile...
-forward-logs-shared.ts:95 [AUTH] Fetching profile for user ID: 3450337c-8069-43e1-bb23-aa45797ce9d9
-forward-logs-shared.ts:95 [AUTH] Session found. Fetching profile.
-forward-logs-shared.ts:95 [AUTH] Fetching profile for user ID: 3450337c-8069-43e1-bb23-aa45797ce9d9
-forward-logs-shared.ts:95 [AUTH] User profile fetched successfully: Object
-forward-logs-shared.ts:95 [AUTH] User state successfully set with profile data.
-forward-logs-shared.ts:95 [AUTH] Session found. Fetching profile.
-forward-logs-shared.ts:95 [AUTH] Fetching profile for user ID: 3450337c-8069-43e1-bb23-aa45797ce9d9
+forward-logs-shared.ts:95 [Fast Refresh] done in 516ms
+AuthContext.tsx:175 [AUTH] Attempting login for: thekoushikdurgas@gmail.com
+axiosRequest.ts:191 [AXIOS_REQUEST] axiosRequest called: {url: 'http://54.87.173.234:8000/api/v2/auth/login/', method: 'POST'}
+axiosRequest.ts:204 [AXIOS_REQUEST] Options: {useQueue: true, useCache: false, priority: 0, skipCache: false, method: 'POST'}
+axiosRequest.ts:290 [AXIOS_REQUEST] Using queue for: http://54.87.173.234:8000/api/v2/auth/login/
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392604370_o57vbwxnc', priority: 0, queueLength: 0, isProcessing: false}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 1, isProcessing: false}
+requestQueue.ts:136 [QUEUE] Starting queue processing
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 1}
+requestQueue.ts:175 [QUEUE] Starting to process queue item
+requestQueue.ts:187 [QUEUE] Processing item: {id: 'queue_1763392604370_o57vbwxnc', priority: 0, remainingInQueue: 0}
+requestQueue.ts:194 [QUEUE] Executing request for item: queue_1763392604370_o57vbwxnc
+axiosRequest.ts:242 [AXIOS_REQUEST] executeRequest starting for: http://54.87.173.234:8000/api/v2/auth/login/
+axiosRequest.ts:244 [AXIOS_REQUEST] Making Axios request to: http://54.87.173.234:8000/api/v2/auth/login/
+axiosRequest.ts:258 [AXIOS_REQUEST] Axios response received: {url: 'http://54.87.173.234:8000/api/v2/auth/login/', status: 200, statusText: 'OK'}
+axiosRequest.ts:277 [AXIOS_REQUEST] Returning wrapped response for: http://54.87.173.234:8000/api/v2/auth/login/
+requestQueue.ts:197 [QUEUE] Request completed successfully for item: queue_1763392604370_o57vbwxnc
+requestQueue.ts:213 [QUEUE] Item processed, checking for next item: {remainingInQueue: 0}
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 0}
+requestQueue.ts:167 [QUEUE] Queue empty, stopping processing
+axiosRequest.ts:292 [AXIOS_REQUEST] Queue returned result for: http://54.87.173.234:8000/api/v2/auth/login/
+AuthContext.tsx:177 [AUTH] apiLogin returned: {success: true, message: 'Login successful'}
+AuthContext.tsx:184 [AUTH] Login successful for thekoushikdurgas@gmail.com. Fetching profile...
+AuthContext.tsx:188 [AUTH] About to call getSession
+auth.ts:488 [AUTH] getSession called, silent: false
+auth.ts:492 [AUTH] getSession token check: Token exists
+auth.ts:499 [AUTH] getSession calling authenticatedFetch for session endpoint
+auth.ts:216 [AUTH] authenticatedFetch called for: http://54.87.173.234:8000/api/v2/auth/session/
+auth.ts:261 [AUTH] Making axiosAuthenticatedRequest with config: {url: 'http://54.87.173.234:8000/api/v2/auth/session/', method: 'GET', useQueue: true, useCache: true}
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v2/auth/session/', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v2/auth/session/
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v2/auth/session/
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v2/auth/session/
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392605881_bsvbgwxis', priority: 0, queueLength: 0, isProcessing: false}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 1, isProcessing: false}
+requestQueue.ts:136 [QUEUE] Starting queue processing
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 1}
+requestQueue.ts:175 [QUEUE] Starting to process queue item
+requestQueue.ts:187 [QUEUE] Processing item: {id: 'queue_1763392605881_bsvbgwxis', priority: 0, remainingInQueue: 0}
+requestQueue.ts:194 [QUEUE] Executing request for item: queue_1763392605881_bsvbgwxis
+axiosRequest.ts:368 [AXIOS_AUTH_REQUEST] executeRequest starting for: http://54.87.173.234:8000/api/v2/auth/session/
+axiosRequest.ts:370 [AXIOS_AUTH_REQUEST] Making authenticated Axios request to: http://54.87.173.234:8000/api/v2/auth/session/
+axiosRequest.ts:384 [AXIOS_AUTH_REQUEST] Axios response received: {url: 'http://54.87.173.234:8000/api/v2/auth/session/', status: 200, statusText: 'OK'}
+axiosRequest.ts:392 [AXIOS_AUTH_REQUEST] Caching response for: GET|http://54.87.173.234:8000/api/v2/auth/session/
+axiosRequest.ts:403 [AXIOS_AUTH_REQUEST] Returning wrapped response for: http://54.87.173.234:8000/api/v2/auth/session/
+requestQueue.ts:197 [QUEUE] Request completed successfully for item: queue_1763392605881_bsvbgwxis
+requestQueue.ts:213 [QUEUE] Item processed, checking for next item: {remainingInQueue: 0}
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 0}
+requestQueue.ts:167 [QUEUE] Queue empty, stopping processing
+axiosRequest.ts:418 [AXIOS_AUTH_REQUEST] Queue returned result for: http://54.87.173.234:8000/api/v2/auth/session/
+auth.ts:270 [AUTH] authenticatedFetch response received: {url: 'http://54.87.173.234:8000/api/v2/auth/session/', status: 200, ok: true}
+auth.ts:504 [AUTH] getSession received response: {ok: true, status: 200}
+auth.ts:521 [AUTH] getSession parsing JSON response
+auth.ts:523 [AUTH] getSession successfully parsed, user: 3450337c-8069-43e1-bb23-aa45797ce9d9
+AuthContext.tsx:190 [AUTH] getSession returned: Session data
+AuthContext.tsx:193 [AUTH] Session data available, user: 3450337c-8069-43e1-bb23-aa45797ce9d9
+AuthContext.tsx:194 [AUTH] About to call fetchUserProfile
+AuthContext.tsx:27 [AUTH] fetchUserProfile called for user ID: 3450337c-8069-43e1-bb23-aa45797ce9d9
+AuthContext.tsx:29 [AUTH] About to call getUserProfile from user service
+user.ts:147 [USER] getUserProfile called for user: 3450337c-8069-43e1-bb23-aa45797ce9d9
+user.ts:150 [USER] Making axiosAuthenticatedRequest to fetch profile
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v2/users/profile/', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v2/users/profile/
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v2/users/profile/
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v2/users/profile/
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392606429_ym3whees8', priority: 0, queueLength: 0, isProcessing: false}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 1, isProcessing: false}
+requestQueue.ts:136 [QUEUE] Starting queue processing
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 1}
+requestQueue.ts:175 [QUEUE] Starting to process queue item
+requestQueue.ts:187 [QUEUE] Processing item: {id: 'queue_1763392606429_ym3whees8', priority: 0, remainingInQueue: 0}
+requestQueue.ts:194 [QUEUE] Executing request for item: queue_1763392606429_ym3whees8
+axiosRequest.ts:368 [AXIOS_AUTH_REQUEST] executeRequest starting for: http://54.87.173.234:8000/api/v2/users/profile/
+axiosRequest.ts:370 [AXIOS_AUTH_REQUEST] Making authenticated Axios request to: http://54.87.173.234:8000/api/v2/users/profile/
+axiosRequest.ts:384 [AXIOS_AUTH_REQUEST] Axios response received: {url: 'http://54.87.173.234:8000/api/v2/users/profile/', status: 200, statusText: 'OK'}
+axiosRequest.ts:392 [AXIOS_AUTH_REQUEST] Caching response for: GET|http://54.87.173.234:8000/api/v2/users/profile/
+axiosRequest.ts:403 [AXIOS_AUTH_REQUEST] Returning wrapped response for: http://54.87.173.234:8000/api/v2/users/profile/
+requestQueue.ts:197 [QUEUE] Request completed successfully for item: queue_1763392606429_ym3whees8
+requestQueue.ts:213 [QUEUE] Item processed, checking for next item: {remainingInQueue: 0}
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 0}
+requestQueue.ts:167 [QUEUE] Queue empty, stopping processing
+axiosRequest.ts:418 [AXIOS_AUTH_REQUEST] Queue returned result for: http://54.87.173.234:8000/api/v2/users/profile/
+user.ts:157 [USER] getUserProfile response received: {ok: true, status: 200}
+user.ts:172 [USER] getUserProfile parsing JSON response
+user.ts:174 [USER] getUserProfile data received: {id: '3450337c-8069-43e1-bb23-aa45797ce9d9', name: 'KOUSHIK CHANDRA SAHA', email: 'thekoushikdurgas@gmail.com'}
+user.ts:181 [USER] getUserProfile successfully mapped user
+AuthContext.tsx:31 [AUTH] getUserProfile returned: Profile data
+AuthContext.tsx:34 [AUTH] User profile fetched successfully: {id: '3450337c-8069-43e1-bb23-aa45797ce9d9', name: 'KOUSHIK CHANDRA SAHA', email: 'thekoushikdurgas@gmail.com'}
+AuthContext.tsx:39 [AUTH] Calling setUser with profile data
+AuthContext.tsx:41 [AUTH] User state successfully set with profile data.
+AuthContext.tsx:196 [AUTH] fetchUserProfile completed
+AuthContext.tsx:206 [AUTH] Login flow complete, returning result
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [AUTH] User profile fetched successfully: Object
-forward-logs-shared.ts:95 [AUTH] User state successfully set with profile data.
-forward-logs-shared.ts:95 [AUTH] User profile fetched successfully: Object
-forward-logs-shared.ts:95 [AUTH] User state successfully set with profile data.
-forward-logs-shared.ts:95 [Fast Refresh] done in 5650ms
+forward-logs-shared.ts:95 [Fast Refresh] done in 6867ms
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 301ms
+forward-logs-shared.ts:95 [Fast Refresh] done in 835ms
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/count/', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/count/
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392615178_yoto8iudy', priority: 0, queueLength: 0, isProcessing: false}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 1, isProcessing: false}
+requestQueue.ts:136 [QUEUE] Starting queue processing
+requestQueue.ts:146 [QUEUE] processQueue called, state: {enabled: true, isProcessing: false, queueLength: 1}
+requestQueue.ts:175 [QUEUE] Starting to process queue item
+requestQueue.ts:187 [QUEUE] Processing item: {id: 'queue_1763392615178_yoto8iudy', priority: 0, remainingInQueue: 0}
+requestQueue.ts:194 [QUEUE] Executing request for item: queue_1763392615178_yoto8iudy
+axiosRequest.ts:368 [AXIOS_AUTH_REQUEST] executeRequest starting for: http://54.87.173.234:8000/api/v1/contacts/count/
+axiosRequest.ts:370 [AXIOS_AUTH_REQUEST] Making authenticated Axios request to: http://54.87.173.234:8000/api/v1/contacts/count/
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/?ordering=-created_at&limit=10&offset=0', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"limit":"10","offset":"0","ordering":"-created_at"}
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"limit":"10","offset":"0","ordering":"-created_at"}
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/?ordering=-created_at&limit=10&offset=0
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392615229_rk06jidre', priority: 0, queueLength: 0, isProcessing: true}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 1, isProcessing: true}
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/count/', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/count/
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392615251_74zj1u51o', priority: 0, queueLength: 1, isProcessing: true}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 2, isProcessing: true}
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/industry/?limit=1000&offset=0', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/industry/|{"limit":"1000","offset":"0"}
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/industry/|{"limit":"1000","offset":"0"}
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/industry/?limit=1000&offset=0
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392615268_m9ogboeox', priority: 0, queueLength: 2, isProcessing: true}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 3, isProcessing: true}
+axiosRequest.ts:316 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/?ordering=-employees&limit=5&fields=company,employees', method: 'GET'}
+axiosRequest.ts:330 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+axiosRequest.ts:349 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"fields":"company,employees","limit":"5","ordering":"-employees"}
+axiosRequest.ts:363 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"fields":"company,employees","limit":"5","ordering":"-employees"}
+axiosRequest.ts:416 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/?ordering=-employees&limit=5&fields=company,employees
+requestQueue.ts:111 [QUEUE] Enqueuing request: {id: 'queue_1763392615282_vvpm3q7wx', priority: 0, queueLength: 3, isProcessing: true}
+requestQueue.ts:129 [QUEUE] Queue state after enqueue: {queueLength: 4, isProcessing: true}
+installHook.js:1 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/count/', method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+installHook.js:1 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+installHook.js:1 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/count/
+installHook.js:1 [QUEUE] Enqueuing request: {id: 'queue_1763392615298_n12pnnwl4', priority: 0, queueLength: 4, isProcessing: true}
+installHook.js:1 [QUEUE] Queue state after enqueue: {queueLength: 5, isProcessing: true}
+installHook.js:1 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/?ordering=-created_at&limit=10&offset=0', method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"limit":"10","offset":"0","ordering":"-created_at"}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"limit":"10","offset":"0","ordering":"-created_at"}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/?ordering=-created_at&limit=10&offset=0
+installHook.js:1 [QUEUE] Enqueuing request: {id: 'queue_1763392615311_j83hey0dr', priority: 0, queueLength: 5, isProcessing: true}
+installHook.js:1 [QUEUE] Queue state after enqueue: {queueLength: 6, isProcessing: true}
+installHook.js:1 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/count/', method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+installHook.js:1 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/count/
+installHook.js:1 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/count/
+installHook.js:1 [QUEUE] Enqueuing request: {id: 'queue_1763392615326_s5sg9hmgg', priority: 0, queueLength: 6, isProcessing: true}
+installHook.js:1 [QUEUE] Queue state after enqueue: {queueLength: 7, isProcessing: true}
+installHook.js:1 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/industry/?limit=1000&offset=0', method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/industry/|{"limit":"1000","offset":"0"}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/industry/|{"limit":"1000","offset":"0"}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/industry/?limit=1000&offset=0
+installHook.js:1 [QUEUE] Enqueuing request: {id: 'queue_1763392615345_61mzt7sqc', priority: 0, queueLength: 7, isProcessing: true}
+installHook.js:1 [QUEUE] Queue state after enqueue: {queueLength: 8, isProcessing: true}
+installHook.js:1 [AXIOS_AUTH_REQUEST] axiosAuthenticatedRequest called: {url: 'http://54.87.173.234:8000/api/v1/contacts/?ordering=-employees&limit=5&fields=company,employees', method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Options: {useQueue: true, useCache: true, priority: 0, skipCache: false, method: 'GET'}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Checking cache for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"fields":"company,employees","limit":"5","ordering":"-employees"}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Cache miss for: GET|http://54.87.173.234:8000/api/v1/contacts/|{"fields":"company,employees","limit":"5","ordering":"-employees"}
+installHook.js:1 [AXIOS_AUTH_REQUEST] Using queue for: http://54.87.173.234:8000/api/v1/contacts/?ordering=-employees&limit=5&fields=company,employees
+installHook.js:1 [QUEUE] Enqueuing request: {id: 'queue_1763392615361_rqauocpqp', priority: 0, queueLength: 8, isProcessing: true}
+installHook.js:1 [QUEUE] Queue state after enqueue: {queueLength: 9, isProcessing: true}
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 747ms
-hook.js:608 Error fetching analytics stats: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchAnalyticsStats (analytics.ts:68:27)
-    at async Promise.all (index 0)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching contacts by email verification: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchContactsByEmailVerification (analytics.ts:136:27)
-    at async Promise.all (index 2)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching contacts by industry: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchContactsByIndustry (analytics.ts:205:30)
-    at async Promise.all (index 3)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching top companies: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchTopCompanies (analytics.ts:310:22)
-    at async Promise.all (index 4)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching analytics stats: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchAnalyticsStats (analytics.ts:68:27)
-    at async Promise.all (index 0)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching contacts by email verification: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchContactsByEmailVerification (analytics.ts:136:27)
-    at async Promise.all (index 2)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching contacts by industry: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchContactsByIndustry (analytics.ts:205:30)
-    at async Promise.all (index 3)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
-hook.js:608 Error fetching top companies: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchTopCompanies (analytics.ts:310:22)
-    at async Promise.all (index 4)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
+forward-logs-shared.ts:95 [Fast Refresh] done in 1596ms
 forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 478ms
-forward-logs-shared.ts:95 [Fast Refresh] rebuilding
-forward-logs-shared.ts:95 [Fast Refresh] done in 197ms
-2contact.ts:839 [CONTACT] Failed to fetch contact count: Error: Request timed out. Please try again.
-    at authenticatedFetch (auth.ts:234:11)
-    at async fetchContacts (contact.ts:825:31)
-    at async Promise.all (index 1)
-    at async loadDashboardData (page.tsx:71:101)
-overrideMethod @ hook.js:608
+forward-logs-shared.ts:95 [Fast Refresh] done in 463ms
+apolloWebSocket.ts:542 WebSocket connection to 'ws://54.87.173.234/api/v2/apollo/ws?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzNDUwMzM3Yy04MDY5LTQzZTEtYmIyMy1hYTQ1Nzk3Y2U5ZDkiLCJleHAiOjE3NjMzOTQ0MDcsInR5cGUiOiJhY2Nlc3MifQ.t1kJg6CASqe7BWmNPP_qJrC5GFjG6lG_kQbYk-XbwUc' failed: WebSocket is closed before the connection is established.
+disconnect @ apolloWebSocket.ts:542
+useApolloWebSocket.useEffect @ useApolloWebSocket.ts:140
+react_stack_bottom_frame @ react-dom-client.development.js:28022
+runWithFiberInDEV @ react-dom-client.development.js:984
+commitHookEffectListUnmount @ react-dom-client.development.js:13678
+commitHookPassiveUnmountEffects @ react-dom-client.development.js:13709
+disconnectPassiveEffect @ react-dom-client.development.js:17438
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17452
+recursivelyTraverseDisconnectPassiveEffects @ react-dom-client.development.js:17426
+disconnectPassiveEffect @ react-dom-client.development.js:17443
+doubleInvokeEffectsOnFiber @ react-dom-client.development.js:20032
+runWithFiberInDEV @ react-dom-client.development.js:984
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:19998
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+runWithFiberInDEV @ react-dom-client.development.js:987
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20018
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20004
+commitDoubleInvokeEffectsInDEV @ react-dom-client.development.js:20043
+flushPassiveEffects @ react-dom-client.development.js:19770
+(anonymous) @ react-dom-client.development.js:19188
+performWorkUntilDeadline @ scheduler.development.js:45
+<ApolloWebSocketPage>
+exports.jsx @ react-jsx-runtime.development.js:342
+ClientPageRoot @ client-page.tsx:83
+react_stack_bottom_frame @ react-dom-client.development.js:27925
+renderWithHooksAgain @ react-dom-client.development.js:8072
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10480
+beginWork @ react-dom-client.development.js:12041
+runWithFiberInDEV @ react-dom-client.development.js:984
+performUnitOfWork @ react-dom-client.development.js:18901
+workLoopConcurrentByScheduler @ react-dom-client.development.js:18895
+renderRootConcurrent @ react-dom-client.development.js:18877
+performWorkOnRoot @ react-dom-client.development.js:17739
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
+performWorkUntilDeadline @ scheduler.development.js:45
+"use client"
+Promise.all @ VM44 <anonymous>:1
+initializeElement @ react-server-dom-turbopack-client.browser.development.js:1887
+"use server"
+ResponseInstance @ react-server-dom-turbopack-client.browser.development.js:2713
+createResponseFromOptions @ react-server-dom-turbopack-client.browser.development.js:4562
+exports.createFromFetch @ react-server-dom-turbopack-client.browser.development.js:4932
+createFromNextFetch @ fetch-server-response.ts:489
+createFetch @ fetch-server-response.ts:375
+fetchServerResponse @ fetch-server-response.ts:196
+navigateDynamicallyWithNoPrefetch @ navigation.ts:443
+navigate @ navigation.ts:205
+push.navigate @ segment-cache.ts:44
+navigateReducer @ navigate-reducer.ts:163
+clientReducer @ router-reducer.ts:30
+action @ app-router-instance.ts:227
+runAction @ app-router-instance.ts:107
+dispatchAction @ app-router-instance.ts:184
+dispatch @ app-router-instance.ts:225
+(anonymous) @ use-action-queue.ts:51
+startTransition @ react-dom-client.development.js:9198
+dispatch @ use-action-queue.ts:50
+dispatchAppRouterAction @ use-action-queue.ts:22
+dispatchNavigateAction @ app-router-instance.ts:296
+(anonymous) @ link.tsx:293
+startTransition @ react.development.js:554
+linkClicked @ link.tsx:292
+onClick @ link.tsx:642
+executeDispatch @ react-dom-client.development.js:20447
+runWithFiberInDEV @ react-dom-client.development.js:984
+processDispatchQueue @ react-dom-client.development.js:20497
+(anonymous) @ react-dom-client.development.js:21068
+batchedUpdates$1 @ react-dom-client.development.js:3375
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20651
+dispatchEvent @ react-dom-client.development.js:25580
+dispatchDiscreteEvent @ react-dom-client.development.js:25548
+<a>
+exports.jsx @ react-jsx-runtime.development.js:342
+LinkComponent @ link.tsx:725
+react_stack_bottom_frame @ react-dom-client.development.js:27925
+renderWithHooksAgain @ react-dom-client.development.js:8072
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10480
+beginWork @ react-dom-client.development.js:12092
+runWithFiberInDEV @ react-dom-client.development.js:984
+performUnitOfWork @ react-dom-client.development.js:18901
+workLoopSync @ react-dom-client.development.js:18729
+renderRootSync @ react-dom-client.development.js:18710
+performWorkOnRoot @ react-dom-client.development.js:17740
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
+performWorkUntilDeadline @ scheduler.development.js:45
+<LinkComponent>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
+NavItem @ Sidebar.tsx:78
+react_stack_bottom_frame @ react-dom-client.development.js:27925
+renderWithHooksAgain @ react-dom-client.development.js:8072
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10480
+beginWork @ react-dom-client.development.js:12092
+runWithFiberInDEV @ react-dom-client.development.js:984
+performUnitOfWork @ react-dom-client.development.js:18901
+workLoopSync @ react-dom-client.development.js:18729
+renderRootSync @ react-dom-client.development.js:18710
+performWorkOnRoot @ react-dom-client.development.js:17740
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
+performWorkUntilDeadline @ scheduler.development.js:45
+<NavItem>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
+(anonymous) @ Sidebar.tsx:125
+NavSection @ Sidebar.tsx:124
+react_stack_bottom_frame @ react-dom-client.development.js:27925
+renderWithHooksAgain @ react-dom-client.development.js:8072
+renderWithHooks @ react-dom-client.development.js:7984
+updateFunctionComponent @ react-dom-client.development.js:10480
+beginWork @ react-dom-client.development.js:12092
+runWithFiberInDEV @ react-dom-client.development.js:984
+performUnitOfWork @ react-dom-client.development.js:18901
+workLoopConcurrentByScheduler @ react-dom-client.development.js:18895
+renderRootConcurrent @ react-dom-client.development.js:18877
+performWorkOnRoot @ react-dom-client.development.js:17739
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
+performWorkUntilDeadline @ scheduler.development.js:45
+installHook.js:1 [APOLLO_WS] WebSocket error: {message: 'WebSocket connection error', type: 'error', target: WebSocket, timestamp: '2025-11-17T15:16:59.645Z', connectionState: 'disconnected', …}connectionState: "disconnected"message: "WebSocket connection error"readyState: undefinedtarget: WebSocket {url: 'ws://54.87.173.234/api/v2/apollo/ws?token=eyJhbGci…3MifQ.t1kJg6CASqe7BWmNPP_qJrC5GFjG6lG_kQbYk-XbwUc', readyState: 3, bufferedAmount: 0, onopen: ƒ, onerror: ƒ, …}timestamp: "2025-11-17T15:16:59.645Z"type: "error"[[Prototype]]: Object
+overrideMethod @ installHook.js:1
 error @ intercept-console-error.ts:42
-fetchContacts @ contact.ts:839
-page.tsx:225 The width(-1) and height(-1) of chart should be greater than 0,
-       please check the style of container, or the props width(100%) and height(100%),
-       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
-       height and width.
-overrideMethod @ hook.js:608
-overrideMethod @ forward-logs-shared.ts:95
-warn @ LogUtils.js:16
-(anonymous) @ ResponsiveContainer.js:131
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooks @ react-dom-client.development.js:7972
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
+handleError @ apolloWebSocket.ts:334
+ws.onerror @ apolloWebSocket.ts:494
+installHook.js:1 [APOLLO_WS] Auto-connect failed: Error: WebSocket connection failed
+    at ws.onerror (apolloWebSocket.ts:496:18)
+overrideMethod @ installHook.js:1
+error @ intercept-console-error.ts:42
+useApolloWebSocket.useEffect @ useApolloWebSocket.ts:123
+Promise.catch
+useApolloWebSocket.useEffect @ useApolloWebSocket.ts:121
+react_stack_bottom_frame @ react-dom-client.development.js:28010
 runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
+commitHookEffectListMount @ react-dom-client.development.js:13611
+commitHookPassiveMountEffects @ react-dom-client.development.js:13698
+commitPassiveMountOnFiber @ react-dom-client.development.js:16638
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16844
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16803
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16658
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16630
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16915
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:16583
+commitPassiveMountOnFiber @ react-dom-client.development.js:16673
+flushPassiveEffects @ react-dom-client.development.js:19763
+(anonymous) @ react-dom-client.development.js:19188
 performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
-exports.createElement @ react.development.js:1137
-(anonymous) @ ResponsiveContainer.js:213
+<ApolloWebSocketPage>
+exports.jsx @ react-jsx-runtime.development.js:342
+ClientPageRoot @ client-page.tsx:83
 react_stack_bottom_frame @ react-dom-client.development.js:27925
 renderWithHooksAgain @ react-dom-client.development.js:8072
 renderWithHooks @ react-dom-client.development.js:7984
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
+updateFunctionComponent @ react-dom-client.development.js:10480
+beginWork @ react-dom-client.development.js:12041
 runWithFiberInDEV @ react-dom-client.development.js:984
 performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
+workLoopConcurrentByScheduler @ react-dom-client.development.js:18895
+renderRootConcurrent @ react-dom-client.development.js:18877
+performWorkOnRoot @ react-dom-client.development.js:17739
 performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
 performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-Dashboard @ page.tsx:225
+"use client"
+Promise.all @ VM44 <anonymous>:1
+initializeElement @ react-server-dom-turbopack-client.browser.development.js:1887
+"use server"
+ResponseInstance @ react-server-dom-turbopack-client.browser.development.js:2713
+createResponseFromOptions @ react-server-dom-turbopack-client.browser.development.js:4562
+exports.createFromFetch @ react-server-dom-turbopack-client.browser.development.js:4932
+createFromNextFetch @ fetch-server-response.ts:489
+createFetch @ fetch-server-response.ts:375
+fetchServerResponse @ fetch-server-response.ts:196
+navigateDynamicallyWithNoPrefetch @ navigation.ts:443
+navigate @ navigation.ts:205
+push.navigate @ segment-cache.ts:44
+navigateReducer @ navigate-reducer.ts:163
+clientReducer @ router-reducer.ts:30
+action @ app-router-instance.ts:227
+runAction @ app-router-instance.ts:107
+dispatchAction @ app-router-instance.ts:184
+dispatch @ app-router-instance.ts:225
+(anonymous) @ use-action-queue.ts:51
+startTransition @ react-dom-client.development.js:9198
+dispatch @ use-action-queue.ts:50
+dispatchAppRouterAction @ use-action-queue.ts:22
+dispatchNavigateAction @ app-router-instance.ts:296
+(anonymous) @ link.tsx:293
+startTransition @ react.development.js:554
+linkClicked @ link.tsx:292
+onClick @ link.tsx:642
+executeDispatch @ react-dom-client.development.js:20447
+runWithFiberInDEV @ react-dom-client.development.js:984
+processDispatchQueue @ react-dom-client.development.js:20497
+(anonymous) @ react-dom-client.development.js:21068
+batchedUpdates$1 @ react-dom-client.development.js:3375
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:20651
+dispatchEvent @ react-dom-client.development.js:25580
+dispatchDiscreteEvent @ react-dom-client.development.js:25548
+<a>
+exports.jsx @ react-jsx-runtime.development.js:342
+LinkComponent @ link.tsx:725
 react_stack_bottom_frame @ react-dom-client.development.js:27925
 renderWithHooksAgain @ react-dom-client.development.js:8072
 renderWithHooks @ react-dom-client.development.js:7984
@@ -139,41 +702,9 @@ renderRootSync @ react-dom-client.development.js:18710
 performWorkOnRoot @ react-dom-client.development.js:17740
 performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
 performWorkUntilDeadline @ scheduler.development.js:45
-page.tsx:225 The width(-1) and height(-1) of chart should be greater than 0,       please check the style of container, or the props width(100%) and height(100%),       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the       height and width.
-overrideMethod @ hook.js:600
-overrideMethod @ forward-logs-shared.ts:95
-warn @ LogUtils.js:16
-(anonymous) @ ResponsiveContainer.js:131
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooksAgain @ react-dom-client.development.js:8072
-renderWithHooks @ react-dom-client.development.js:7984
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
-exports.createElement @ react.development.js:1137
-(anonymous) @ ResponsiveContainer.js:213
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooksAgain @ react-dom-client.development.js:8072
-renderWithHooks @ react-dom-client.development.js:7984
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
+<LinkComponent>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-Dashboard @ page.tsx:225
+NavItem @ Sidebar.tsx:78
 react_stack_bottom_frame @ react-dom-client.development.js:27925
 renderWithHooksAgain @ react-dom-client.development.js:8072
 renderWithHooks @ react-dom-client.development.js:7984
@@ -186,43 +717,10 @@ renderRootSync @ react-dom-client.development.js:18710
 performWorkOnRoot @ react-dom-client.development.js:17740
 performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
 performWorkUntilDeadline @ scheduler.development.js:45
-page.tsx:259 The width(-1) and height(-1) of chart should be greater than 0,
-       please check the style of container, or the props width(100%) and height(100%),
-       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
-       height and width.
-overrideMethod @ hook.js:608
-overrideMethod @ forward-logs-shared.ts:95
-warn @ LogUtils.js:16
-(anonymous) @ ResponsiveContainer.js:131
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooks @ react-dom-client.development.js:7972
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
-exports.createElement @ react.development.js:1137
-(anonymous) @ ResponsiveContainer.js:213
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooksAgain @ react-dom-client.development.js:8072
-renderWithHooks @ react-dom-client.development.js:7984
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
+<NavItem>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-Dashboard @ page.tsx:259
+(anonymous) @ Sidebar.tsx:125
+NavSection @ Sidebar.tsx:124
 react_stack_bottom_frame @ react-dom-client.development.js:27925
 renderWithHooksAgain @ react-dom-client.development.js:8072
 renderWithHooks @ react-dom-client.development.js:7984
@@ -230,57 +728,16 @@ updateFunctionComponent @ react-dom-client.development.js:10480
 beginWork @ react-dom-client.development.js:12092
 runWithFiberInDEV @ react-dom-client.development.js:984
 performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
+workLoopConcurrentByScheduler @ react-dom-client.development.js:18895
+renderRootConcurrent @ react-dom-client.development.js:18877
+performWorkOnRoot @ react-dom-client.development.js:17739
 performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
 performWorkUntilDeadline @ scheduler.development.js:45
-page.tsx:259 The width(-1) and height(-1) of chart should be greater than 0,       please check the style of container, or the props width(100%) and height(100%),       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the       height and width.
-overrideMethod @ hook.js:600
+installHook.js:1 [APOLLO_WS] WebSocket closed unexpectedly: {code: 1006, reason: 'No reason provided', wasClean: false, previousState: 'error', timestamp: '2025-11-17T15:16:59.653Z'}code: 1006previousState: "error"reason: "No reason provided"timestamp: "2025-11-17T15:16:59.653Z"wasClean: false[[Prototype]]: Object
+overrideMethod @ installHook.js:1
 overrideMethod @ forward-logs-shared.ts:95
-warn @ LogUtils.js:16
-(anonymous) @ ResponsiveContainer.js:131
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooksAgain @ react-dom-client.development.js:8072
-renderWithHooks @ react-dom-client.development.js:7984
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
-exports.createElement @ react.development.js:1137
-(anonymous) @ ResponsiveContainer.js:213
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooksAgain @ react-dom-client.development.js:8072
-renderWithHooks @ react-dom-client.development.js:7984
-updateForwardRef @ react-dom-client.development.js:10038
-beginWork @ react-dom-client.development.js:12431
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-<ForwardRef>
-exports.jsxDEV @ react-jsx-dev-runtime.development.js:342
-Dashboard @ page.tsx:259
-react_stack_bottom_frame @ react-dom-client.development.js:27925
-renderWithHooksAgain @ react-dom-client.development.js:8072
-renderWithHooks @ react-dom-client.development.js:7984
-updateFunctionComponent @ react-dom-client.development.js:10480
-beginWork @ react-dom-client.development.js:12092
-runWithFiberInDEV @ react-dom-client.development.js:984
-performUnitOfWork @ react-dom-client.development.js:18901
-workLoopSync @ react-dom-client.development.js:18729
-renderRootSync @ react-dom-client.development.js:18710
-performWorkOnRoot @ react-dom-client.development.js:17740
-performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:20288
-performWorkUntilDeadline @ scheduler.development.js:45
-AuthContext.tsx:89 [AUTH] Session expired. Attempting token refresh...
-AuthContext.tsx:121 [AUTH] No refresh token available. Clearing user state.
+handleClose @ apolloWebSocket.ts:361
+ws.onclose @ apolloWebSocket.ts:503
+apolloWebSocket.ts:393 [APOLLO_WS] Reconnection disabled, not attempting to reconnect
+forward-logs-shared.ts:95 [Fast Refresh] rebuilding
+forward-logs-shared.ts:95 [Fast Refresh] done in 222ms

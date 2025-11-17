@@ -920,3 +920,64 @@
   color: hsl(var(--muted-foreground));
   font-weight: var(--font-weight-medium);
 }
+
+/* ============================================
+   APOLLO WEBSOCKET CONNECTION STATUS
+   ============================================ */
+
+.apollo-ws-status-container {
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.apollo-ws-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border: 1px solid;
+  transition: all var(--transition-base) ease;
+}
+
+.apollo-ws-status--connecting {
+  background-color: hsl(var(--warning) / 0.1);
+  border-color: hsl(var(--warning) / 0.3);
+  color: hsl(var(--warning));
+}
+
+.apollo-ws-status--connected {
+  background-color: hsl(var(--success) / 0.1);
+  border-color: hsl(var(--success) / 0.3);
+  color: hsl(var(--success));
+}
+
+.apollo-ws-status--disconnected {
+  background-color: hsl(var(--muted) / 0.3);
+  border-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+
+.apollo-ws-status--error {
+  background-color: hsl(var(--error) / 0.1);
+  border-color: hsl(var(--error) / 0.3);
+  color: hsl(var(--error));
+}
+
+.apollo-ws-status-icon {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.apollo-ws-status-label {
+  font-size: var(--font-size-sm);
+}
+
+.apollo-ws-status-reconnect {
+  margin-left: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: var(--font-size-xs);
+}

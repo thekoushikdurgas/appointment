@@ -5026,7 +5026,7 @@
 	"variable": [
 		{
 			"key": "baseHost",
-			"value": "http://54.87.173.234",
+			"value": "http://54.87.173.234:8000",
 			"description": "Default FastAPI server origin."
 		},
 		{

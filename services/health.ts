@@ -32,7 +32,7 @@ export interface HealthCheckResult {
  * Get the base host URL (without API version prefix)
  */
 const getBaseHost = (): string => {
-  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234';
+  const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://54.87.173.234:8000';
   return backendUrl;
 };
 
