@@ -52,13 +52,13 @@ cd "$APP_DIR"
 
 print_status "Working directory: $APP_DIR"
 
-# Check if .env.production exists
-if [ ! -f ".env.production" ]; then
-    print_error ".env.production file not found!"
-    print_warning "Please create .env.production file with your production environment variables."
-    print_warning "You can use .env.production.example as a template."
-    exit 1
-fi
+# # Check if .env.production exists
+# if [ ! -f ".env.production" ]; then
+#     print_error ".env.production file not found!"
+#     print_warning "Please create .env.production file with your production environment variables."
+#     print_warning "You can use .env.production.example as a template."
+#     exit 1
+# fi
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
