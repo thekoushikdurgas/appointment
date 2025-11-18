@@ -5,7 +5,7 @@ import { Order } from '@/types/index';
 import { MOCK_ORDERS } from '@utils/constants';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
-import { OrdersIcon, UsersIcon, TagIcon, CalendarIcon, DollarIcon, CheckIcon, ClockIcon, XIcon } from '@components/icons/IconComponents';
+import { OrdersIcon, UsersIcon, TagIcon, CalendarIcon, DollarIcon, CheckIcon, ClockIcon, XIcon } from '@components/icons';
 
 const StatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => {
   const statusConfig = {

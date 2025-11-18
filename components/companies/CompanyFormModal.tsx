@@ -13,7 +13,7 @@ import { Modal } from '@components/ui/Modal';
 import { Input } from '@components/ui/Input';
 import { Textarea } from '@components/ui/Textarea';
 import { Button } from '@components/ui/Button';
-import { SaveIcon, CancelIcon } from '@components/icons/IconComponents';
+import { SaveIcon, CancelIcon } from '@components/icons';
 
 interface CompanyFormModalProps {
   isOpen: boolean;

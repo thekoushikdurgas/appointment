@@ -9,7 +9,7 @@ import { Tooltip } from '@components/ui/Tooltip';
 import { CollapsibleSection } from '@components/ui/CollapsibleSection';
 import { BottomSheet } from '@components/ui/BottomSheet';
 import { FullScreenOverlay } from '@components/ui/FullScreenOverlay';
-import { CreditCardIcon, CheckIcon, DollarIcon, PlansIcon, StarIcon, XMarkIcon, SparklesIcon } from '@components/icons/IconComponents';
+import { CreditCardIcon, CheckIcon, DollarIcon, PlansIcon, StarIcon, XMarkIcon, SparklesIcon } from '@components/icons';
 
 const ConfirmationModal: React.FC<{
   plan: Plan | null;

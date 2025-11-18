@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { ChevronUpIcon, ChevronDownIcon } from '@components/icons/IconComponents';
+import { ChevronUpIcon, ChevronDownIcon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 
 interface FilterDebugPanelProps {

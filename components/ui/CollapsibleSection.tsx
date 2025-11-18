@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDownIcon } from '@components/icons/IconComponents';
+import { ChevronDownIcon } from '@components/icons';
 
 export interface CollapsibleSectionProps {
   title: string;

@@ -13,7 +13,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@comp
 import { CollapsibleSection } from '@components/ui/CollapsibleSection';
 import { Tooltip } from '@components/ui/Tooltip';
 import { BottomSheet } from '@components/ui/BottomSheet';
-import { UploadIcon, UsersIcon, IdentificationIcon, GlobeAltIcon, SaveIcon, AlertTriangleIcon, SuccessIcon, MailIcon, BriefcaseIcon, ShieldCheckIcon } from '@components/icons/IconComponents';
+import { UploadIcon, UsersIcon, IdentificationIcon, GlobeAltIcon, SaveIcon, AlertTriangleIcon, SuccessIcon, MailIcon, BriefcaseIcon, ShieldCheckIcon } from '@components/icons';
 
 const RoleBadge: React.FC<{ role: User['role'] }> = ({ role }) => {
   const roleConfig = {

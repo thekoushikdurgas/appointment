@@ -30,7 +30,7 @@ import {
   CalendarIcon,
   DownloadIcon,
   CheckIcon,
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { useDebounce } from '@hooks/useDebounce';
 import {
   fetchCompanies,

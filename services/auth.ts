@@ -26,13 +26,13 @@ import {
   setHybridStorage,
   removeHybridStorage,
 } from "@utils/cookies";
-import { axiosRequest, axiosRequestWithErrorHandling, axiosAuthenticatedRequest } from "@utils/axiosRequest";
+import { axiosRequest, axiosRequestWithErrorHandling, axiosAuthenticatedRequest } from "@utils/request";
 import {
   parseApiError,
   parseExceptionError,
   formatErrorMessage,
   ParsedError,
-} from "@utils/errorHandler";
+} from "@utils/error";
 
 // Token storage keys
 const TOKEN_KEY = "auth_token";

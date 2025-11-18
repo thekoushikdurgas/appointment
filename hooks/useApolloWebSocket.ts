@@ -82,28 +82,43 @@ export const useApolloWebSocket = (autoConnect: boolean = true): UseApolloWebSoc
   const isMountedRef = useRef(true);
   const connectionAttemptRef = useRef<Promise<void> | null>(null);
 
-  // Initialize client
+  // Initialize client and subscribe to state changes
   useEffect(() => {
     isMountedRef.current = true;
     
+    // Always get the client instance (singleton)
     if (!clientRef.current) {
       clientRef.current = getApolloWebSocketClient();
-      
-      // Subscribe to connection state changes
-      unsubscribeRef.current = clientRef.current.onConnectionStateChange((state) => {
-        if (isMountedRef.current) {
-          setConnectionState(state);
-        }
-      });
-
-      // Set initial state
-      setConnectionState(clientRef.current.getConnectionState());
     }
+    
+    // Always subscribe to connection state changes on mount
+    // This is critical for React Strict Mode where components unmount/remount
+    // We need to re-register the callback even if the client already exists
+    if (unsubscribeRef.current) {
+      // Clean up any existing subscription first
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+    
+    // Subscribe to connection state changes
+    // Note: onConnectionStateChange will immediately call the callback with current state
+    // This ensures synchronization even if WebSocket connects before subscription
+    unsubscribeRef.current = clientRef.current.onConnectionStateChange((state) => {
+      if (isMountedRef.current) {
+        console.log('[APOLLO_WS_HOOK] Connection state changed:', state);
+        setConnectionState(state);
+      }
+    });
 
     return () => {
       // Cleanup on unmount
+      // Note: In React Strict Mode, this cleanup runs before remount
+      // We mark as unmounted first to prevent state updates
       isMountedRef.current = false;
+      
       if (unsubscribeRef.current) {
+        // Unsubscribe immediately - the callback will be re-registered on remount
+        // and will immediately receive the current state, so we don't lose state updates
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }

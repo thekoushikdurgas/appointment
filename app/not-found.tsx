@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LogoIcon, HomeIcon, ArrowLeftIcon } from '@components/icons/IconComponents';
+import { LogoIcon, HomeIcon, ArrowLeftIcon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 import { Card } from '@components/ui/Card';
 

@@ -240,13 +240,27 @@ export class ApolloWebSocketClient {
    */
   private setConnectionState(state: WebSocketConnectionState) {
     if (this.connectionState !== state) {
+      const previousState = this.connectionState;
       this.connectionState = state;
+      console.log(`[APOLLO_WS] Connection state changed: ${previousState} -> ${state}`, {
+        previousState,
+        newState: state,
+        callbackCount: this.connectionStateCallbacks.size,
+        timestamp: new Date().toISOString(),
+      });
+      
       this.connectionStateCallbacks.forEach(callback => {
         try {
           callback(state);
         } catch (error) {
           console.error('[APOLLO_WS] Error in connection state callback:', error);
         }
+      });
+    } else {
+      // Log when state is set to the same value (for debugging)
+      console.debug(`[APOLLO_WS] Connection state unchanged: ${state}`, {
+        state,
+        callbackCount: this.connectionStateCallbacks.size,
       });
     }
   }
@@ -411,10 +425,22 @@ export class ApolloWebSocketClient {
     console.log('[APOLLO_WS] WebSocket connected successfully', {
       timestamp: new Date().toISOString(),
       reconnectAttempts: this.reconnectAttempts,
+      readyState: this.ws?.readyState,
     });
-    this.setConnectionState('connected');
-    this.reconnectAttempts = 0;
-    this.reconnectDelay = 1000; // Reset delay
+    
+    // Verify WebSocket is actually open before setting state
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.setConnectionState('connected');
+      this.reconnectAttempts = 0;
+      this.reconnectDelay = 1000; // Reset delay
+    } else {
+      console.warn('[APOLLO_WS] WebSocket onopen fired but readyState is not OPEN', {
+        readyState: this.ws?.readyState,
+        expectedState: WebSocket.OPEN,
+      });
+      // Still set state to connected as the event fired, but log the discrepancy
+      this.setConnectionState('connected');
+    }
   };
 
   /**
@@ -600,7 +626,7 @@ export class ApolloWebSocketClient {
   private sendRequest<T>(
     action: ApolloWebSocketAction,
     data: Record<string, any>,
-    timeout: number = 60000
+    timeout: number = 3600000
   ): Promise<ApolloWebSocketResponse<T>> {
     return new Promise((resolve, reject) => {
       // Ensure connection
@@ -766,11 +792,33 @@ export class ApolloWebSocketClient {
    * Subscribe to connection state changes
    */
   onConnectionStateChange(callback: ConnectionStateCallback): () => void {
+    // Add callback to the set
     this.connectionStateCallbacks.add(callback);
+    
+    console.log('[APOLLO_WS] Callback subscribed', {
+      callbackCount: this.connectionStateCallbacks.size,
+      currentState: this.connectionState,
+      timestamp: new Date().toISOString(),
+    });
+    
+    // Immediately call callback with current state to ensure synchronization
+    // This is critical for cases where the WebSocket connects before the callback is registered
+    // or when React Strict Mode causes remounts
+    try {
+      callback(this.connectionState);
+    } catch (error) {
+      console.error('[APOLLO_WS] Error calling connection state callback on subscribe:', error);
+    }
     
     // Return unsubscribe function
     return () => {
-      this.connectionStateCallbacks.delete(callback);
+      const removed = this.connectionStateCallbacks.delete(callback);
+      console.log('[APOLLO_WS] Callback unsubscribed', {
+        removed,
+        remainingCallbacks: this.connectionStateCallbacks.size,
+        currentState: this.connectionState,
+        timestamp: new Date().toISOString(),
+      });
     };
   }
 }

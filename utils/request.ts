@@ -2,9 +2,17 @@
  * Request Utilities
  * 
  * Standardized request wrapper with retry logic, timeout handling, and interceptors
+ * 
+ * @deprecated This file is kept for backward compatibility.
+ * The new modular structure is in './request/index'.
+ * This file re-exports from the new module to maintain compatibility.
  */
 
-import { parseApiError, parseExceptionError, ParsedError, isRetryableError } from '@utils/errorHandler';
+// Re-export everything from the new request module (Axios-based)
+export * from './request/index';
+
+// Keep the old fetch-based exports for backward compatibility
+import { parseApiError, parseExceptionError, ParsedError, isRetryableError } from '@utils/error';
 
 /**
  * Request options

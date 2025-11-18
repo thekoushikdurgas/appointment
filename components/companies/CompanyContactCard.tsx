@@ -15,7 +15,7 @@ import {
   UserIcon,
   BriefcaseIcon,
   EyeIcon
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { Button } from '@components/ui/Button';
 import { Badge } from '@components/ui/Badge';
 import { Tooltip } from '@components/ui/Tooltip';

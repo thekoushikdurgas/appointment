@@ -14,7 +14,7 @@ import {
   FilterIcon,
   ChevronDownIcon,
   ChevronUpIcon
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';

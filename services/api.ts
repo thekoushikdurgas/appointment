@@ -1,5 +1,5 @@
-import { axiosRequest } from '@utils/axiosRequest';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
+import { axiosRequest } from '@utils/request';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/error';
 import { API_BASE_URL as API_BASE_URL_CONFIG } from '@utils/config';
 
 /**

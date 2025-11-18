@@ -16,7 +16,7 @@ import { Input } from '@components/ui/Input';
 import { 
   ContactsIcon, UsersIcon, PlansIcon, TrendingUpIcon, 
   DollarIcon, DownloadIcon, RefreshIcon, SearchIcon 
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { 
   fetchAnalyticsStats, 
   fetchContactsByEmailVerification, 

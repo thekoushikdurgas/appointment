@@ -23,7 +23,7 @@ const getApiBaseUrl = (): string => {
  * Default timeout (60 seconds)
  * Increased timeout for slow endpoints like count queries
  */
-const DEFAULT_TIMEOUT = 60000;
+const DEFAULT_TIMEOUT = 3600000;
 const SLOW_ENDPOINT_TIMEOUT = 120000; // 2 minutes for slow endpoints
 
 /**

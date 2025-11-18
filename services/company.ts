@@ -42,7 +42,7 @@ import {
   FetchCompanyContactAttributeParams,
 } from '@/types/company';
 import { API_BASE_URL } from './api';
-import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { axiosAuthenticatedRequest } from '@utils/request';
 import { NEXT_PUBLIC_COMPANIES_WRITE_KEY } from '@utils/config';
 import {
   parseApiError,
@@ -50,7 +50,7 @@ import {
   formatErrorMessage,
   formatErrorForLogging,
   ParsedError,
-} from '../utils/errorHandler';
+} from '@utils/error';
 
 // Simple in-memory cache for count requests (5 minute TTL)
 interface CacheEntry {

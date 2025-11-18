@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@components/icons/IconComponents';
+import { ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon } from '@components/icons';
 
 export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
   responsive?: boolean;

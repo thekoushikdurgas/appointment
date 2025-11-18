@@ -6,13 +6,13 @@ import { User } from '@/types/index';
 import { useAuth } from '@hooks/useAuth';
 import { authenticatedFetch } from '@services/auth';
 import { API_BASE_URL } from '@services/api';
-import { parseApiError, formatErrorMessage } from '@utils/errorHandler';
+import { parseApiError, formatErrorMessage } from '@utils/error';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Select } from '@components/ui/Select';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
-import { UsersIcon, MailIcon, CheckIcon, XIcon, PlusIcon, XMarkIcon, AlertTriangleIcon, SuccessIcon, ClockIcon } from '@components/icons/IconComponents';
+import { UsersIcon, MailIcon, CheckIcon, XIcon, PlusIcon, XMarkIcon, AlertTriangleIcon, SuccessIcon, ClockIcon } from '@components/icons';
 
 const RoleBadge: React.FC<{ role: User['role'] }> = ({ role }) => {
   return (

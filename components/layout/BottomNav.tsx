@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DashboardIcon, ContactsIcon, BuildingIcon, SparklesIcon, PlansIcon, SettingsIcon } from '@components/icons/IconComponents';
+import { DashboardIcon, ContactsIcon, BuildingIcon, SparklesIcon, PlansIcon, SettingsIcon } from '@components/icons';
 
 interface NavItem {
   path: string;

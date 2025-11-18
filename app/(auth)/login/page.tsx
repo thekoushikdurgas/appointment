@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@hooks/useAuth';
 import { useAuthSwipe } from '@hooks/useAuthSwipe';
-import { LogoIcon, AlertTriangleIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '@components/icons/IconComponents';
+import { LogoIcon, AlertTriangleIcon, MailIcon, LockIcon, EyeIcon, EyeOffIcon } from '@components/icons';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@components/ui/Input';

@@ -1,6 +1,6 @@
-import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { axiosAuthenticatedRequest } from '@utils/request';
 import { API_BASE_URL } from './api';
-import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/errorHandler';
+import { parseApiError, parseExceptionError, formatErrorMessage, ParsedError } from '@utils/error';
 
 /**
  * Import job status values

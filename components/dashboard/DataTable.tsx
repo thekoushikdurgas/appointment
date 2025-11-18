@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card } from '@components/ui/Card';
-import { SortIndicator, CheckIcon } from '@components/icons/IconComponents';
+import { SortIndicator, CheckIcon } from '@components/icons';
 
 export interface Column<T> {
   key: string;

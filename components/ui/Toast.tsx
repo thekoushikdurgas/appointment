@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2Icon, WarningIcon, XCircleIcon, InfoCircleIcon, CloseButtonIcon } from '@components/icons/IconComponents';
+import { CheckCircle2Icon, WarningIcon, XCircleIcon, InfoCircleIcon, CloseButtonIcon } from '@components/icons';
 
 export interface ToastProps {
   id: string;

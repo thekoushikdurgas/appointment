@@ -20,13 +20,13 @@
  */
 
 import { API_BASE_URL } from './api';
-import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { axiosAuthenticatedRequest } from '@utils/request';
 import {
   parseApiError,
   parseExceptionError,
   formatErrorMessage,
   ParsedError,
-} from '../utils/errorHandler';
+} from '@utils/error';
 import {
   ApolloUrlAnalysisResponse,
   ApolloContactsResponse,

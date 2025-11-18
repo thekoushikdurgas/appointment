@@ -27,7 +27,7 @@ import {
   PhoneIcon,
   EyeIcon,
   CheckIcon,
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { useDebounce } from '@hooks/useDebounce';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
@@ -39,7 +39,7 @@ import { CompanyContactFilterDrawer } from './CompanyContactFilterDrawer';
 import { CompanyContactsSkeletonLoader, CompanyContactsFullSkeleton } from './CompanyContactsSkeletonLoader';
 import { CompanyContactsEmptyState, CompanyContactsErrorState } from './CompanyContactsEmptyState';
 import { ExportModal } from '@components/contacts/ExportModal';
-import { DownloadIcon } from '@components/icons/IconComponents';
+import { DownloadIcon } from '@components/icons';
 
 interface CompanyContactsSectionProps {
   companyUuid: string;

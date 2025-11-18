@@ -8,7 +8,7 @@
 
 import React from 'react';
 import { Button } from '@components/ui/Button';
-import { SearchIcon, AlertTriangleIcon, InfoIcon, GlobeAltIcon } from '@components/icons/IconComponents';
+import { SearchIcon, AlertTriangleIcon, InfoIcon, GlobeAltIcon } from '@components/icons';
 
 export interface ApolloEmptyStateProps {
   variant: 'no-analysis' | 'no-contacts' | 'error';

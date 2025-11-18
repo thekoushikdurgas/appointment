@@ -1,6 +1,6 @@
-import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
+import { axiosAuthenticatedRequest } from '@utils/request';
 import { API_BASE_URL } from './api';
-import { parseApiError } from '@utils/errorHandler';
+import { parseApiError } from '@utils/error';
 import { Contact } from '@/types';
 
 export interface AnalyticsStats {

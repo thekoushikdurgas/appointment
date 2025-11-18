@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useSwipeGesture } from '@hooks/useSwipeGesture';
-import { EditIcon, TrashIcon, ArchiveIcon, CheckCircleIcon } from '@components/icons/IconComponents';
+import { EditIcon, TrashIcon, ArchiveIcon, CheckCircleIcon } from '@components/icons';
 import { Tooltip } from '@components/ui/Tooltip';
 
 interface SwipeAction {

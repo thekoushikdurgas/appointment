@@ -12,7 +12,7 @@ import {
   GlobeAltIcon,
   EditIcon,
   EyeIcon
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { Button } from '@components/ui/Button';
 import { Tooltip } from '@components/ui/Tooltip';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CheckIcon } from '@components/icons/IconComponents';
+import { CheckIcon } from '@components/icons';
 
 export interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string;

@@ -10,7 +10,7 @@ import {
   DeleteIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon, SuccessIcon, 
   ChevronUpDownIcon, XMarkIcon, CopyIcon, RegenerateIcon, EditIcon, AttachIcon,
   EmojiIcon, MicrophoneIcon, SettingsIcon, ExportIcon, ClearIcon
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { fetchContacts } from '@services/contact';
 import { getChatHistory, getChat, createChat, updateChat, deleteChat, Message, ChatHistoryItem, PaginationMetadata } from '@services/aiChat';
 import { NEXT_PUBLIC_GEMINI_API_KEY } from '@utils/config';

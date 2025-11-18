@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useTheme } from '@hooks/useTheme';
-import { SunIcon, MoonIcon, PaintBrushIcon, SparklesIcon } from '@components/icons/IconComponents';
+import { SunIcon, MoonIcon, PaintBrushIcon, SparklesIcon } from '@components/icons';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
 import { Tooltip } from '@components/ui/Tooltip';

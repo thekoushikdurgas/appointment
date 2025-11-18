@@ -11,7 +11,7 @@ import {
   AlertTriangleIcon,
   XMarkIcon,
   HistoryIcon
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { useRouter } from 'next/navigation';
 import { 
   createContactExport, 

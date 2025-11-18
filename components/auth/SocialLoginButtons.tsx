@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { GoogleIcon, FacebookIcon, GithubIcon, AppleIcon, TwitterIcon } from '@components/icons/IconComponents';
+import { GoogleIcon, FacebookIcon, GithubIcon, AppleIcon, TwitterIcon } from '@components/icons';
 
 interface SocialButton {
   name: string;

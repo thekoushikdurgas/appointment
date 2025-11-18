@@ -8,7 +8,7 @@
 'use client';
 
 import React from 'react';
-import { BuildingIcon, PlusIcon, SearchIcon, FilterIcon } from '@components/icons/IconComponents';
+import { BuildingIcon, PlusIcon, SearchIcon, FilterIcon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 
 interface CompanyEmptyStateProps {

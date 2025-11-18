@@ -3,13 +3,13 @@
 import React, { useState, useMemo } from 'react';
 import { authenticatedFetch } from '@services/auth';
 import { API_BASE_URL } from '@services/api';
-import { parseApiError, formatErrorMessage } from '@utils/errorHandler';
+import { parseApiError, formatErrorMessage } from '@utils/error';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@components/ui/Card';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
 import { Tooltip } from '@components/ui/Tooltip';
 import { CollapsibleSection } from '@components/ui/CollapsibleSection';
-import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, SuccessIcon, CheckCircleIcon } from '@components/icons/IconComponents';
+import { ShieldCheckIcon, LockIcon, AlertTriangleIcon, SuccessIcon, CheckCircleIcon } from '@components/icons';
 
 interface FormErrors {
   password?: string;

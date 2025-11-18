@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { LogoIcon, ContactsIcon, UsersIcon, DashboardIcon, UploadIcon, ShieldCheckIcon, PlansIcon, ArrowRightIcon, ChartIcon, SparklesIcon, RocketIcon, TrendingUpIcon } from '@components/icons/IconComponents';
+import { LogoIcon, ContactsIcon, UsersIcon, DashboardIcon, UploadIcon, ShieldCheckIcon, PlansIcon, ArrowRightIcon, ChartIcon, SparklesIcon, RocketIcon, TrendingUpIcon } from '@components/icons';
 import { useAuth } from '@hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import { Button } from '@components/ui/Button';

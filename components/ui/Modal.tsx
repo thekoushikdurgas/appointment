@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { CloseButtonIcon } from '@components/icons/IconComponents';
+import { CloseButtonIcon } from '@components/icons';
 
 export interface ModalProps {
   isOpen: boolean;

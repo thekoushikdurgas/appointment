@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card } from '@components/ui/Card';
 import { Button } from '@components/ui/Button';
-import { ChevronDownIcon } from '@components/icons/IconComponents';
+import { ChevronDownIcon } from '@components/icons';
 
 export interface FilterOption {
   id: string;

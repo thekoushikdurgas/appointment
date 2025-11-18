@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useSwipeGesture } from '@hooks/useSwipeGesture';
-import { XMarkIcon, FilterIcon } from '@components/icons/IconComponents';
+import { XMarkIcon, FilterIcon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 
 interface MobileFilterDrawerProps {

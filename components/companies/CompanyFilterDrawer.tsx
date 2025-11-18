@@ -11,7 +11,7 @@ import React from 'react';
 import { CompanyFilters } from '@/types/company';
 import { Input } from '@components/ui/Input';
 import { Button } from '@components/ui/Button';
-import { XMarkIcon, FilterIcon } from '@components/icons/IconComponents';
+import { XMarkIcon, FilterIcon } from '@components/icons';
 
 interface CompanyFilterDrawerProps {
   isOpen: boolean;

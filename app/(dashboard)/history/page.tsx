@@ -6,7 +6,7 @@ import { listExports, downloadExport, ExportListItem } from '@services/export';
 import { Card, CardContent } from '@components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@components/ui/Table';
 import { Button } from '@components/ui/Button';
-import { HistoryIcon, TableIcon, CalendarIcon, DownloadIcon, CheckIcon, ClockIcon, ErrorIcon, LoadingSpinner, RefreshIcon, ContactsIcon, BuildingIcon, SearchIcon } from '@components/icons/IconComponents';
+import { HistoryIcon, TableIcon, CalendarIcon, DownloadIcon, CheckIcon, ClockIcon, ErrorIcon, LoadingSpinner, RefreshIcon, ContactsIcon, BuildingIcon, SearchIcon } from '@components/icons';
 import { Toast, ToastContainer, ToastProps } from '@components/ui/Toast';
 import { Input } from '@components/ui/Input';
 import { Badge } from '@components/ui/Badge';

@@ -7,6 +7,7 @@
 
 // API Base URL (without protocol - protocol will be added when constructing URLs)
 export const API_BASE_URL = '54.87.173.234:8000';
+// export const API_BASE_URL = '127.0.0.1:8000';
 
 // Contacts Write Key
 export const NEXT_PUBLIC_CONTACTS_WRITE_KEY = 'demo-write-key';

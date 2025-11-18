@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronDownIcon, ErrorIconSmall, InfoIconSmall } from '@components/icons/IconComponents';
+import { ChevronDownIcon, ErrorIconSmall, InfoIconSmall } from '@components/icons';
 import { Tooltip } from './Tooltip';
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {

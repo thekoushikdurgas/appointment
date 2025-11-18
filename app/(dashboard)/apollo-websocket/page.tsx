@@ -21,7 +21,7 @@ import {
   PhoneIcon,
   GlobeAltIcon,
   EditIcon,
-} from '@components/icons/IconComponents';
+} from '@components/icons';
 import { Input } from '@components/ui/Input';
 import { Textarea } from '@components/ui/Textarea';
 import { Button } from '@components/ui/Button';

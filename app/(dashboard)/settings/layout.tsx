@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IdentificationIcon, PaintBrushIcon, CreditCardIcon, UsersIcon, ShieldCheckIcon, BellIcon, SettingsIcon, ArrowDownIcon, ChevronRightIcon, LoadingSpinner } from '@components/icons/IconComponents';
+import { IdentificationIcon, PaintBrushIcon, CreditCardIcon, UsersIcon, ShieldCheckIcon, BellIcon, SettingsIcon, ArrowDownIcon, ChevronRightIcon, LoadingSpinner } from '@components/icons';
 import { Card } from '@components/ui/Card';
 import { ScrollProgress, useScrollProgress } from '@components/ui/ScrollProgress';
 import { Tooltip } from '@components/ui/Tooltip';

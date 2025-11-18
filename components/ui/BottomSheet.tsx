@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { XMarkIcon } from '@components/icons/IconComponents';
+import { XMarkIcon } from '@components/icons';
 
 export interface BottomSheetProps {
   isOpen: boolean;

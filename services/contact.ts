@@ -18,8 +18,8 @@
 
 import { Contact, ContactCreate } from '@/types/index';
 import { API_BASE_URL } from './api';
-import { axiosAuthenticatedRequest } from '@utils/axiosRequest';
-import { parseApiError, parseExceptionError, formatErrorMessage, formatErrorForLogging, ParsedError } from '@utils/errorHandler';
+import { axiosAuthenticatedRequest } from '@utils/request';
+import { parseApiError, parseExceptionError, formatErrorMessage, formatErrorForLogging, ParsedError } from '@utils/error';
 import { NEXT_PUBLIC_CONTACTS_WRITE_KEY } from '@utils/config';
 
 // Simple in-memory cache for count requests (5 minute TTL)

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { XMarkIcon, ExclamationTriangleIcon } from '@components/icons/IconComponents';
+import { XMarkIcon, ExclamationTriangleIcon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 
 interface ConfirmDialogProps {

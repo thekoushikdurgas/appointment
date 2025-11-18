@@ -4,7 +4,7 @@ import { Input } from '@components/ui/Input';
 import { Textarea } from '@components/ui/Textarea';
 import { Select } from '@components/ui/Select';
 import { Button } from '@components/ui/Button';
-import { XMarkIcon, CheckIcon } from '@components/icons/IconComponents';
+import { XMarkIcon, CheckIcon } from '@components/icons';
 
 interface ContactEditFormProps {
   contact: Contact;

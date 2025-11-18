@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@hooks/useAuth';
 import Sidebar from '@components/layout/Sidebar';
 import BottomNav from '@components/layout/BottomNav';
-import { MenuIcon } from '@components/icons/IconComponents';
+import { MenuIcon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 
 export default function DashboardLayout({

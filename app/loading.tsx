@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { LogoIcon } from '@components/icons/IconComponents';
+import { LogoIcon } from '@components/icons';
 
 const LoadingPage: React.FC = () => {
   return (
