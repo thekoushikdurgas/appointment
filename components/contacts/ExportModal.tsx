@@ -43,7 +43,7 @@ export interface ExportModalProps {
   apolloParams?: ApolloContactsUuidsParams; // Apollo URL parameters (include/exclude company names)
 }
 
-type ExportStatus = 'idle' | 'fetching' | 'creating' | 'processing' | 'completed' | 'failed';
+type ExportStatus = 'idle' | 'creating' | 'processing' | 'completed' | 'failed';
 
 type ExportResponse = CreateContactExportResponse | CreateCompanyExportResponse;
 
@@ -69,26 +69,30 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [toasts, setToasts] = useState<ToastProps[]>([]);
   const [uuidsToExport, setUuidsToExport] = useState<string[]>([]);
 
-  // Reset state when modal opens/closes
+  // Reset state when modal opens/closes, but only if export is not in progress
   useEffect(() => {
     if (!isOpen) {
-      setExportStatus('idle');
-      setCurrentExport(null);
-      setExportError(null);
-      setExportMode('selected');
-      setSpecifiedRows('');
-      setUuidsToExport([]);
+      // Only reset if export is not in progress (idle or failed states)
+      // Don't reset if export is creating, processing, or completed (background export continues)
+      if (exportStatus === 'idle' || exportStatus === 'failed') {
+        setExportStatus('idle');
+        setCurrentExport(null);
+        setExportError(null);
+        setExportMode('selected');
+        setSpecifiedRows('');
+        setUuidsToExport([]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, exportStatus]);
 
   const showToast = (title: string, description?: string, variant: ToastProps['variant'] = 'default') => {
-    const id = `toast-${Date.now()}`;
+    const id = `toast-${Date.now()}-${Math.random()}`;
     const newToast: ToastProps = {
       id,
       title,
       description,
       variant,
-      duration: variant === 'error' ? 7000 : 5000,
+      duration: variant === 'error' ? 7000 : variant === 'info' ? 6000 : 5000,
       onClose: (toastId) => {
         setToasts(prev => prev.filter(t => t.id !== toastId));
       },
@@ -113,8 +117,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           throw new Error('Please enter a valid number of rows');
         }
         
-        setExportStatus('fetching');
-        
         // Use Apollo URL if provided, otherwise use regular filters
         if (apolloUrl && exportType === 'contacts') {
           const result = await getContactUuidsFromApolloUrl(apolloUrl, {
@@ -137,8 +139,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }
       
       case 'all': {
-        setExportStatus('fetching');
-        
         // Use Apollo URL if provided, otherwise use regular filters
         if (apolloUrl && exportType === 'contacts') {
           const result = await getContactUuidsFromApolloUrl(apolloUrl, apolloParams);
@@ -163,24 +163,56 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handleCreateExport = async () => {
+    const entityName = getEntityName();
+    const entityNamePlural = getEntityNamePlural();
+    
+    // Close modal immediately after starting export
+    onClose();
+    
     try {
-      // Get UUIDs based on selected mode
+      // Check if we need to fetch UUIDs (for specified_rows or all modes)
+      const needsFetching = exportMode === 'specified_rows' || exportMode === 'all';
+      
+      // Show toast notification when fetching starts
+      if (needsFetching) {
+        showToast(
+          `Fetching ${entityNamePlural}...`,
+          `Please wait while we gather the ${entityNamePlural} to export.`,
+          'info'
+        );
+      }
+      
+      // Get UUIDs based on selected mode (this will fetch in background for specified_rows/all)
       const uuids = await getUuidsForMode(exportMode);
       
       if (uuids.length === 0) {
-        const entityName = exportType === 'contacts' ? 'contacts' : 'companies';
         showToast(
-          `No ${entityName} to export`, 
-          `No ${entityName} match the selected export criteria`, 
+          `No ${entityNamePlural} to export`, 
+          `No ${entityNamePlural} match the selected export criteria`, 
           'error'
         );
-        setExportStatus('idle');
         return;
+      }
+
+      // Show toast when fetching completes
+      if (needsFetching) {
+        showToast(
+          `Found ${uuids.length.toLocaleString()} ${entityNamePlural} to export`,
+          `Proceeding with export creation...`,
+          'success'
+        );
       }
 
       setUuidsToExport(uuids);
       setExportStatus('creating');
       setExportError(null);
+
+      // Show toast for export creation
+      showToast(
+        'Creating export...',
+        'Please wait while we prepare your export.',
+        'info'
+      );
 
       // Create export based on type
       const result = exportType === 'contacts'
@@ -203,6 +235,11 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         } else {
           // Start polling for status
           setExportStatus('processing');
+          showToast(
+            'Processing export...',
+            'This may take a few moments.',
+            'info'
+          );
           pollExportStatus(result.data.export_id);
         }
       } else {
@@ -229,6 +266,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         // In a real implementation, you would check the status here
         // For now, we'll allow the user to try downloading
         setExportStatus('completed');
+        showToast(
+          'Export Ready',
+          navigateToHistory 
+            ? 'Your export is ready. You can download it from the History page.' 
+            : 'Your export is ready for download',
+          'success'
+        );
       }
     }, 3000);
   };
@@ -348,14 +392,13 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         isOpen={isOpen}
         onClose={onClose}
         title={`Export ${getEntityNameCapitalized()}`}
-        description={exportStatus === 'idle' ? getExportDescription() : undefined}
+        description={getExportDescription()}
         size="md"
         variant="glass"
       >
         <div className="export-modal-content">
-          {/* Initial State */}
-          {exportStatus === 'idle' && (
-            <div>
+          {/* Export Options - Always show this state */}
+          <div>
               <div className="export-modal-section">
                 {/* Export Mode Selection */}
                 <div className="export-modal-mode-selection">
@@ -461,126 +504,6 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                 </Button>
               </div>
             </div>
-          )}
-
-          {/* Fetching UUIDs State */}
-          {exportStatus === 'fetching' && (
-            <div className="export-modal-center">
-              <div className="export-modal-spinner-wrapper">
-                <LoadingSpinner size="lg" />
-              </div>
-              <p className="export-modal-text--bold">Fetching {getEntityNamePlural()}...</p>
-              <p className="export-modal-text--small">
-                Please wait while we gather the {getEntityNamePlural()} to export.
-              </p>
-            </div>
-          )}
-
-          {/* Creating State */}
-          {exportStatus === 'creating' && (
-            <div className="export-modal-center">
-              <div className="export-modal-spinner-wrapper">
-                <LoadingSpinner size="lg" />
-              </div>
-              <p className="export-modal-text--bold">Creating export...</p>
-              <p className="export-modal-text--small">
-                Please wait while we prepare your export.
-              </p>
-            </div>
-          )}
-
-          {/* Processing State */}
-          {exportStatus === 'processing' && currentExport && (
-            <div className="export-modal-center">
-              <div className="export-modal-spinner-wrapper">
-                <LoadingSpinner size="lg" />
-              </div>
-              <p className="export-modal-text--bold">Processing export...</p>
-              <p className="export-modal-text--small export-modal-text">
-                Status: <strong>{currentExport.status}</strong>
-              </p>
-              <p className="export-modal-text--small">
-                This may take a few moments.
-              </p>
-            </div>
-          )}
-
-          {/* Completed State */}
-          {exportStatus === 'completed' && currentExport && (
-            <div>
-              <div className="export-modal-status-card export-modal-status-card--success">
-                <SuccessIcon className="export-modal-icon export-modal-icon--success" />
-                <div className="export-modal-status-card-content">
-                  <p className="export-modal-status-card-title">Export Ready!</p>
-                  <p className="export-modal-status-card-message">
-                    Your export is ready for download.
-                  </p>
-                </div>
-              </div>
-
-              <div className="export-modal-info">
-                <div className="export-modal-info-item">
-                  <strong>Export ID:</strong> {currentExport.export_id}
-                </div>
-                <div className="export-modal-info-item">
-                  <strong>{getEntityNameCapitalized()}:</strong> {
-                    exportType === 'contacts' 
-                      ? (currentExport as CreateContactExportResponse).contact_count
-                      : (currentExport as CreateCompanyExportResponse).company_count
-                  }
-                </div>
-                <div className="export-modal-info-item export-modal-info-item--muted">
-                  <strong>Expires:</strong> {formatExpirationDate(currentExport.expires_at)}
-                </div>
-              </div>
-
-              <div className="export-modal-actions">
-                <Button variant="outline" onClick={onClose}>
-                  Close
-                </Button>
-                {navigateToHistory ? (
-                  <Button 
-                    variant="primary" 
-                    onClick={() => {
-                      onClose();
-                      router.push('/history');
-                    }} 
-                    leftIcon={<HistoryIcon />}
-                  >
-                    View in History
-                  </Button>
-                ) : (
-                  <Button variant="primary" onClick={handleDownload} leftIcon={<DownloadIcon />}>
-                    Download CSV
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Failed State */}
-          {exportStatus === 'failed' && (
-            <div>
-              <div className="export-modal-status-card export-modal-status-card--error">
-                <AlertTriangleIcon className="export-modal-icon export-modal-icon--error" />
-                <div className="export-modal-status-card-content">
-                  <p className="export-modal-status-card-title">Export Failed</p>
-                  <p className="export-modal-status-card-message">
-                    {exportError || 'An error occurred while creating the export.'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="export-modal-actions">
-                <Button variant="outline" onClick={onClose}>
-                  Close
-                </Button>
-                <Button variant="primary" onClick={handleCreateExport}>
-                  Try Again
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </Modal>
     </>

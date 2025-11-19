@@ -464,54 +464,13 @@ const FilterSidebar: React.FC<{
     onAddExclusionValue: (name: keyof Filters, value: string) => void;
     onRemoveExclusionValue: (name: keyof Filters, value: string) => void;
     clearFilters: () => void;
-    uniqueIndustries: string[];
     uniqueTitles: string[];
-    uniqueCompanies: string[];
     isLoadingTitles: boolean;
-    isLoadingCompanies: boolean;
-}> = ({ filters, onFilterChange, onAddExclusionValue, onRemoveExclusionValue, clearFilters, uniqueIndustries, uniqueTitles, uniqueCompanies, isLoadingTitles, isLoadingCompanies }) => {
-    const [openSections, setOpenSections] = useState<string[]>(['status', 'company']);
-
-    const toggleSection = (section: string) => {
-        setOpenSections(prev => 
-            prev.includes(section) ? prev.filter(s => s !== section) : [...prev, section]
-        );
-    };
-
-    const AccordionSection: React.FC<{ title: string; id: string; children: React.ReactNode }> = ({ title, id, children }) => {
-        const isOpen = openSections.includes(id);
-        return (
-            <div className="filter-accordion-section">
-                <button 
-                    onClick={() => toggleSection(id)} 
-                    className="filter-accordion-button" 
-                    aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${title} section`} 
-                    aria-expanded={isOpen ? 'true' : 'false'}
-                    title={`${isOpen ? 'Collapse' : 'Expand'} ${title} section`}
-                >
-                    <span>{title}</span>
-                    {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-                </button>
-                {isOpen && <div className="filter-accordion-content">{children}</div>}
-            </div>
-        );
-    };
-    
-    // Count active filters for badge
+}> = ({ filters, onFilterChange, onAddExclusionValue, onRemoveExclusionValue, clearFilters, uniqueTitles, isLoadingTitles }) => {
+    // Count active filters for badge - only count title filter
     const activeFilterCount = useMemo(() => {
-        let count = 0;
-        Object.entries(filters).forEach(([key, value]) => {
-            if (key === 'status' || key === 'emailStatus' || key === 'industry') {
-                if (value && value !== 'All') count++;
-            } else if (Array.isArray(value)) {
-                // Count exclusion filters (non-empty arrays)
-                if (value.length > 0) count++;
-            } else if (value && value !== '') {
-                count++;
-            }
-        });
-        return count;
-    }, [filters]);
+        return filters.title && filters.title !== '' ? 1 : 0;
+    }, [filters.title]);
     
     return (
         <aside className="filter-sidebar">
@@ -535,323 +494,28 @@ const FilterSidebar: React.FC<{
                 </Button>
             </div>
             <div className="filter-sidebar-content">
-                <AccordionSection title="Status & Stage" id="status">
-                    <div>
-                        <label htmlFor="status" className="form-label">Contact Status (Stage)</label>
-                        <select id="status" name="status" value={filters.status} onChange={onFilterChange} className="select">
-                            <option value="All">All Statuses</option>
-                            <option value="Lead">Lead</option>
-                            <option value="Customer">Customer</option>
-                            <option value="Archived">Archived</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="emailStatus" className="form-label">Email Status</label>
-                        <select id="emailStatus" name="emailStatus" value={filters.emailStatus} onChange={onFilterChange} className="select">
-                            <option value="All">All Email Statuses</option>
-                            <option value="valid">Verified</option>
-                            <option value="unknown">Unverified</option>
-                            <option value="invalid">Bounced</option>
-                        </select>
-                    </div>
-                </AccordionSection>
-                
-                <AccordionSection title="Person Information" id="person">
-                    <FilterInput label="First Name" name="first_name" value={filters.first_name} onChange={onFilterChange} placeholder="e.g. John" />
-                    <FilterInput label="Last Name" name="last_name" value={filters.last_name} onChange={onFilterChange} placeholder="e.g. Doe" />
-                    <FilterInput label="Email" name="email" value={filters.email} onChange={onFilterChange} placeholder="e.g. john@example.com" />
-                    <FilterInput label="Departments" name="departments" value={filters.departments} onChange={onFilterChange} placeholder="e.g. executive, sales" />
-                </AccordionSection>
-
-                <AccordionSection title="Phone Numbers" id="phone">
-                    <FilterInput label="Work Direct Phone" name="work_direct_phone" value={filters.work_direct_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                    <FilterInput label="Home Phone" name="home_phone" value={filters.home_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                    <FilterInput label="Mobile Phone" name="mobile_phone" value={filters.mobile_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                    <FilterInput label="Corporate Phone" name="corporate_phone" value={filters.corporate_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                    <FilterInput label="Other Phone" name="other_phone" value={filters.other_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                </AccordionSection>
-                
-                <AccordionSection title="Contact Info" id="contact">
-                    <div>
-                        <label htmlFor="title" className="form-label">Title</label>
-                        <select 
-                            id="title" 
-                            name="title" 
-                            value={filters.title} 
-                            onChange={onFilterChange} 
-                            className="select"
-                            disabled={isLoadingTitles}
-                        >
-                            <option value="">All Titles</option>
-                            {isLoadingTitles ? (
-                                <option value="" disabled>Loading titles...</option>
-                            ) : (
-                                uniqueTitles.map(title => (
-                                    <option key={title} value={title}>
-                                        {title}
-                                    </option>
-                                ))
-                            )}
-                        </select>
-                    </div>
-                    <FilterInput label="Keywords" name="tags" value={filters.tags} onChange={onFilterChange} placeholder="e.g. saas, b2b" />
-                </AccordionSection>
-                
-                <AccordionSection title="Company Info" id="company">
-                    <div>
-                        <label htmlFor="industry" className="form-label">Industry</label>
-                        <select id="industry" name="industry" value={filters.industry} onChange={onFilterChange} className="select">
-                             <option value="All">All Industries</option>
-                            {uniqueIndustries.map(industry => (
-                                <option key={industry} value={industry}>
-                                    {industry}
+                <div>
+                    <label htmlFor="title" className="form-label">Title</label>
+                    <select 
+                        id="title" 
+                        name="title" 
+                        value={filters.title} 
+                        onChange={onFilterChange} 
+                        className="select"
+                        disabled={isLoadingTitles}
+                    >
+                        <option value="">All Titles</option>
+                        {isLoadingTitles ? (
+                            <option value="" disabled>Loading titles...</option>
+                        ) : (
+                            uniqueTitles.map(title => (
+                                <option key={title} value={title}>
+                                    {title}
                                 </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="company_name_for_emails" className="form-label">Company Name</label>
-                        <select 
-                            id="company_name_for_emails" 
-                            name="company_name_for_emails" 
-                            value={filters.company_name_for_emails} 
-                            onChange={onFilterChange} 
-                            className="select"
-                            disabled={isLoadingCompanies}
-                        >
-                            <option value="">All Companies</option>
-                            {isLoadingCompanies ? (
-                                <option value="" disabled>Loading companies...</option>
-                            ) : (
-                                uniqueCompanies.map(company => (
-                                    <option key={company} value={company}>
-                                        {company}
-                                    </option>
-                                ))
-                            )}
-                        </select>
-                    </div>
-                    <FilterInput label="Company Address" name="company_address" value={filters.company_address} onChange={onFilterChange} placeholder="e.g. 123 Main St" />
-                    <FilterInput label="Company Phone" name="company_phone" value={filters.company_phone} onChange={onFilterChange} placeholder="+1234567890" />
-                    
-                    {/* Employees Filters */}
-                    <div className="filter-field-group">
-                        <h4 className="filter-section-title">Employees</h4>
-                        <FilterInput 
-                            label="Exact Count" 
-                            name="employees_count" 
-                            value={filters.employees_count} 
-                            onChange={onFilterChange} 
-                            placeholder="e.g. 100" 
-                            type="number"
-                        />
-                        <FilterRangeInput 
-                            label="Range" 
-                            minName="employees_min" 
-                            minValue={filters.employees_min} 
-                            maxName="employees_max" 
-                            maxValue={filters.employees_max} 
-                            onChange={onFilterChange} 
-                        />
-                    </div>
-                    
-                    {/* Annual Revenue Filters */}
-                    <div className="filter-field-group">
-                        <h4 className="filter-section-title">Annual Revenue ($)</h4>
-                        <FilterInput 
-                            label="Exact Amount" 
-                            name="annual_revenue" 
-                            value={filters.annual_revenue} 
-                            onChange={onFilterChange} 
-                            placeholder="e.g. 10000000" 
-                            type="number"
-                        />
-                        <FilterRangeInput 
-                            label="Range" 
-                            minName="annual_revenue_min" 
-                            minValue={filters.annual_revenue_min} 
-                            maxName="annual_revenue_max" 
-                            maxValue={filters.annual_revenue_max} 
-                            onChange={onFilterChange} 
-                        />
-                    </div>
-                </AccordionSection>
-
-                <AccordionSection title="Location" id="location">
-                    <h4 className="filter-section-title">Location Search</h4>
-                    <FilterInput 
-                        label="Company Location" 
-                        name="company_location" 
-                        value={filters.company_location || ''} 
-                        onChange={onFilterChange} 
-                        placeholder="Search company address, city, state, country"
-                    />
-                    <FilterInput 
-                        label="Contact Location" 
-                        name="contact_location" 
-                        value={filters.contact_location || ''} 
-                        onChange={onFilterChange} 
-                        placeholder="Search contact location metadata"
-                    />
-                    <h4 className="filter-section-title filter-section-title--spaced">Person Location</h4>
-                    <FilterInput label="City" name="city" value={filters.city} onChange={onFilterChange} />
-                    <FilterInput label="State" name="state" value={filters.state} onChange={onFilterChange} />
-                    <FilterInput label="Country" name="country" value={filters.country} onChange={onFilterChange} />
-                    <h4 className="filter-section-title filter-section-title--spaced">Company Location</h4>
-                    <FilterInput label="Company City" name="company_city" value={filters.company_city} onChange={onFilterChange} />
-                    <FilterInput label="Company State" name="company_state" value={filters.company_state} onChange={onFilterChange} />
-                    <FilterInput label="Company Country" name="company_country" value={filters.company_country} onChange={onFilterChange} />
-                </AccordionSection>
-
-                <AccordionSection title="Funding & Revenue" id="funding">
-                    {/* Total Funding Filters */}
-                    <div className="filter-field-group">
-                        <h4 className="filter-section-title">Total Funding ($)</h4>
-                        <FilterInput 
-                            label="Exact Amount" 
-                            name="total_funding" 
-                            value={filters.total_funding} 
-                            onChange={onFilterChange} 
-                            placeholder="e.g. 50000000" 
-                            type="number"
-                        />
-                        <FilterRangeInput 
-                            label="Range" 
-                            minName="total_funding_min" 
-                            minValue={filters.total_funding_min} 
-                            maxName="total_funding_max" 
-                            maxValue={filters.total_funding_max} 
-                            onChange={onFilterChange} 
-                        />
-                    </div>
-                    
-                    <FilterRangeInput label="Latest Funding Amount" minName="latest_funding_amount_min" minValue={filters.latest_funding_amount_min} maxName="latest_funding_amount_max" maxValue={filters.latest_funding_amount_max} onChange={onFilterChange} />
-                    <FilterInput label="Latest Funding" name="latest_funding" value={filters.latest_funding} onChange={onFilterChange} placeholder="e.g. Series B" />
-                    <FilterInput label="Last Raised At" name="last_raised_at" value={filters.last_raised_at} onChange={onFilterChange} placeholder="e.g. 2023-06-01" />
-                </AccordionSection>
-
-                <AccordionSection title="Web Presence" id="web">
-                    <FilterInput label="Person LinkedIn URL" name="person_linkedin_url" value={filters.person_linkedin_url} onChange={onFilterChange} placeholder="https://linkedin.com/in/..." />
-                    <FilterInput label="Company LinkedIn URL" name="company_linkedin_url" value={filters.company_linkedin_url} onChange={onFilterChange} placeholder="https://linkedin.com/company/..." />
-                    <FilterInput label="Facebook URL" name="facebook_url" value={filters.facebook_url} onChange={onFilterChange} placeholder="https://facebook.com/..." />
-                    <FilterInput label="Twitter URL" name="twitter_url" value={filters.twitter_url} onChange={onFilterChange} placeholder="https://twitter.com/..." />
-                    <FilterInput label="Website" name="website" value={filters.website} onChange={onFilterChange} placeholder="https://example.com" />
-                </AccordionSection>
-
-                <AccordionSection title="Technologies & Keywords" id="tech">
-                    <FilterInput label="Technologies" name="technologies" value={filters.technologies} onChange={onFilterChange} placeholder="e.g. Python, Django, PostgreSQL" />
-                    <FilterInput label="Keywords" name="tags" value={filters.tags} onChange={onFilterChange} placeholder="e.g. saas, b2b" />
-                </AccordionSection>
-
-                <AccordionSection title="Date Ranges" id="dates">
-                    <FilterDateRange 
-                        label="Created Date" 
-                        afterName="created_at_after" 
-                        afterValue={filters.created_at_after} 
-                        beforeName="created_at_before" 
-                        beforeValue={filters.created_at_before} 
-                        onChange={onFilterChange} 
-                    />
-                    <FilterDateRange 
-                        label="Updated Date" 
-                        afterName="updated_at_after" 
-                        afterValue={filters.updated_at_after} 
-                        beforeName="updated_at_before" 
-                        beforeValue={filters.updated_at_before} 
-                        onChange={onFilterChange} 
-                    />
-                </AccordionSection>
-
-                <AccordionSection title="Exclusion Filters" id="exclusion">
-                    <p className="filter-exclude-text">Exclude contacts matching any of these values</p>
-                    <FilterMultiSelect
-                        label="Exclude Titles"
-                        name="exclude_titles"
-                        values={filters.exclude_titles || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. Intern, Junior"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Industries"
-                        name="exclude_industries"
-                        values={filters.exclude_industries || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. Retail, Hospitality"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Departments"
-                        name="exclude_departments"
-                        values={filters.exclude_departments || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. HR, Legal"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Seniorities"
-                        name="exclude_seniorities"
-                        values={filters.exclude_seniorities || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. entry-level, intern"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Technologies"
-                        name="exclude_technologies"
-                        values={filters.exclude_technologies || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. PHP, COBOL"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Keywords"
-                        name="exclude_keywords"
-                        values={filters.exclude_keywords || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. startup, non-profit"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Company Locations"
-                        name="exclude_company_locations"
-                        values={filters.exclude_company_locations || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. New York, London"
-                    />
-                    <FilterMultiSelect
-                        label="Exclude Contact Locations"
-                        name="exclude_contact_locations"
-                        values={filters.exclude_contact_locations || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="e.g. San Francisco, Austin"
-                    />
-                </AccordionSection>
-
-                <AccordionSection title="Advanced Filters" id="advanced">
-                    <div>
-                        <label htmlFor="stage" className="form-label">Stage</label>
-                        <input id="stage" name="stage" type="text" value={filters.stage} onChange={onFilterChange} placeholder="e.g. lead, customer" className="input"/>
-                    </div>
-                    <div>
-                        <label htmlFor="seniority" className="form-label">Seniority</label>
-                        <input id="seniority" name="seniority" type="text" value={filters.seniority} onChange={onFilterChange} placeholder="e.g. c-level, director" className="input"/>
-                    </div>
-                    <div>
-                        <label htmlFor="primary_email_catch_all_status" className="form-label">Primary Email Catch-All Status</label>
-                        <input id="primary_email_catch_all_status" name="primary_email_catch_all_status" type="text" value={filters.primary_email_catch_all_status} onChange={onFilterChange} placeholder="e.g. valid, invalid" className="input"/>
-                    </div>
-                    <FilterMultiSelect
-                        label="Exclude Company IDs"
-                        name="exclude_company_ids"
-                        values={filters.exclude_company_ids || []}
-                        onAdd={onAddExclusionValue}
-                        onRemove={onRemoveExclusionValue}
-                        placeholder="Enter company UUID"
-                    />
-                </AccordionSection>
+                            ))
+                        )}
+                    </select>
+                </div>
             </div>
         </aside>
     );
@@ -1888,11 +1552,8 @@ const Contacts: React.FC = () => {
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
-  const [uniqueIndustries, setUniqueIndustries] = useState<string[]>([]);
   const [uniqueTitles, setUniqueTitles] = useState<string[]>([]);
-  const [uniqueCompanies, setUniqueCompanies] = useState<string[]>([]);
   const [isLoadingTitles, setIsLoadingTitles] = useState(false);
-  const [isLoadingCompanies, setIsLoadingCompanies] = useState(false);
 
   // Dual pagination state
   const [paginationMode, setPaginationMode] = useState<'cursor' | 'offset'>('cursor');
@@ -2234,14 +1895,6 @@ const Contacts: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  useEffect(() => {
-    const loadIndustries = async () => {
-        const industries = await fetchDistinctValues('industry');
-        setUniqueIndustries(industries.sort());
-    };
-    loadIndustries();
-  }, []);
-
   // Load titles for dropdown
   useEffect(() => {
     const loadTitles = async () => {
@@ -2264,30 +1917,6 @@ const Contacts: React.FC = () => {
         }
     };
     loadTitles();
-  }, []);
-
-  // Load companies for dropdown
-  useEffect(() => {
-    const loadCompanies = async () => {
-        setIsLoadingCompanies(true);
-        try {
-            const results = await fetchFieldValues('company', { distinct: true, ordering: 'value', limit: 100 });
-            // Extract values from results - API returns objects with 'id' and field value
-            const companies = results
-                .map(item => {
-                    // The API returns objects like { id: number, company: string } or { id: number, value: string }
-                    return item.company || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
-                })
-                .filter(Boolean)
-                .sort();
-            setUniqueCompanies(companies);
-        } catch (error) {
-            console.error('Failed to load companies:', error);
-        } finally {
-            setIsLoadingCompanies(false);
-        }
-    };
-    loadCompanies();
   }, []);
 
   // Sorting handler - switches to offset pagination
@@ -2661,11 +2290,8 @@ const Contacts: React.FC = () => {
                 onAddExclusionValue={addExclusionValue}
                 onRemoveExclusionValue={removeExclusionValue}
                 clearFilters={clearFilters} 
-                uniqueIndustries={uniqueIndustries}
                 uniqueTitles={uniqueTitles}
-                uniqueCompanies={uniqueCompanies}
                 isLoadingTitles={isLoadingTitles}
-                isLoadingCompanies={isLoadingCompanies}
             />
         </div>
 
@@ -2722,11 +2348,8 @@ const Contacts: React.FC = () => {
                 onAddExclusionValue={addExclusionValue}
                 onRemoveExclusionValue={removeExclusionValue}
                 clearFilters={clearFilters} 
-                uniqueIndustries={uniqueIndustries}
                 uniqueTitles={uniqueTitles}
-                uniqueCompanies={uniqueCompanies}
                 isLoadingTitles={isLoadingTitles}
-                isLoadingCompanies={isLoadingCompanies}
             />
         </div>
 
@@ -3088,11 +2711,8 @@ const Contacts: React.FC = () => {
           onAddExclusionValue={addExclusionValue}
           onRemoveExclusionValue={removeExclusionValue}
           clearFilters={clearFilters} 
-          uniqueIndustries={uniqueIndustries}
           uniqueTitles={uniqueTitles}
-          uniqueCompanies={uniqueCompanies}
           isLoadingTitles={isLoadingTitles}
-          isLoadingCompanies={isLoadingCompanies}
         />
       </MobileFilterDrawer>
     </div>
