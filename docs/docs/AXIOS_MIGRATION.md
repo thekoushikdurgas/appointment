@@ -69,7 +69,7 @@ import { authenticatedFetch } from './auth';
 
 const response = await request(url, {
   method: 'GET',
-  timeout: 30000,
+  timeout: 336000000,
   retries: 1,
 });
 
@@ -86,7 +86,7 @@ import { axiosRequest, axiosAuthenticatedRequest } from '../utils/axiosRequest';
 
 const response = await axiosRequest(url, {
   method: 'GET',
-  timeout: 30000,
+  timeout: 336000000,
   useQueue: true,
   useCache: true,
 });

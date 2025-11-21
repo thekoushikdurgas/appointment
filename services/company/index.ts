@@ -30,7 +30,11 @@ export {
   getCompanyByUuid,
   getCompanyCount,
   getCompanyUuids,
+  fetchCompanyUuidsPaginated,
 } from './fetch';
+
+// Re-export types from fetch
+export type { UuidFetchProgressCallback } from './fetch';
 
 export {
   fetchFieldValues,

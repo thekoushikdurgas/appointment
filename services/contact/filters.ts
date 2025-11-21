@@ -58,10 +58,17 @@ export const mapFilterKey = (key: string): string => {
         // Person fields
         'first_name': 'first_name',
         'last_name': 'last_name',
+        'departments': 'departments',
+        'seniority': 'seniority',
         
         // Company fields (already snake_case in API)
         'company_name_for_emails': 'company_name_for_emails',
         'company_address': 'company_address',
+        'company_domains': 'company_domains',
+        'industry': 'industry',
+        'keywords': 'keywords',
+        'technologies': 'technologies',
+        'contact_address': 'contact_address',
         'company_city': 'company_city',
         'company_state': 'company_state',
         'company_country': 'company_country',
@@ -156,6 +163,12 @@ export const buildFilterQuery = (filters?: ContactFilters, search?: string): URL
         continue;
       }
       
+      // Skip company_domains as it's not a valid filter for the main contacts API
+      // (it's only used for the distinct endpoint dropdown)
+      if (key === 'company_domains') {
+        continue;
+      }
+      
       // Handle exclusion filters (arrays)
       if (key.startsWith('exclude_') && Array.isArray(value)) {
         if (value.length > 0) {
@@ -170,8 +183,47 @@ export const buildFilterQuery = (filters?: ContactFilters, search?: string): URL
         continue;
       }
       
-      // Skip empty values, 'All' values
-      if (value === 'All' || value === '') {
+      // Handle company_name_for_emails as array (multi-value filter)
+      if (key === 'company_name_for_emails' && Array.isArray(value)) {
+        if (value.length > 0) {
+          const apiKey = mapFilterKey(key);
+          // Add each value as a separate query parameter (repeated params)
+          value.forEach(v => {
+            if (v && v.trim()) {
+              query.append(apiKey, v.trim());
+            }
+          });
+        }
+        continue;
+      }
+      
+      // Handle array-based multi-value filters
+      const arrayFilters = [
+        'title',
+        'industry',
+        'seniority',
+        'departments',
+        'keywords',
+        'technologies',
+        'company_address',
+        'contact_address'
+      ];
+      
+      if (arrayFilters.includes(key) && Array.isArray(value)) {
+        if (value.length > 0) {
+          const apiKey = mapFilterKey(key);
+          // Add each value as a separate query parameter (repeated params)
+          value.forEach(v => {
+            if (v && v.trim()) {
+              query.append(apiKey, v.trim());
+            }
+          });
+        }
+        continue;
+      }
+      
+      // Skip empty values, 'All' values, and empty arrays
+      if (value === 'All' || value === '' || (Array.isArray(value) && value.length === 0)) {
         continue;
       }
       

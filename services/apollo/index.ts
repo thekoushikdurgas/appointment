@@ -33,7 +33,11 @@ export {
   searchContactsFromApolloUrl,
   countContactsFromApolloUrl,
   getContactUuidsFromApolloUrl,
+  getContactUuidsFromApolloUrlPaginated,
 } from './search';
+
+// Re-export types from search
+export type { ApolloUuidFetchProgressCallback } from './search';
 
 // Re-export mappers (internal use, but available if needed)
 export {

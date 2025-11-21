@@ -3729,7 +3729,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n  \"name\": \"Acme Corporation Updated\",\n  \"employees_count\": 300,\n  \"annual_revenue\": 60000000,\n  \"industries\": [\n    \"Technology\",\n    \"Software\",\n    \"AI\"\n  ],\n  \"metadata\": {\n    \"city\": \"San Francisco\",\n    \"state\": \"California\",\n    \"phone_number\": \"+1-415-555-0200\"\n  }\n}"
+									"raw": "{\n  \"name\": \"Acme Corporation Updated\",\n  \"employees_count\": 300,\n  \"annual_revenue\": 3600000000,\n  \"industries\": [\n    \"Technology\",\n    \"Software\",\n    \"AI\"\n  ],\n  \"metadata\": {\n    \"city\": \"San Francisco\",\n    \"state\": \"California\",\n    \"phone_number\": \"+1-415-555-0200\"\n  }\n}"
 								},
 								"url": {
 									"raw": "{{baseUrl}}/companies/{{sampleCompanyUuid}}/",

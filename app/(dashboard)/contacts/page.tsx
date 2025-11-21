@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef, useId } from 'react';
 import Image from 'next/image';
 import { Contact, ContactCreate } from '@/types/index';
 import { SearchIcon, XMarkIcon, GlobeAltIcon, LinkedInIcon, FacebookIcon, TwitterIcon, OfficeBuildingIcon, ChevronUpIcon, ChevronDownIcon, ChevronUpDownIcon, FilterIcon, PlusIcon, ChevronLeftIcon, ChevronRightIcon, MailIcon, PhoneIcon, BuildingIcon, MapPinIcon, CalendarIcon, UsersIcon, EditIcon, SuccessIcon, AlertTriangleIcon, LoadingSpinner, DownloadIcon, CheckIcon } from '@components/icons';
@@ -40,11 +40,11 @@ type SortDirection = 'asc' | 'desc';
  * All string filters default to empty string (''), arrays default to [], and status/industry default to 'All'.
  * Empty values and 'All' are filtered out when building API requests.
  */
-interface Filters extends ContactFilters {
+interface Filters extends Omit<ContactFilters, 'company_name_for_emails' | 'title' | 'company_address'> {
     status: Contact['status'] | 'All';
     emailStatus: 'All' | 'Verified' | 'Unverified' | 'Bounced';
-    industry: string;
-    title: string;
+    industry: string[];
+    title: string[];
     tags: string;
     city: string;
     state: string;
@@ -62,7 +62,14 @@ interface Filters extends ContactFilters {
     first_name: string;
     last_name: string;
     email: string;
-    departments: string;
+    departments: string[];
+    seniority: string[];
+    // Company filters
+    company_domains: string[];
+    keywords: string[];
+    technologies: string[];
+    company_address: string[];
+    contact_address: string[];
     // Phone filters
     work_direct_phone: string;
     home_phone: string;
@@ -70,8 +77,7 @@ interface Filters extends ContactFilters {
     corporate_phone: string;
     other_phone: string;
     // Company detail filters
-    company_name_for_emails: string;
-    company_address: string;
+    company_name_for_emails: string[];
     company_city: string;
     company_state: string;
     company_country: string;
@@ -83,7 +89,6 @@ interface Filters extends ContactFilters {
     twitter_url: string;
     website: string;
     // Technology and funding filters
-    technologies: string;
     latest_funding: string;
     last_raised_at: string;
     // Additional numeric ranges
@@ -93,7 +98,6 @@ interface Filters extends ContactFilters {
     latest_funding_amount_max: string;
     // Exact match filters
     primary_email_catch_all_status: string;
-    seniority: string;
     stage: string;
     // Date range filters (ISO datetime format strings)
     created_at_after: string;
@@ -118,8 +122,8 @@ interface Filters extends ContactFilters {
 const initialFilters: Filters = {
     status: 'All',
     emailStatus: 'All',
-    industry: 'All',
-    title: '',
+    industry: [],
+    title: [],
     tags: '',
     city: '',
     state: '',
@@ -137,7 +141,7 @@ const initialFilters: Filters = {
     first_name: '',
     last_name: '',
     email: '',
-    departments: '',
+    departments: [],
     // Phone filters
     work_direct_phone: '',
     home_phone: '',
@@ -145,8 +149,9 @@ const initialFilters: Filters = {
     corporate_phone: '',
     other_phone: '',
     // Company detail filters
-    company_name_for_emails: '',
-    company_address: '',
+    company_name_for_emails: [],
+    company_address: [],
+    company_domains: [],
     company_city: '',
     company_state: '',
     company_country: '',
@@ -158,7 +163,8 @@ const initialFilters: Filters = {
     twitter_url: '',
     website: '',
     // Technology and funding filters
-    technologies: '',
+    technologies: [],
+    keywords: [],
     latest_funding: '',
     last_raised_at: '',
     // Additional numeric ranges
@@ -168,8 +174,10 @@ const initialFilters: Filters = {
     latest_funding_amount_max: '',
     // Exact match filters
     primary_email_catch_all_status: '',
-    seniority: '',
+    seniority: [],
     stage: '',
+    // Address filters
+    contact_address: [],
     // Date range filters
     created_at_after: '',
     created_at_before: '',
@@ -269,11 +277,13 @@ const DetailItem: React.FC<{label: string; value?: string | number | null}> = ({
 
 const FilterInput: React.FC<{ label: string; name: keyof Filters, value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; type?: string }> = 
 ({ label, name, value, onChange, placeholder, type = 'text' }) => {
+    const uniqueId = useId();
     const nameString = String(name);
+    const inputId = `filter-${nameString}-${uniqueId}`;
     return (
         <div className="filter-input-wrapper">
-            <label htmlFor={nameString} className="form-label">{label}</label>
-            <input id={nameString} name={nameString} type={type} value={value} onChange={onChange} placeholder={placeholder} className="input filter-input-sm"/>
+            <label htmlFor={inputId} className="form-label">{label}</label>
+            <input id={inputId} name={nameString} type={type} value={value} onChange={onChange} placeholder={placeholder} className="input filter-input-sm"/>
         </div>
     );
 };
@@ -306,8 +316,11 @@ const FilterDateRange: React.FC<{
     beforeValue: string; 
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }> = ({ label, afterName, afterValue, beforeName, beforeValue, onChange }) => {
+    const uniqueId = useId();
     const afterNameString = String(afterName);
     const beforeNameString = String(beforeName);
+    const afterInputId = `filter-${afterNameString}-${uniqueId}`;
+    const beforeInputId = `filter-${beforeNameString}-${uniqueId}`;
     
     // Convert ISO format to datetime-local format for display
     const isoToLocal = (iso: string): string => {
@@ -359,9 +372,9 @@ const FilterDateRange: React.FC<{
             <label className="form-label">{label}</label>
             <div className="filter-date-range-wrapper">
                 <div>
-                    <label htmlFor={`${afterNameString}_input`} className="filter-input-label filter-input-label--from">From</label>
+                    <label htmlFor={afterInputId} className="filter-input-label filter-input-label--from">From</label>
                     <input 
-                        id={`${afterNameString}_input`}
+                        id={afterInputId}
                         name={afterNameString} 
                         type="datetime-local" 
                         value={isoToLocal(afterValue)} 
@@ -370,9 +383,9 @@ const FilterDateRange: React.FC<{
                     />
                 </div>
                 <div>
-                    <label htmlFor={`${beforeNameString}_input`} className="filter-input-label filter-input-label--to">To</label>
+                    <label htmlFor={beforeInputId} className="filter-input-label filter-input-label--to">To</label>
                     <input 
-                        id={`${beforeNameString}_input`}
+                        id={beforeInputId}
                         name={beforeNameString} 
                         type="datetime-local" 
                         value={isoToLocal(beforeValue)} 
@@ -397,8 +410,10 @@ const FilterMultiSelect: React.FC<{
     onRemove: (name: keyof Filters, value: string) => void;
     placeholder?: string;
 }> = ({ label, name, values, onAdd, onRemove, placeholder }) => {
+    const uniqueId = useId();
     const [inputValue, setInputValue] = useState('');
     const nameString = String(name);
+    const inputId = `filter-${nameString}-${uniqueId}`;
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && inputValue.trim()) {
@@ -423,7 +438,7 @@ const FilterMultiSelect: React.FC<{
 
     return (
         <div className="filter-multi-select-wrapper">
-            <label htmlFor={nameString} className="form-label">{label}</label>
+            <label htmlFor={inputId} className="form-label">{label}</label>
             <div className="filter-multi-select-tags">
                 {values.map((value, index) => (
                     <span
@@ -443,7 +458,7 @@ const FilterMultiSelect: React.FC<{
                 ))}
             </div>
             <input
-                id={nameString}
+                id={inputId}
                 name={nameString}
                 type="text"
                 value={inputValue}
@@ -457,6 +472,863 @@ const FilterMultiSelect: React.FC<{
     );
 };
 
+/**
+ * Generic API-based FilterMultiSelect component
+ * Reusable component for all filter types that fetch from API endpoints
+ */
+const ApiFilterMultiSelect: React.FC<{
+    label: string;
+    field: string;
+    value: string[];
+    onChange: (values: string[]) => void;
+    disabled?: boolean;
+    companyFilter?: string[];
+    placeholder?: string;
+    extractValue?: (item: Record<string, any>) => string;
+}> = ({ label, field, value, onChange, disabled, companyFilter, placeholder, extractValue }) => {
+    const uniqueId = useId();
+    const inputId = `filter-${field.replace(/\//g, '-')}-${uniqueId}`;
+    const [searchText, setSearchText] = useState('');
+    const [options, setOptions] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const debouncedSearchText = useDebounce(searchText, 300);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    // Default value extractor function
+    const getValue = extractValue || ((item: Record<string, any>) => {
+        return item[field] || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
+    });
+
+    // Fetch values from API
+    const fetchValues = useCallback(async (search: string = '') => {
+        setIsLoading(true);
+        try {
+            // For company/domain endpoint, use special path and handle string array response
+            const endpoint = field === 'company/domain' ? 'company/domain' : field;
+            const isDomainEndpoint = field === 'company/domain';
+            
+            // Build company filter string if provided (not for domain endpoint)
+            const companyFilterStr = !isDomainEndpoint && companyFilter && companyFilter.length > 0 
+                ? companyFilter.join(',') 
+                : undefined;
+
+            if (isDomainEndpoint) {
+                // Special handling for company/domain endpoint which returns string array
+                const query = new URLSearchParams();
+                if (search.trim()) query.set('search', search.trim());
+                query.set('distinct', 'true');
+                query.set('limit', '25');
+                query.set('offset', '0');
+
+                const { API_BASE_URL } = await import('@services/api');
+                const { axiosAuthenticatedRequest } = await import('@utils/request');
+                const { parseApiError } = await import('@utils/error');
+
+                const response = await axiosAuthenticatedRequest(
+                    `${API_BASE_URL}/api/v1/contacts/${endpoint}/?${query.toString()}`,
+                    {
+                        method: 'GET',
+                        headers: {},
+                        useQueue: true,
+                        useCache: true,
+                    }
+                );
+
+                if (!response.ok) {
+                    const error = await parseApiError(response, `Failed to fetch ${field}`);
+                    throw error;
+                }
+
+                const data = await response.json();
+                // Domain endpoint returns array of strings directly
+                const extractedValues = (data.results || [])
+                    .filter((val: any) => typeof val === 'string' && Boolean(val))
+                    .filter((val: string) => !value.includes(val))
+                    .sort();
+                
+                setOptions(extractedValues);
+            } else {
+                // Check if this endpoint returns strings directly (seniority, department) or objects
+                const stringArrayEndpoints = ['seniority', 'department'];
+                const isStringArrayEndpoint = stringArrayEndpoints.includes(field);
+
+                if (isStringArrayEndpoint) {
+                    // Handle endpoints that return string arrays directly
+                    const query = new URLSearchParams();
+                    if (search.trim()) query.set('search', search.trim());
+                    query.set('distinct', 'true');
+                    query.set('limit', '25');
+                    query.set('offset', '0');
+                    if (companyFilterStr) query.set('company', companyFilterStr);
+
+                    const { API_BASE_URL } = await import('@services/api');
+                    const { axiosAuthenticatedRequest } = await import('@utils/request');
+                    const { parseApiError } = await import('@utils/error');
+
+                    const response = await axiosAuthenticatedRequest(
+                        `${API_BASE_URL}/api/v1/contacts/${endpoint}/?${query.toString()}`,
+                        {
+                            method: 'GET',
+                            headers: {},
+                            useQueue: true,
+                            useCache: true,
+                        }
+                    );
+
+                    if (!response.ok) {
+                        const error = await parseApiError(response, `Failed to fetch ${field}`);
+                        throw error;
+                    }
+
+                    const data = await response.json();
+                    // These endpoints return array of strings directly
+                    const extractedValues = (data.results || [])
+                        .filter((val: any) => typeof val === 'string' && Boolean(val))
+                        .filter((val: string) => !value.includes(val))
+                        .sort();
+                    
+                    setOptions(extractedValues);
+                } else {
+                    const results = await fetchFieldValues(endpoint, { 
+                        distinct: true,
+                        limit: 25, 
+                        offset: 0,
+                        search: search.trim() || undefined,
+                        company: companyFilterStr
+                    });
+                    
+                    // Extract values from results
+                    const extractedValues = results
+                        .map(item => getValue(item))
+                        .filter(Boolean)
+                        .filter(val => !value.includes(val)) // Filter out already selected values
+                        .sort();
+                    
+                    setOptions(extractedValues);
+                }
+            }
+        } catch (error) {
+            console.error(`Failed to load ${field}:`, error);
+            setOptions([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [field, value, companyFilter, getValue]);
+
+    // Load initial values on mount
+    useEffect(() => {
+        fetchValues('');
+    }, [fetchValues]);
+
+    // Fetch values when search text changes (debounced)
+    useEffect(() => {
+        if (isOpen) {
+            fetchValues(debouncedSearchText);
+        }
+    }, [debouncedSearchText, isOpen, fetchValues]);
+
+    // Re-fetch when company filter changes
+    useEffect(() => {
+        if (isOpen) {
+            fetchValues(debouncedSearchText);
+        }
+    }, [companyFilter, isOpen, debouncedSearchText, fetchValues]);
+
+    // Filter options to exclude already selected ones
+    const availableOptions = useMemo(() => {
+        return options.filter(opt => !value.includes(opt));
+    }, [options, value]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchText(e.target.value);
+        setIsOpen(true);
+        setHighlightedIndex(-1);
+    };
+
+    const handleInputFocus = () => {
+        setIsOpen(true);
+        if (options.length === 0) {
+            fetchValues(searchText);
+        }
+    };
+
+    const handleSelectValue = (val: string) => {
+        if (!value.includes(val)) {
+            onChange([...value, val]);
+            setSearchText('');
+            setIsOpen(false);
+            inputRef.current?.focus();
+        }
+    };
+
+    const handleRemoveValue = (val: string) => {
+        onChange(value.filter(v => v !== val));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && availableOptions[highlightedIndex]) {
+                handleSelectValue(availableOptions[highlightedIndex]);
+            } else if (searchText.trim() && !value.includes(searchText.trim())) {
+                // Allow adding custom value if not in list
+                onChange([...value, searchText.trim()]);
+                setSearchText('');
+                setIsOpen(false);
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHighlightedIndex(prev => 
+                prev < availableOptions.length - 1 ? prev + 1 : prev
+            );
+            setIsOpen(true);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+        }
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+                setHighlightedIndex(-1);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    return (
+        <div className="filter-multi-select-wrapper" ref={wrapperRef}>
+            <label htmlFor={inputId} className="form-label">{label}</label>
+            <div className="filter-multi-select-tags">
+                {value.map((val, index) => (
+                    <span
+                        key={`filter-tag-${index}-${val || ''}`}
+                        className="filter-multi-select-tag"
+                    >
+                        <span>{val}</span>
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveValue(val)}
+                            className="filter-multi-select-tag-remove"
+                            aria-label={`Remove ${val}`}
+                            disabled={disabled}
+                        >
+                            <XMarkIcon className="filter-multi-select-tag-icon" />
+                        </button>
+                    </span>
+                ))}
+            </div>
+            <div style={{ position: 'relative' }}>
+                <input
+                    ref={inputRef}
+                    id={inputId}
+                    type="text"
+                    value={searchText}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholder || `Search and select ${label.toLowerCase()}...`}
+                    className="input filter-input-sm"
+                    disabled={disabled}
+                    autoComplete="off"
+                />
+                {isLoading && (
+                    <div style={{ 
+                        position: 'absolute', 
+                        right: '8px', 
+                        top: '50%', 
+                        transform: 'translateY(-50%)' 
+                    }}>
+                        <LoadingSpinner className="w-4 h-4" />
+                    </div>
+                )}
+                {isOpen && !isLoading && availableOptions.length > 0 && (
+                    <div 
+                        ref={dropdownRef}
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '4px',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            boxShadow: 'var(--shadow-lg)'
+                        }}
+                    >
+                        {availableOptions.map((opt, index) => (
+                            <div
+                                key={opt}
+                                onClick={() => handleSelectValue(opt)}
+                                onMouseEnter={() => setHighlightedIndex(index)}
+                                style={{
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    backgroundColor: highlightedIndex === index 
+                                        ? 'hsl(var(--accent))' 
+                                        : 'transparent',
+                                    color: highlightedIndex === index 
+                                        ? 'hsl(var(--accent-foreground))' 
+                                        : 'hsl(var(--foreground))'
+                                }}
+                            >
+                                {opt}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {isOpen && !isLoading && availableOptions.length === 0 && searchText.trim() && (
+                    <div 
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '4px',
+                            padding: '8px 12px',
+                            boxShadow: 'var(--shadow-lg)',
+                            color: 'hsl(var(--muted-foreground))'
+                        }}
+                    >
+                        No {label.toLowerCase()} found. Press Enter to add &quot;{searchText.trim()}&quot;
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * CompanyMultiSelect component for selecting multiple companies with searchable dropdown
+ * Fetches companies from API as user types, displays selected companies as tags
+ */
+const CompanyMultiSelect: React.FC<{
+    label: string;
+    value: string[];
+    onChange: (companies: string[]) => void;
+    disabled?: boolean;
+}> = ({ label, value, onChange, disabled }) => {
+    const uniqueId = useId();
+    const inputId = `filter-company-${uniqueId}`;
+    const [searchText, setSearchText] = useState('');
+    const [companies, setCompanies] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const debouncedSearchText = useDebounce(searchText, 300);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    // Fetch companies from API
+    const fetchCompanies = useCallback(async (search: string = '') => {
+        setIsLoading(true);
+        try {
+            const results = await fetchFieldValues('company', { 
+                distinct: true,
+                limit: 25, 
+                offset: 0,
+                search: search.trim() || undefined
+            });
+            
+            // Extract company names from results
+            const companyNames = results
+                .map(item => {
+                    return item.company || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
+                })
+                .filter(Boolean)
+                .filter(company => !value.includes(company)) // Filter out already selected companies
+                .sort();
+            
+            setCompanies(companyNames);
+        } catch (error) {
+            console.error('Failed to load companies:', error);
+            setCompanies([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [value]);
+
+    // Load initial companies on mount
+    useEffect(() => {
+        fetchCompanies('');
+    }, [fetchCompanies]);
+
+    // Fetch companies when search text changes (debounced)
+    useEffect(() => {
+        if (isOpen) {
+            fetchCompanies(debouncedSearchText);
+        }
+    }, [debouncedSearchText, isOpen, fetchCompanies]);
+
+    // Filter companies to exclude already selected ones
+    const availableCompanies = useMemo(() => {
+        return companies.filter(company => !value.includes(company));
+    }, [companies, value]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchText(e.target.value);
+        setIsOpen(true);
+        setHighlightedIndex(-1);
+    };
+
+    const handleInputFocus = () => {
+        setIsOpen(true);
+        if (companies.length === 0) {
+            fetchCompanies(searchText);
+        }
+    };
+
+    const handleSelectCompany = (company: string) => {
+        if (!value.includes(company)) {
+            onChange([...value, company]);
+            setSearchText('');
+            setIsOpen(false);
+            inputRef.current?.focus();
+        }
+    };
+
+    const handleRemoveCompany = (company: string) => {
+        onChange(value.filter(c => c !== company));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && availableCompanies[highlightedIndex]) {
+                handleSelectCompany(availableCompanies[highlightedIndex]);
+            } else if (searchText.trim() && !value.includes(searchText.trim())) {
+                // Allow adding custom company name if not in list
+                onChange([...value, searchText.trim()]);
+                setSearchText('');
+                setIsOpen(false);
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHighlightedIndex(prev => 
+                prev < availableCompanies.length - 1 ? prev + 1 : prev
+            );
+            setIsOpen(true);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+        }
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+                setHighlightedIndex(-1);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    return (
+        <div className="filter-multi-select-wrapper" ref={wrapperRef}>
+            <label htmlFor={inputId} className="form-label">{label}</label>
+            <div className="filter-multi-select-tags">
+                {value.map((company, index) => (
+                    <span
+                        key={`company-tag-${index}-${company || ''}`}
+                        className="filter-multi-select-tag"
+                    >
+                        <span>{company}</span>
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveCompany(company)}
+                            className="filter-multi-select-tag-remove"
+                            aria-label={`Remove ${company}`}
+                            disabled={disabled}
+                        >
+                            <XMarkIcon className="filter-multi-select-tag-icon" />
+                        </button>
+                    </span>
+                ))}
+            </div>
+            <div className="company-multiselect-input-wrapper" style={{ position: 'relative' }}>
+                <input
+                    ref={inputRef}
+                    id={inputId}
+                    type="text"
+                    value={searchText}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search and select companies..."
+                    className="input filter-input-sm"
+                    disabled={disabled}
+                    autoComplete="off"
+                />
+                {isLoading && (
+                    <div className="company-multiselect-loading" style={{ 
+                        position: 'absolute', 
+                        right: '8px', 
+                        top: '50%', 
+                        transform: 'translateY(-50%)' 
+                    }}>
+                        <LoadingSpinner className="w-4 h-4" />
+                    </div>
+                )}
+                {isOpen && !isLoading && availableCompanies.length > 0 && (
+                    <div 
+                        ref={dropdownRef}
+                        className="company-multiselect-dropdown"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '4px',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            boxShadow: 'var(--shadow-lg)'
+                        }}
+                    >
+                        {availableCompanies.map((company, index) => (
+                            <div
+                                key={company}
+                                onClick={() => handleSelectCompany(company)}
+                                onMouseEnter={() => setHighlightedIndex(index)}
+                                style={{
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    backgroundColor: highlightedIndex === index 
+                                        ? 'hsl(var(--accent))' 
+                                        : 'transparent',
+                                    color: highlightedIndex === index 
+                                        ? 'hsl(var(--accent-foreground))' 
+                                        : 'hsl(var(--foreground))'
+                                }}
+                            >
+                                {company}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {isOpen && !isLoading && availableCompanies.length === 0 && searchText.trim() && (
+                    <div 
+                        className="company-multiselect-dropdown"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '4px',
+                            padding: '8px 12px',
+                            boxShadow: 'var(--shadow-lg)',
+                            color: 'hsl(var(--muted-foreground))'
+                        }}
+                    >
+                        No companies found. Press Enter to add &quot;{searchText.trim()}&quot;
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * TitleMultiSelect component for selecting multiple titles with searchable dropdown
+ * Fetches titles from API as user types, displays selected titles as tags
+ * Supports company filtering
+ */
+const TitleMultiSelect: React.FC<{
+    label: string;
+    value: string[];
+    onChange: (titles: string[]) => void;
+    disabled?: boolean;
+    companyFilter?: string[];
+}> = ({ label, value, onChange, disabled, companyFilter }) => {
+    const uniqueId = useId();
+    const inputId = `filter-title-${uniqueId}`;
+    const [searchText, setSearchText] = useState('');
+    const [titles, setTitles] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const debouncedSearchText = useDebounce(searchText, 300);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const wrapperRef = useRef<HTMLDivElement>(null);
+
+    // Fetch titles from API
+    const fetchTitles = useCallback(async (search: string = '') => {
+        setIsLoading(true);
+        try {
+            // Build company filter string if provided
+            const companyFilterStr = companyFilter && companyFilter.length > 0 
+                ? companyFilter.join(',') 
+                : undefined;
+
+            const results = await fetchFieldValues('title', { 
+                distinct: true,
+                limit: 25, 
+                offset: 0,
+                search: search.trim() || undefined,
+                company: companyFilterStr
+            });
+            
+            // Extract title names from results
+            const titleNames = results
+                .map(item => {
+                    return item.title || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
+                })
+                .filter(Boolean)
+                .filter(title => !value.includes(title)) // Filter out already selected titles
+                .sort();
+            
+            setTitles(titleNames);
+        } catch (error) {
+            console.error('Failed to load titles:', error);
+            setTitles([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [value, companyFilter]);
+
+    // Load initial titles on mount
+    useEffect(() => {
+        fetchTitles('');
+    }, [fetchTitles]);
+
+    // Fetch titles when search text changes (debounced)
+    useEffect(() => {
+        if (isOpen) {
+            fetchTitles(debouncedSearchText);
+        }
+    }, [debouncedSearchText, isOpen, fetchTitles]);
+
+    // Re-fetch when company filter changes
+    useEffect(() => {
+        if (isOpen) {
+            fetchTitles(debouncedSearchText);
+        }
+    }, [companyFilter, isOpen, debouncedSearchText, fetchTitles]);
+
+    // Filter titles to exclude already selected ones
+    const availableTitles = useMemo(() => {
+        return titles.filter(title => !value.includes(title));
+    }, [titles, value]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchText(e.target.value);
+        setIsOpen(true);
+        setHighlightedIndex(-1);
+    };
+
+    const handleInputFocus = () => {
+        setIsOpen(true);
+        if (titles.length === 0) {
+            fetchTitles(searchText);
+        }
+    };
+
+    const handleSelectTitle = (title: string) => {
+        if (!value.includes(title)) {
+            onChange([...value, title]);
+            setSearchText('');
+            setIsOpen(false);
+            inputRef.current?.focus();
+        }
+    };
+
+    const handleRemoveTitle = (title: string) => {
+        onChange(value.filter(t => t !== title));
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0 && availableTitles[highlightedIndex]) {
+                handleSelectTitle(availableTitles[highlightedIndex]);
+            } else if (searchText.trim() && !value.includes(searchText.trim())) {
+                // Allow adding custom title if not in list
+                onChange([...value, searchText.trim()]);
+                setSearchText('');
+                setIsOpen(false);
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setHighlightedIndex(prev => 
+                prev < availableTitles.length - 1 ? prev + 1 : prev
+            );
+            setIsOpen(true);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+        } else if (e.key === 'Escape') {
+            setIsOpen(false);
+            setHighlightedIndex(-1);
+        }
+    };
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+                setHighlightedIndex(-1);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    return (
+        <div className="filter-multi-select-wrapper" ref={wrapperRef}>
+            <label htmlFor={inputId} className="form-label">{label}</label>
+            <div className="filter-multi-select-tags">
+                {value.map((title, index) => (
+                    <span
+                        key={`title-tag-${index}-${title || ''}`}
+                        className="filter-multi-select-tag"
+                    >
+                        <span>{title}</span>
+                        <button
+                            type="button"
+                            onClick={() => handleRemoveTitle(title)}
+                            className="filter-multi-select-tag-remove"
+                            aria-label={`Remove ${title}`}
+                            disabled={disabled}
+                        >
+                            <XMarkIcon className="filter-multi-select-tag-icon" />
+                        </button>
+                    </span>
+                ))}
+            </div>
+            <div className="title-multiselect-input-wrapper" style={{ position: 'relative' }}>
+                <input
+                    ref={inputRef}
+                    id={inputId}
+                    type="text"
+                    value={searchText}
+                    onChange={handleInputChange}
+                    onFocus={handleInputFocus}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search and select titles..."
+                    className="input filter-input-sm"
+                    disabled={disabled}
+                    autoComplete="off"
+                />
+                {isLoading && (
+                    <div className="title-multiselect-loading" style={{ 
+                        position: 'absolute', 
+                        right: '8px', 
+                        top: '50%', 
+                        transform: 'translateY(-50%)' 
+                    }}>
+                        <LoadingSpinner className="w-4 h-4" />
+                    </div>
+                )}
+                {isOpen && !isLoading && availableTitles.length > 0 && (
+                    <div 
+                        ref={dropdownRef}
+                        className="title-multiselect-dropdown"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '4px',
+                            maxHeight: '200px',
+                            overflowY: 'auto',
+                            boxShadow: 'var(--shadow-lg)'
+                        }}
+                    >
+                        {availableTitles.map((title, index) => (
+                            <div
+                                key={title}
+                                onClick={() => handleSelectTitle(title)}
+                                onMouseEnter={() => setHighlightedIndex(index)}
+                                style={{
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    backgroundColor: highlightedIndex === index 
+                                        ? 'hsl(var(--accent))' 
+                                        : 'transparent',
+                                    color: highlightedIndex === index 
+                                        ? 'hsl(var(--accent-foreground))' 
+                                        : 'hsl(var(--foreground))'
+                                }}
+                            >
+                                {title}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {isOpen && !isLoading && availableTitles.length === 0 && searchText.trim() && (
+                    <div 
+                        className="title-multiselect-dropdown"
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            backgroundColor: 'hsl(var(--card))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 'var(--radius-md)',
+                            marginTop: '4px',
+                            padding: '8px 12px',
+                            boxShadow: 'var(--shadow-lg)',
+                            color: 'hsl(var(--muted-foreground))'
+                        }}
+                    >
+                        No titles found. Press Enter to add &quot;{searchText.trim()}&quot;
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 
 const FilterSidebar: React.FC<{
     filters: Filters;
@@ -464,13 +1336,59 @@ const FilterSidebar: React.FC<{
     onAddExclusionValue: (name: keyof Filters, value: string) => void;
     onRemoveExclusionValue: (name: keyof Filters, value: string) => void;
     clearFilters: () => void;
-    uniqueTitles: string[];
-    isLoadingTitles: boolean;
-}> = ({ filters, onFilterChange, onAddExclusionValue, onRemoveExclusionValue, clearFilters, uniqueTitles, isLoadingTitles }) => {
-    // Count active filters for badge - only count title filter
+    onTitleChange: (titles: string[]) => void;
+    onCompanyChange: (companies: string[]) => void;
+    onIndustryChange: (industries: string[]) => void;
+    onSeniorityChange: (seniorities: string[]) => void;
+    onDepartmentChange: (departments: string[]) => void;
+    onKeywordsChange: (keywords: string[]) => void;
+    onTechnologiesChange: (technologies: string[]) => void;
+    onCompanyDomainsChange: (domains: string[]) => void;
+    onCompanyAddressChange: (addresses: string[]) => void;
+    onContactAddressChange: (addresses: string[]) => void;
+}> = ({ 
+    filters, 
+    onFilterChange, 
+    onAddExclusionValue, 
+    onRemoveExclusionValue, 
+    clearFilters, 
+    onTitleChange, 
+    onCompanyChange,
+    onIndustryChange,
+    onSeniorityChange,
+    onDepartmentChange,
+    onKeywordsChange,
+    onTechnologiesChange,
+    onCompanyDomainsChange,
+    onCompanyAddressChange,
+    onContactAddressChange
+}) => {
+    // Count active filters for badge
     const activeFilterCount = useMemo(() => {
-        return filters.title && filters.title !== '' ? 1 : 0;
-    }, [filters.title]);
+        let count = 0;
+        if (filters.title && filters.title.length > 0) count++;
+        if (filters.company_name_for_emails && filters.company_name_for_emails.length > 0) count++;
+        if (filters.industry && filters.industry.length > 0) count++;
+        if (filters.seniority && filters.seniority.length > 0) count++;
+        if (filters.departments && filters.departments.length > 0) count++;
+        if (filters.keywords && filters.keywords.length > 0) count++;
+        if (filters.technologies && filters.technologies.length > 0) count++;
+        if (filters.company_domains && filters.company_domains.length > 0) count++;
+        if (filters.company_address && filters.company_address.length > 0) count++;
+        if (filters.contact_address && filters.contact_address.length > 0) count++;
+        return count;
+    }, [
+        filters.title, 
+        filters.company_name_for_emails, 
+        filters.industry, 
+        filters.seniority, 
+        filters.departments, 
+        filters.keywords, 
+        filters.technologies, 
+        filters.company_domains, 
+        filters.company_address, 
+        filters.contact_address
+    ]);
     
     return (
         <aside className="filter-sidebar">
@@ -494,27 +1412,91 @@ const FilterSidebar: React.FC<{
                 </Button>
             </div>
             <div className="filter-sidebar-content">
-                <div>
-                    <label htmlFor="title" className="form-label">Title</label>
-                    <select 
-                        id="title" 
-                        name="title" 
-                        value={filters.title} 
-                        onChange={onFilterChange} 
-                        className="select"
-                        disabled={isLoadingTitles}
-                    >
-                        <option value="">All Titles</option>
-                        {isLoadingTitles ? (
-                            <option value="" disabled>Loading titles...</option>
-                        ) : (
-                            uniqueTitles.map(title => (
-                                <option key={title} value={title}>
-                                    {title}
-                                </option>
-                            ))
-                        )}
-                    </select>
+                {/* Company Filters */}
+                <div className="filter-group">
+                    <h3 className="filter-group-title">Company</h3>
+                    <CompanyMultiSelect
+                        label="Company Name"
+                        value={filters.company_name_for_emails}
+                        onChange={onCompanyChange}
+                    />
+                    <ApiFilterMultiSelect
+                        label="Company Domains"
+                        field="company/domain"
+                        value={filters.company_domains}
+                        onChange={onCompanyDomainsChange}
+                        placeholder="Search and select company domains..."
+                    />
+                    <ApiFilterMultiSelect
+                        label="Industry"
+                        field="industry"
+                        value={filters.industry}
+                        onChange={onIndustryChange}
+                        companyFilter={filters.company_name_for_emails}
+                        placeholder="Search and select industries..."
+                    />
+                    <ApiFilterMultiSelect
+                        label="Company Address"
+                        field="company_address"
+                        value={filters.company_address}
+                        onChange={onCompanyAddressChange}
+                        placeholder="Search and select company addresses..."
+                    />
+                </div>
+
+                {/* Person Filters */}
+                <div className="filter-group">
+                    <h3 className="filter-group-title">Person</h3>
+                    <TitleMultiSelect
+                        label="Title"
+                        value={filters.title}
+                        onChange={onTitleChange}
+                        companyFilter={filters.company_name_for_emails}
+                    />
+                    <ApiFilterMultiSelect
+                        label="Seniority"
+                        field="seniority"
+                        value={filters.seniority}
+                        onChange={onSeniorityChange}
+                        companyFilter={filters.company_name_for_emails}
+                        placeholder="Search and select seniority levels..."
+                    />
+                    <ApiFilterMultiSelect
+                        label="Department"
+                        field="department"
+                        value={filters.departments}
+                        onChange={onDepartmentChange}
+                        companyFilter={filters.company_name_for_emails}
+                        placeholder="Search and select departments..."
+                    />
+                    <ApiFilterMultiSelect
+                        label="Contact Address"
+                        field="contact_address"
+                        value={filters.contact_address}
+                        onChange={onContactAddressChange}
+                        placeholder="Search and select contact addresses..."
+                    />
+                </div>
+
+                {/* Technology & Keywords */}
+                <div className="filter-group">
+                    <h3 className="filter-group-title">Technology & Keywords</h3>
+                    <ApiFilterMultiSelect
+                        label="Keywords"
+                        field="keywords"
+                        value={filters.keywords}
+                        onChange={onKeywordsChange}
+                        companyFilter={filters.company_name_for_emails}
+                        placeholder="Search and select keywords..."
+                    />
+                    <ApiFilterMultiSelect
+                        label="Technologies"
+                        field="technologies"
+                        value={filters.technologies}
+                        onChange={onTechnologiesChange}
+                        companyFilter={filters.company_name_for_emails}
+                        placeholder="Search and select technologies..."
+                    />
                 </div>
             </div>
         </aside>
@@ -1332,7 +2314,7 @@ const CreateContactModal: React.FC<{
                             <div className="create-contact-form__field">
                                 <Input
                                     label="First Name"
-                                    id="first_name"
+                                    id="create-contact-first_name"
                                     type="text"
                                     value={formData.first_name || ''}
                                     onChange={(e) => handleFieldChange('first_name', e.target.value)}
@@ -1345,7 +2327,7 @@ const CreateContactModal: React.FC<{
                             <div className="create-contact-form__field">
                                 <Input
                                     label="Last Name"
-                                    id="last_name"
+                                    id="create-contact-last_name"
                                     type="text"
                                     value={formData.last_name || ''}
                                     onChange={(e) => handleFieldChange('last_name', e.target.value)}
@@ -1361,7 +2343,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Input
                                 label="Email"
-                                id="email"
+                                id="create-contact-email"
                                 type="email"
                                 value={formData.email || ''}
                                 onChange={(e) => handleFieldChange('email', e.target.value)}
@@ -1376,7 +2358,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Input
                                 label="Job Title"
-                                id="title"
+                                id="create-contact-title"
                                 type="text"
                                 value={formData.title || ''}
                                 onChange={(e) => handleFieldChange('title', e.target.value)}
@@ -1391,7 +2373,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Input
                                 label="Departments"
-                                id="departments"
+                                id="create-contact-departments"
                                 type="text"
                                 value={departmentsInput}
                                 onChange={(e) => handleDepartmentsChange(e.target.value)}
@@ -1428,7 +2410,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Input
                                 label="Mobile Phone"
-                                id="mobile_phone"
+                                id="create-contact-mobile_phone"
                                 type="tel"
                                 value={formData.mobile_phone || ''}
                                 onChange={(e) => handleFieldChange('mobile_phone', e.target.value)}
@@ -1443,7 +2425,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Select
                                 label="Email Status"
-                                id="email_status"
+                                id="create-contact-email_status"
                                 value={formData.email_status || ''}
                                 onChange={(e) => handleFieldChange('email_status', e.target.value)}
                                 error={errors.email_status}
@@ -1462,7 +2444,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Input
                                 label="Seniority"
-                                id="seniority"
+                                id="create-contact-seniority"
                                 type="text"
                                 value={formData.seniority || ''}
                                 onChange={(e) => handleFieldChange('seniority', e.target.value)}
@@ -1476,7 +2458,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Input
                                 label="Company ID (UUID)"
-                                id="company_id"
+                                id="create-contact-company_id"
                                 type="text"
                                 value={formData.company_id || ''}
                                 onChange={(e) => handleFieldChange('company_id', e.target.value)}
@@ -1492,7 +2474,7 @@ const CreateContactModal: React.FC<{
                         <div className="create-contact-form__field">
                             <Textarea
                                 label="Search Text / Location"
-                                id="text_search"
+                                id="create-contact-text_search"
                                 value={formData.text_search || ''}
                                 onChange={(e) => handleFieldChange('text_search', e.target.value)}
                                 error={errors.text_search}
@@ -1552,8 +2534,6 @@ const Contacts: React.FC = () => {
   const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
-  const [uniqueTitles, setUniqueTitles] = useState<string[]>([]);
-  const [isLoadingTitles, setIsLoadingTitles] = useState(false);
 
   // Dual pagination state
   const [paginationMode, setPaginationMode] = useState<'cursor' | 'offset'>('cursor');
@@ -1739,20 +2719,13 @@ const Contacts: React.FC = () => {
   const debouncedFilters = useDebounce(filters, 300);
   const isSearching = searchTerm !== debouncedSearchTerm;
 
-  // Calculate active filter count
+  // Calculate active filter count - only count title and company name filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    Object.entries(filters).forEach(([key, value]) => {
-      if (key === 'status' || key === 'emailStatus' || key === 'industry') {
-        if (value && value !== 'All') count++;
-      } else if (Array.isArray(value)) {
-        if (value.length > 0) count++;
-      } else if (value && value !== '') {
-        count++;
-      }
-    });
+    if (filters.title && filters.title.length > 0) count++;
+    if (filters.company_name_for_emails && filters.company_name_for_emails.length > 0) count++;
     return count;
-  }, [filters]);
+  }, [filters.title, filters.company_name_for_emails]);
 
   // Load contacts with dual pagination support
   const loadContacts = useCallback(async () => {
@@ -1895,30 +2868,6 @@ const Contacts: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Load titles for dropdown
-  useEffect(() => {
-    const loadTitles = async () => {
-        setIsLoadingTitles(true);
-        try {
-            const results = await fetchFieldValues('title', { distinct: true, ordering: 'value', limit: 100 });
-            // Extract values from results - API returns objects with 'id' and field value
-            const titles = results
-                .map(item => {
-                    // The API returns objects like { id: number, title: string } or { id: number, value: string }
-                    return item.title || item.value || (item as any)[Object.keys(item).find(k => k !== 'id') || ''] || '';
-                })
-                .filter(Boolean)
-                .sort();
-            setUniqueTitles(titles);
-        } catch (error) {
-            console.error('Failed to load titles:', error);
-        } finally {
-            setIsLoadingTitles(false);
-        }
-    };
-    loadTitles();
-  }, []);
-
   // Sorting handler - switches to offset pagination
   const handleSort = (column: SortableColumn) => {
     if (sortColumn === column) {
@@ -1988,6 +2937,140 @@ const Contacts: React.FC = () => {
     setCursor(null);
     setOffset(0);
   };
+
+  /**
+   * Handle title filter change (multi-value array)
+   */
+  const handleTitleChange = useCallback((titles: string[]) => {
+    const oldValue = filters.title;
+    
+    // Log filter change
+    filterLogger.logFilterChange('title', oldValue, titles);
+    
+    setFilters(prev => ({ ...prev, title: titles }));
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
+  }, [filters.title]);
+
+  /**
+   * Handle company name filter change (multi-value array)
+   */
+  const handleCompanyChange = useCallback((companies: string[]) => {
+    const oldValue = filters.company_name_for_emails;
+    
+    // Log filter change
+    filterLogger.logFilterChange('company_name_for_emails', oldValue, companies);
+    
+    setFilters(prev => ({ ...prev, company_name_for_emails: companies }));
+    // Reset pagination on filter change
+    setCursor(null);
+    setOffset(0);
+  }, [filters.company_name_for_emails]);
+
+  /**
+   * Handle industry filter change (multi-value array)
+   */
+  const handleIndustryChange = useCallback((industries: string[]) => {
+    const oldValue = filters.industry;
+    
+    filterLogger.logFilterChange('industry', oldValue, industries);
+    
+    setFilters(prev => ({ ...prev, industry: industries }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.industry]);
+
+  /**
+   * Handle seniority filter change (multi-value array)
+   */
+  const handleSeniorityChange = useCallback((seniorities: string[]) => {
+    const oldValue = filters.seniority;
+    
+    filterLogger.logFilterChange('seniority', oldValue, seniorities);
+    
+    setFilters(prev => ({ ...prev, seniority: seniorities }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.seniority]);
+
+  /**
+   * Handle department filter change (multi-value array)
+   */
+  const handleDepartmentChange = useCallback((departments: string[]) => {
+    const oldValue = filters.departments;
+    
+    filterLogger.logFilterChange('departments', oldValue, departments);
+    
+    setFilters(prev => ({ ...prev, departments: departments }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.departments]);
+
+  /**
+   * Handle keywords filter change (multi-value array)
+   */
+  const handleKeywordsChange = useCallback((keywords: string[]) => {
+    const oldValue = filters.keywords;
+    
+    filterLogger.logFilterChange('keywords', oldValue, keywords);
+    
+    setFilters(prev => ({ ...prev, keywords: keywords }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.keywords]);
+
+  /**
+   * Handle technologies filter change (multi-value array)
+   */
+  const handleTechnologiesChange = useCallback((technologies: string[]) => {
+    const oldValue = filters.technologies;
+    
+    filterLogger.logFilterChange('technologies', oldValue, technologies);
+    
+    setFilters(prev => ({ ...prev, technologies: technologies }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.technologies]);
+
+  /**
+   * Handle company domains filter change (multi-value array)
+   */
+  const handleCompanyDomainsChange = useCallback((domains: string[]) => {
+    const oldValue = filters.company_domains;
+    
+    filterLogger.logFilterChange('company_domains', oldValue, domains);
+    
+    setFilters(prev => ({ ...prev, company_domains: domains }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.company_domains]);
+
+  /**
+   * Handle company address filter change (multi-value array)
+   */
+  const handleCompanyAddressChange = useCallback((addresses: string[]) => {
+    const oldValue = filters.company_address;
+    
+    filterLogger.logFilterChange('company_address', oldValue, addresses);
+    
+    setFilters(prev => ({ ...prev, company_address: addresses }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.company_address]);
+
+  /**
+   * Handle contact address filter change (multi-value array)
+   */
+  const handleContactAddressChange = useCallback((addresses: string[]) => {
+    const oldValue = filters.contact_address;
+    
+    filterLogger.logFilterChange('contact_address', oldValue, addresses);
+    
+    setFilters(prev => ({ ...prev, contact_address: addresses }));
+    setCursor(null);
+    setOffset(0);
+  }, [filters.contact_address]);
 
   /**
    * Add a value to an exclusion filter
@@ -2290,8 +3373,16 @@ const Contacts: React.FC = () => {
                 onAddExclusionValue={addExclusionValue}
                 onRemoveExclusionValue={removeExclusionValue}
                 clearFilters={clearFilters} 
-                uniqueTitles={uniqueTitles}
-                isLoadingTitles={isLoadingTitles}
+                onTitleChange={handleTitleChange}
+                onCompanyChange={handleCompanyChange}
+                onIndustryChange={handleIndustryChange}
+                onSeniorityChange={handleSeniorityChange}
+                onDepartmentChange={handleDepartmentChange}
+                onKeywordsChange={handleKeywordsChange}
+                onTechnologiesChange={handleTechnologiesChange}
+                onCompanyDomainsChange={handleCompanyDomainsChange}
+                onCompanyAddressChange={handleCompanyAddressChange}
+                onContactAddressChange={handleContactAddressChange}
             />
         </div>
 
@@ -2348,8 +3439,16 @@ const Contacts: React.FC = () => {
                 onAddExclusionValue={addExclusionValue}
                 onRemoveExclusionValue={removeExclusionValue}
                 clearFilters={clearFilters} 
-                uniqueTitles={uniqueTitles}
-                isLoadingTitles={isLoadingTitles}
+                onTitleChange={handleTitleChange}
+                onCompanyChange={handleCompanyChange}
+                onIndustryChange={handleIndustryChange}
+                onSeniorityChange={handleSeniorityChange}
+                onDepartmentChange={handleDepartmentChange}
+                onKeywordsChange={handleKeywordsChange}
+                onTechnologiesChange={handleTechnologiesChange}
+                onCompanyDomainsChange={handleCompanyDomainsChange}
+                onCompanyAddressChange={handleCompanyAddressChange}
+                onContactAddressChange={handleContactAddressChange}
             />
         </div>
 
@@ -2711,8 +3810,16 @@ const Contacts: React.FC = () => {
           onAddExclusionValue={addExclusionValue}
           onRemoveExclusionValue={removeExclusionValue}
           clearFilters={clearFilters} 
-          uniqueTitles={uniqueTitles}
-          isLoadingTitles={isLoadingTitles}
+          onTitleChange={handleTitleChange}
+          onCompanyChange={handleCompanyChange}
+          onIndustryChange={handleIndustryChange}
+          onSeniorityChange={handleSeniorityChange}
+          onDepartmentChange={handleDepartmentChange}
+          onKeywordsChange={handleKeywordsChange}
+          onTechnologiesChange={handleTechnologiesChange}
+          onCompanyDomainsChange={handleCompanyDomainsChange}
+          onCompanyAddressChange={handleCompanyAddressChange}
+          onContactAddressChange={handleContactAddressChange}
         />
       </MobileFilterDrawer>
     </div>

@@ -102,9 +102,8 @@ npm audit fix                  # Fix security vulnerabilities
 git init
 git add .
 git commit -m "05-11-2025"
-git remote add origin https://github.com/thekoushikdurgas/appointment.git
+git remote add origin https://github.com/thekoushikdurgas/appointmentbackend.git
 git branch -M main
 git push -u origin main -f
-
 
 

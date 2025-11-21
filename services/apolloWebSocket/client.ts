@@ -289,7 +289,7 @@ export class ApolloWebSocketClient {
     }
 
     this.reconnectAttempts++;
-    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // Max 30 seconds
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 336000000); // Max 30 seconds
 
     console.log(`[APOLLO_WS] Scheduling reconnect attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts} in ${delay}ms`, {
       attempt: this.reconnectAttempts,
@@ -463,7 +463,7 @@ export class ApolloWebSocketClient {
   private sendRequest<T>(
     action: ApolloWebSocketAction,
     data: Record<string, any>,
-    timeout: number = 3600000
+    timeout: number = 336000000
   ): Promise<ApolloWebSocketResponse<T>> {
     return new Promise((resolve, reject) => {
       // Ensure connection

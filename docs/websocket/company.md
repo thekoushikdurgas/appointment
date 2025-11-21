@@ -378,7 +378,7 @@ Update an existing company. Requires admin authentication and write key.
     "company_uuid": "398cce44-233d-5f7c-aea1-e4a6a79df10c",
     "name": "Acme Corporation Updated",
     "employees_count": 300,
-    "annual_revenue": 60000000,
+    "annual_revenue": 3600000000,
     "industries": ["Technology", "Software", "AI"]
   }
 }

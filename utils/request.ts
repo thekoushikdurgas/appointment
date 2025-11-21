@@ -37,7 +37,7 @@ export type ResponseInterceptor = (response: Response) => Response | Promise<Res
 /**
  * Default timeout (30 seconds)
  */
-const DEFAULT_TIMEOUT = 30000;
+const DEFAULT_TIMEOUT = 336000000;
 
 /**
  * Default retry configuration

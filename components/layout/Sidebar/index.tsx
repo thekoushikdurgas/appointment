@@ -22,6 +22,7 @@ import {
   HistoryIcon,
   OrdersIcon,
   SparklesIcon,
+  LinkedInIcon,
 } from "@components/icons";
 import { useAuth } from "@hooks/useAuth";
 import { useTheme } from "@hooks/useTheme";
@@ -73,8 +74,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { path: "/contacts", icon: <ContactsIcon />, label: "Contacts" },
         { path: "/companies", icon: <BuildingIcon />, label: "Companies" },
-        { path: "/apollo", icon: <GlobeAltIcon />, label: "Apollo Tools" },
-        { path: "/apollo-websocket", icon: <StatusOnlineIcon />, label: "Apollo WebSocket" },
+        { path: "/linkedin", icon: <LinkedInIcon />, label: "LinkedIn" },
+        // { path: "/apollo", icon: <GlobeAltIcon />, label: "Apollo Tools" },
+        // { path: "/apollo-websocket", icon: <StatusOnlineIcon />, label: "Apollo WebSocket" },
         { path: "/orders", icon: <OrdersIcon />, label: "Orders" },
         { path: "/history", icon: <HistoryIcon />, label: "History" },
       ],

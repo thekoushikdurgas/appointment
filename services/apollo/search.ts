@@ -592,3 +592,260 @@ export const getContactUuidsFromApolloUrl = async (
   }
 };
 
+/**
+ * Progress callback for paginated UUID fetching
+ */
+export type ApolloUuidFetchProgressCallback = (progress: {
+  fetched: number;
+  total: number;
+  percentage: number;
+}) => void;
+
+/**
+ * Get Contact UUIDs from Apollo.io URL with Pagination
+ * 
+ * Fetches contact UUIDs in batches to handle large datasets efficiently.
+ * Reports progress via callback and supports cancellation.
+ * 
+ * Note: This function uses the same endpoint but handles pagination by making
+ * multiple requests with offset/limit if the backend supports it, or falls back
+ * to the standard single request.
+ * 
+ * @param url - Apollo.io URL to convert and search (must be from apollo.io domain)
+ * @param params - Optional parameters for company name filtering, domain filtering, limit, and pagination
+ * @returns Promise resolving to ServiceResponse with ApolloContactsUuidsResponse
+ * 
+ * @example
+ * ```typescript
+ * const abortController = new AbortController();
+ * const result = await getContactUuidsFromApolloUrlPaginated(
+ *   'https://app.apollo.io/#/people?personTitles[]=CEO',
+ *   {
+ *     batchSize: 1000,
+ *     onProgress: ({ fetched, total, percentage }) => {
+ *       console.log(`Fetched ${fetched}/${total} (${percentage}%)`);
+ *     },
+ *     signal: abortController.signal
+ *   }
+ * );
+ * ```
+ */
+export const getContactUuidsFromApolloUrlPaginated = async (
+  url: string,
+  params?: ApolloContactsUuidsParams & {
+    batchSize?: number;
+    maxUuids?: number;
+    onProgress?: ApolloUuidFetchProgressCallback;
+    signal?: AbortSignal;
+  }
+): Promise<ServiceResponse<ApolloContactsUuidsResponse>> => {
+  const batchSize = params?.batchSize || 1000;
+  const maxUuids = params?.maxUuids;
+  const onProgress = params?.onProgress;
+  const signal = params?.signal;
+
+  try {
+    // Validate URL
+    const validation = validateApolloUrl(url);
+    if (!validation.valid) {
+      return {
+        success: false,
+        message: validation.error || 'Invalid URL',
+        error: {
+          message: validation.error || 'Invalid URL',
+          statusCode: 400,
+          isNetworkError: false,
+          isTimeoutError: false,
+        },
+      };
+    }
+
+    // First, get the total count
+    const countResult = await countContactsFromApolloUrl(url, {
+      include_company_name: params?.include_company_name,
+      exclude_company_name: params?.exclude_company_name,
+      include_domain_list: params?.include_domain_list,
+      exclude_domain_list: params?.exclude_domain_list,
+      requestId: params?.requestId,
+    });
+
+    if (!countResult.success || countResult.data === undefined) {
+      return {
+        success: false,
+        message: countResult.message || 'Failed to get contact count from Apollo URL',
+        error: countResult.error,
+      };
+    }
+
+    const totalCount = countResult.data;
+    let targetCount = totalCount;
+
+    // If maxUuids is specified, limit targetCount
+    if (maxUuids !== undefined && totalCount > maxUuids) {
+      targetCount = maxUuids;
+    }
+
+    // If total count is small or no pagination needed, use standard function
+    if (totalCount <= batchSize && maxUuids === undefined) {
+      return await getContactUuidsFromApolloUrl(url, {
+        ...params,
+        limit: totalCount,
+      });
+    }
+
+    // Fetch UUIDs in batches
+    const allUuids: string[] = [];
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore && !signal?.aborted && allUuids.length < targetCount) {
+      const currentLimit = Math.min(batchSize, targetCount - allUuids.length);
+
+      // Build query parameters
+      const query = new URLSearchParams();
+      if (params?.include_company_name) {
+        query.set('include_company_name', params.include_company_name);
+      }
+      if (params?.exclude_company_name && Array.isArray(params.exclude_company_name)) {
+        params.exclude_company_name.forEach((value) => {
+          if (value && value.trim()) {
+            query.append('exclude_company_name', value.trim());
+          }
+        });
+      }
+      if (params?.include_domain_list && Array.isArray(params.include_domain_list)) {
+        params.include_domain_list.forEach((domain) => {
+          if (domain && domain.trim()) {
+            query.append('include_domain_list', domain.trim());
+          }
+        });
+      }
+      if (params?.exclude_domain_list && Array.isArray(params.exclude_domain_list)) {
+        params.exclude_domain_list.forEach((domain) => {
+          if (domain && domain.trim()) {
+            query.append('exclude_domain_list', domain.trim());
+          }
+        });
+      }
+      query.set('limit', currentLimit.toString());
+      query.set('offset', offset.toString());
+
+      const queryString = query.toString();
+      const endpoint = `${API_BASE_URL}/api/v2/apollo/contacts/count/uuids?${queryString}`;
+
+      // Prepare headers
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (params?.requestId) {
+        headers['X-Request-Id'] = params.requestId;
+      }
+
+      // Prepare request body
+      const requestBody: ApolloContactsUuidsRequest = { url };
+
+      // Make API request
+      const response = await axiosAuthenticatedRequest(endpoint, {
+        method: 'POST',
+        headers,
+        data: requestBody,
+        useQueue: true,
+        useCache: false,
+        timeout: 336000000, // 30 second timeout for Apollo UUID fetch
+        priority: 5, // Higher priority for export-related requests
+      });
+
+      if (!response.ok) {
+        const error = await parseApiError(
+          response,
+          'Failed to get contact UUIDs from Apollo URL'
+        );
+        return {
+          success: false,
+          message: formatErrorMessage(
+            error,
+            'Failed to get contact UUIDs from Apollo URL'
+          ),
+          error,
+        };
+      }
+
+      const data: ApolloContactsUuidsResponse = await response.json();
+      const batchUuids = data.uuids || [];
+
+      if (batchUuids.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      allUuids.push(...batchUuids);
+
+      // Check if we've reached the max
+      if (maxUuids !== undefined && allUuids.length >= maxUuids) {
+        allUuids.splice(maxUuids);
+        hasMore = false;
+        break;
+      }
+
+      // Report progress
+      if (onProgress) {
+        const percentage = targetCount > 0 
+          ? Math.min(100, Math.round((allUuids.length / targetCount) * 100))
+          : 0;
+        onProgress({
+          fetched: allUuids.length,
+          total: targetCount,
+          percentage,
+        });
+      }
+
+      // Check if we have more to fetch
+      if (batchUuids.length < currentLimit || allUuids.length >= targetCount) {
+        hasMore = false;
+      } else {
+        offset += batchSize;
+      }
+    }
+
+    // Handle cancellation
+    if (signal?.aborted) {
+      return {
+        success: true,
+        message: `Fetched ${allUuids.length} contact UUID(s) (cancelled)`,
+        data: {
+          count: allUuids.length,
+          uuids: allUuids,
+        },
+      };
+    }
+
+    return {
+      success: true,
+      message: `Found ${allUuids.length} contact UUID(s) matching Apollo URL criteria`,
+      data: {
+        count: allUuids.length,
+        uuids: allUuids,
+      },
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(
+      error,
+      'Failed to get contact UUIDs from Apollo URL'
+    );
+    console.error('[APOLLO] Get contact UUIDs error (paginated):', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      success: false,
+      message: formatErrorMessage(
+        parsedError,
+        'Failed to get contact UUIDs from Apollo URL'
+      ),
+      error: parsedError,
+    };
+  }
+};
+

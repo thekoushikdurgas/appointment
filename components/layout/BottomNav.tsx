@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { DashboardIcon, ContactsIcon, BuildingIcon, SparklesIcon, PlansIcon, SettingsIcon } from '@components/icons';
+import { DashboardIcon, ContactsIcon, BuildingIcon, SparklesIcon, PlansIcon, SettingsIcon, LinkedInIcon } from '@components/icons';
 
 interface NavItem {
   path: string;
@@ -18,6 +18,7 @@ const BottomNav: React.FC = () => {
     { path: '/dashboard', icon: <DashboardIcon />, label: 'Home' },
     { path: '/contacts', icon: <ContactsIcon />, label: 'Contacts' },
     { path: '/companies', icon: <BuildingIcon />, label: 'Companies' },
+    { path: '/linkedin', icon: <LinkedInIcon />, label: 'LinkedIn' },
     { path: '/ai-assistant', icon: <SparklesIcon />, label: 'AI' },
     { path: '/settings', icon: <SettingsIcon />, label: 'Settings' },
   ];

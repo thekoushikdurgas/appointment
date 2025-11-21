@@ -31,20 +31,28 @@ export type {
   ExportListItem,
   ListExportsResponse,
   DeleteAllExportsResponse,
+  ChunkedExportResult,
+  ChunkedExportProgressCallback,
+  ExportStatusResponse,
 } from './types';
 
 // Re-export all functions
 export {
   createContactExport,
+  createChunkedContactExport,
   downloadExport,
 } from './contacts';
 
 export {
   createCompanyExport,
+  createChunkedCompanyExport,
 } from './companies';
 
 export {
   listExports,
   deleteAllExports,
+  getExportStatus,
+  pollExportStatus,
+  cancelExport,
 } from './list';
 

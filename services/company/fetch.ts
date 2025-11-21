@@ -434,3 +434,183 @@ export const getCompanyUuids = async (
   }
 };
 
+/**
+ * Progress callback for paginated UUID fetching
+ */
+export type UuidFetchProgressCallback = (progress: {
+  fetched: number;
+  total: number;
+  percentage: number;
+}) => void;
+
+/**
+ * Fetch Company UUIDs with Pagination
+ * 
+ * Fetches company UUIDs in batches to handle large datasets efficiently.
+ * Reports progress via callback and supports cancellation.
+ * 
+ * @param filters - Optional CompanyFilters to filter the UUIDs
+ * @param params - Optional parameters including batchSize, onProgress, and cancellation signal
+ * @returns Promise resolving to object with count and uuids array
+ * 
+ * @example
+ * ```typescript
+ * const abortController = new AbortController();
+ * const result = await fetchCompanyUuidsPaginated(
+ *   { industries: 'Technology' },
+ *   {
+ *     batchSize: 1000,
+ *     onProgress: ({ fetched, total, percentage }) => {
+ *       console.log(`Fetched ${fetched}/${total} (${percentage}%)`);
+ *     },
+ *     signal: abortController.signal
+ *   }
+ * );
+ * ```
+ */
+export const fetchCompanyUuidsPaginated = async (
+  filters?: CompanyFilters,
+  params?: {
+    batchSize?: number;
+    maxUuids?: number;
+    onProgress?: UuidFetchProgressCallback;
+    signal?: AbortSignal;
+    requestId?: string;
+  }
+): Promise<{ count: number; uuids: string[] }> => {
+  const batchSize = params?.batchSize || 1000;
+  const maxUuids = params?.maxUuids;
+  const onProgress = params?.onProgress;
+  const signal = params?.signal;
+  const requestId = params?.requestId;
+
+  const allUuids: string[] = [];
+  let offset = 0;
+  let totalCount = 0;
+  let hasMore = true;
+
+  try {
+    // First, get the total count
+    const countQuery = buildFilterQuery(filters);
+    const countQueryString = countQuery.toString();
+    const countUrl = countQueryString
+      ? `${API_BASE_URL}/api/v1/companies/count/?${countQueryString}`
+      : `${API_BASE_URL}/api/v1/companies/count/`;
+
+    const countHeaders: HeadersInit = {};
+    if (requestId) {
+      countHeaders['X-Request-Id'] = requestId;
+    }
+
+    const countResponse = await axiosAuthenticatedRequest(countUrl, {
+      method: 'GET',
+      headers: countHeaders,
+      useQueue: true,
+      useCache: true,
+    });
+
+    if (!countResponse.ok) {
+      const error = await parseApiError(countResponse, 'Failed to fetch company count');
+      throw error;
+    }
+
+    const countData: CountResponse = await countResponse.json();
+    totalCount = countData.count || 0;
+
+    // If maxUuids is specified, limit totalCount
+    if (maxUuids !== undefined && totalCount > maxUuids) {
+      totalCount = maxUuids;
+    }
+
+    // Fetch UUIDs in batches
+    while (hasMore && !signal?.aborted) {
+      const query = buildFilterQuery(filters);
+      query.set('limit', batchSize.toString());
+      query.set('offset', offset.toString());
+
+      const queryString = query.toString();
+      const url = `${API_BASE_URL}/api/v1/companies/count/uuids/?${queryString}`;
+
+      const headers: HeadersInit = {};
+      if (requestId) {
+        headers['X-Request-Id'] = requestId;
+      }
+
+      const response = await axiosAuthenticatedRequest(url, {
+        method: 'GET',
+        headers,
+        useQueue: true,
+        useCache: false, // Don't cache paginated requests
+        timeout: 336000000, // 1 hour timeout for UUID fetch
+        priority: 5, // Higher priority for export-related requests
+      });
+
+      if (!response.ok) {
+        const error = await parseApiError(response, 'Failed to fetch company UUIDs');
+        throw error;
+      }
+
+      const data: { count: number; uuids: string[] } = await response.json();
+      const batchUuids = data.uuids || [];
+
+      if (batchUuids.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      allUuids.push(...batchUuids);
+
+      // Check if we've reached the max
+      if (maxUuids !== undefined && allUuids.length >= maxUuids) {
+        allUuids.splice(maxUuids);
+        hasMore = false;
+        break;
+      }
+
+      // Report progress
+      if (onProgress) {
+        const percentage = totalCount > 0 
+          ? Math.min(100, Math.round((allUuids.length / totalCount) * 100))
+          : 0;
+        onProgress({
+          fetched: allUuids.length,
+          total: totalCount,
+          percentage,
+        });
+      }
+
+      // Check if we have more to fetch
+      if (batchUuids.length < batchSize) {
+        hasMore = false;
+      } else {
+        offset += batchSize;
+      }
+    }
+
+    // Handle cancellation
+    if (signal?.aborted) {
+      return {
+        count: totalCount,
+        uuids: allUuids,
+      };
+    }
+
+    return {
+      count: totalCount,
+      uuids: allUuids,
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(error, 'Failed to fetch company UUIDs');
+    console.error('[COMPANY] Failed to fetch company UUIDs (paginated):', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      count: totalCount || 0,
+      uuids: allUuids,
+    };
+  }
+};
+

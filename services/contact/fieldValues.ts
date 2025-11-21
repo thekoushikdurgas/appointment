@@ -99,7 +99,9 @@ export const fetchFieldValues = async (
         
         const query = new URLSearchParams();
         if (search) query.set('search', search);
-        // distinct parameter removed to prevent timeout issues
+        if (distinct !== undefined) {
+            query.set('distinct', distinct.toString());
+        }
         if (company) query.set('company', company);
         if (ordering) query.set('ordering', ordering);
         query.set('limit', String(limit));

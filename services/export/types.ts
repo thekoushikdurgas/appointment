@@ -31,7 +31,8 @@ export interface CreateContactExportResponse {
   download_url: string;
   expires_at: string;
   contact_count: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  job_id?: string;
 }
 
 /**
@@ -49,7 +50,8 @@ export interface CreateCompanyExportResponse {
   download_url: string;
   expires_at: string;
   company_count: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  job_id?: string;
 }
 
 /**
@@ -65,7 +67,7 @@ export interface ExportListItem {
   contact_uuids?: string[] | null;
   company_count: number;
   company_uuids?: string[] | null;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   created_at: string;
   expires_at?: string | null;
   download_url?: string | null;
@@ -85,5 +87,44 @@ export interface ListExportsResponse {
 export interface DeleteAllExportsResponse {
   message: string;
   deleted_count: number;
+}
+
+/**
+ * Chunked Export Progress Callback
+ */
+export type ChunkedExportProgressCallback = (progress: {
+  completed: number;
+  total: number;
+  percentage: number;
+  currentChunk: number;
+}) => void;
+
+/**
+ * Chunked Export Result
+ */
+export interface ChunkedExportResult {
+  export_id?: string; // Main export ID (when using backend chunked endpoint)
+  chunk_ids?: string[]; // Chunk export IDs (when using backend chunked endpoint)
+  exportIds?: string[]; // Legacy: array of export IDs (when using frontend chunking)
+  totalCount: number;
+  total_count?: number; // Backend field name
+  successfulChunks?: number;
+  failedChunks?: number;
+  status?: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  job_id?: string;
+  errors?: string[];
+}
+
+/**
+ * Export Status Response
+ */
+export interface ExportStatusResponse {
+  export_id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  progress_percentage?: number;
+  estimated_time?: number;
+  error_message?: string;
+  download_url?: string | null;
+  expires_at?: string | null;
 }
 

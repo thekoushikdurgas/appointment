@@ -16,13 +16,31 @@ import { useRouter } from 'next/navigation';
 import { 
   createContactExport, 
   createCompanyExport,
-  downloadExport, 
+  createChunkedContactExport,
+  createChunkedCompanyExport,
+  downloadExport,
+  pollExportStatus,
+  type ExportStatusResponse,
   CreateContactExportResponse,
-  CreateCompanyExportResponse
+  CreateCompanyExportResponse,
+  type ChunkedExportProgressCallback
 } from '@services/export';
-import { getContactUuids } from '@services/contact';
-import { getCompanyUuids } from '@services/company';
-import { getContactUuidsFromApolloUrl, ApolloContactsUuidsParams } from '@services/apollo';
+import { 
+  getContactUuids, 
+  fetchContactUuidsPaginated,
+  type UuidFetchProgressCallback as ContactUuidFetchProgressCallback
+} from '@services/contact';
+import { 
+  getCompanyUuids, 
+  fetchCompanyUuidsPaginated,
+  type UuidFetchProgressCallback as CompanyUuidFetchProgressCallback
+} from '@services/company';
+import { 
+  getContactUuidsFromApolloUrl, 
+  getContactUuidsFromApolloUrlPaginated,
+  type ApolloUuidFetchProgressCallback,
+  ApolloContactsUuidsParams 
+} from '@services/apollo';
 import { Toast, ToastContainer, ToastProps } from '@components/ui/Toast';
 
 export type ExportType = 'contacts' | 'companies';
@@ -68,10 +86,33 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [exportError, setExportError] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastProps[]>([]);
   const [uuidsToExport, setUuidsToExport] = useState<string[]>([]);
+  const [uuidFetchProgress, setUuidFetchProgress] = useState<{
+    fetched: number;
+    total: number;
+    percentage: number;
+  } | null>(null);
+  const [isFetchingUuids, setIsFetchingUuids] = useState(false);
+  const [uuidFetchAbortController, setUuidFetchAbortController] = useState<AbortController | null>(null);
+  const [chunkedExportProgress, setChunkedExportProgress] = useState<{
+    completed: number;
+    total: number;
+    percentage: number;
+    currentChunk: number;
+  } | null>(null);
+  const [exportProcessingProgress, setExportProcessingProgress] = useState<{
+    percentage: number;
+    status: string;
+  } | null>(null);
 
   // Reset state when modal opens/closes, but only if export is not in progress
   useEffect(() => {
     if (!isOpen) {
+      // Cancel any ongoing UUID fetching
+      if (uuidFetchAbortController) {
+        uuidFetchAbortController.abort();
+        setUuidFetchAbortController(null);
+      }
+      
       // Only reset if export is not in progress (idle or failed states)
       // Don't reset if export is creating, processing, or completed (background export continues)
       if (exportStatus === 'idle' || exportStatus === 'failed') {
@@ -81,9 +122,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         setExportMode('selected');
         setSpecifiedRows('');
         setUuidsToExport([]);
+        setIsFetchingUuids(false);
+        setUuidFetchProgress(null);
       }
     }
   }, [isOpen, exportStatus]);
+  
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (uuidFetchAbortController) {
+        uuidFetchAbortController.abort();
+      }
+    };
+  }, [uuidFetchAbortController]);
 
   const showToast = (title: string, description?: string, variant: ToastProps['variant'] = 'default') => {
     const id = `toast-${Date.now()}-${Math.random()}`;
@@ -117,43 +169,97 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           throw new Error('Please enter a valid number of rows');
         }
         
-        // Use Apollo URL if provided, otherwise use regular filters
-        if (apolloUrl && exportType === 'contacts') {
-          const result = await getContactUuidsFromApolloUrl(apolloUrl, {
-            ...apolloParams,
-            limit,
-          });
+        // Use paginated fetching for better performance
+        setIsFetchingUuids(true);
+        setUuidFetchProgress({ fetched: 0, total: limit, percentage: 0 });
+        
+        const abortController = new AbortController();
+        setUuidFetchAbortController(abortController);
+        
+        try {
+          const progressCallback: ContactUuidFetchProgressCallback | CompanyUuidFetchProgressCallback | ApolloUuidFetchProgressCallback = (progress) => {
+            setUuidFetchProgress(progress);
+          };
           
-          if (result.success && result.data) {
-            return result.data.uuids;
+          // Use Apollo URL if provided, otherwise use regular filters
+          if (apolloUrl && exportType === 'contacts') {
+            const result = await getContactUuidsFromApolloUrlPaginated(apolloUrl, {
+              ...apolloParams,
+              maxUuids: limit,
+              onProgress: progressCallback,
+              signal: abortController.signal,
+            });
+            
+            if (result.success && result.data) {
+              return result.data.uuids;
+            } else {
+              throw new Error(result.message || 'Failed to fetch contact UUIDs from Apollo URL');
+            }
           } else {
-            throw new Error(result.message || 'Failed to fetch contact UUIDs from Apollo URL');
+            const result = exportType === 'contacts' 
+              ? await fetchContactUuidsPaginated(filters, {
+                  maxUuids: limit,
+                  onProgress: progressCallback,
+                  signal: abortController.signal,
+                })
+              : await fetchCompanyUuidsPaginated(filters, {
+                  maxUuids: limit,
+                  onProgress: progressCallback,
+                  signal: abortController.signal,
+                });
+            
+            return result.uuids;
           }
-        } else {
-          const result = exportType === 'contacts' 
-            ? await getContactUuids(filters, { limit })
-            : await getCompanyUuids(filters, { limit });
-          
-          return result.uuids;
+        } finally {
+          setIsFetchingUuids(false);
+          setUuidFetchAbortController(null);
+          setUuidFetchProgress(null);
         }
       }
       
       case 'all': {
-        // Use Apollo URL if provided, otherwise use regular filters
-        if (apolloUrl && exportType === 'contacts') {
-          const result = await getContactUuidsFromApolloUrl(apolloUrl, apolloParams);
+        // Use paginated fetching for better performance
+        setIsFetchingUuids(true);
+        setUuidFetchProgress({ fetched: 0, total: totalCount || 0, percentage: 0 });
+        
+        const abortController = new AbortController();
+        setUuidFetchAbortController(abortController);
+        
+        try {
+          const progressCallback: ContactUuidFetchProgressCallback | CompanyUuidFetchProgressCallback | ApolloUuidFetchProgressCallback = (progress) => {
+            setUuidFetchProgress(progress);
+          };
           
-          if (result.success && result.data) {
-            return result.data.uuids;
+          // Use Apollo URL if provided, otherwise use regular filters
+          if (apolloUrl && exportType === 'contacts') {
+            const result = await getContactUuidsFromApolloUrlPaginated(apolloUrl, {
+              ...apolloParams,
+              onProgress: progressCallback,
+              signal: abortController.signal,
+            });
+            
+            if (result.success && result.data) {
+              return result.data.uuids;
+            } else {
+              throw new Error(result.message || 'Failed to fetch contact UUIDs from Apollo URL');
+            }
           } else {
-            throw new Error(result.message || 'Failed to fetch contact UUIDs from Apollo URL');
+            const result = exportType === 'contacts'
+              ? await fetchContactUuidsPaginated(filters, {
+                  onProgress: progressCallback,
+                  signal: abortController.signal,
+                })
+              : await fetchCompanyUuidsPaginated(filters, {
+                  onProgress: progressCallback,
+                  signal: abortController.signal,
+                });
+            
+            return result.uuids;
           }
-        } else {
-          const result = exportType === 'contacts'
-            ? await getContactUuids(filters)
-            : await getCompanyUuids(filters);
-          
-          return result.uuids;
+        } finally {
+          setIsFetchingUuids(false);
+          setUuidFetchAbortController(null);
+          setUuidFetchProgress(null);
         }
       }
       
@@ -165,6 +271,20 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const handleCreateExport = async () => {
     const entityName = getEntityName();
     const entityNamePlural = getEntityNamePlural();
+    
+    // Performance tracking
+    const performanceMetrics = {
+      uuidFetchStart: 0,
+      uuidFetchEnd: 0,
+      uuidFetchDuration: 0,
+      exportCreationStart: 0,
+      exportCreationEnd: 0,
+      exportCreationDuration: 0,
+      totalDuration: 0,
+      recordCount: 0,
+    };
+    
+    const totalStartTime = Date.now();
     
     // Close modal immediately after starting export
     onClose();
@@ -183,7 +303,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       }
       
       // Get UUIDs based on selected mode (this will fetch in background for specified_rows/all)
+      performanceMetrics.uuidFetchStart = Date.now();
       const uuids = await getUuidsForMode(exportMode);
+      performanceMetrics.uuidFetchEnd = Date.now();
+      performanceMetrics.uuidFetchDuration = performanceMetrics.uuidFetchEnd - performanceMetrics.uuidFetchStart;
       
       if (uuids.length === 0) {
         showToast(
@@ -206,6 +329,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       setUuidsToExport(uuids);
       setExportStatus('creating');
       setExportError(null);
+      performanceMetrics.recordCount = uuids.length;
 
       // Show toast for export creation
       showToast(
@@ -214,67 +338,238 @@ export const ExportModal: React.FC<ExportModalProps> = ({
         'info'
       );
 
-      // Create export based on type
-      const result = exportType === 'contacts'
-        ? await createContactExport(uuids)
-        : await createCompanyExport(uuids);
+      // Use chunked export for large exports (>5000 UUIDs)
+      const CHUNK_THRESHOLD = 5000;
+      const useChunked = uuids.length > CHUNK_THRESHOLD;
+      
+      performanceMetrics.exportCreationStart = Date.now();
 
-      if (result.success && result.data) {
-        setCurrentExport(result.data);
+      if (useChunked) {
+        // Use chunked export
+        const chunkedProgressCallback: ChunkedExportProgressCallback = (progress) => {
+          setChunkedExportProgress(progress);
+        };
+
+        const result = exportType === 'contacts'
+          ? await createChunkedContactExport(uuids, {
+              onProgress: chunkedProgressCallback,
+            })
+          : await createChunkedCompanyExport(uuids, {
+              onProgress: chunkedProgressCallback,
+            });
+
+        performanceMetrics.exportCreationEnd = Date.now();
+        performanceMetrics.exportCreationDuration = performanceMetrics.exportCreationEnd - performanceMetrics.exportCreationStart;
         
-        // Check if export is already completed
-        if (result.data.status === 'completed') {
-          setExportStatus('completed');
-          showToast(
-            'Export Ready', 
-            navigateToHistory 
-              ? 'Your export is ready. You can download it from the History page.' 
-              : 'Your export is ready for download', 
-            'success'
-          );
+        if (result.success && result.data) {
+          // Backend chunked export returns a single export_id (main export ID)
+          // and chunk_ids array for tracking individual chunks
+          if (result.data.export_id) {
+            // Create a mock export object for the main export
+            const mainExport: CreateContactExportResponse | CreateCompanyExportResponse = {
+              export_id: result.data.export_id,
+              download_url: '',
+              expires_at: '',
+              contact_count: exportType === 'contacts' ? result.data.totalCount : 0,
+              company_count: exportType === 'companies' ? result.data.totalCount : 0,
+              status: result.data.status || 'pending',
+            } as any;
+            
+            setCurrentExport(mainExport);
+            
+            // Check if export is already completed
+            if (result.data.status === 'completed') {
+              setExportStatus('completed');
+              showToast(
+                'Export Ready',
+                navigateToHistory
+                  ? 'Your export is ready. You can download it from the History page.'
+                  : 'Your export is ready for download',
+                'success'
+              );
+            } else {
+              // Start polling for status using the main export ID
+              setExportStatus('processing');
+              showToast(
+                'Processing export...',
+                'This may take a few moments.',
+                'info'
+              );
+              pollExportStatusLocal(result.data.export_id);
+            }
+          } else if (result.data.exportIds && result.data.exportIds.length > 0) {
+            // Fallback for legacy frontend chunking (shouldn't happen with new backend)
+            setExportStatus('completed');
+            showToast(
+              'Export Created',
+              `Successfully created ${result.data.successfulChunks || 0} export chunk(s) with ${result.data.totalCount.toLocaleString()} ${entityNamePlural}. ${result.data.failedChunks && result.data.failedChunks > 0 ? `${result.data.failedChunks} chunk(s) failed. ` : ''}Check the History page to download.`,
+              result.data.failedChunks && result.data.failedChunks > 0 ? 'info' : 'success'
+            );
+          } else {
+            setExportStatus('failed');
+            setExportError('Failed to create export');
+            showToast('Export Failed', 'Failed to create export', 'error');
+          }
+          setChunkedExportProgress(null);
         } else {
-          // Start polling for status
-          setExportStatus('processing');
-          showToast(
-            'Processing export...',
-            'This may take a few moments.',
-            'info'
-          );
-          pollExportStatus(result.data.export_id);
+          setExportStatus('failed');
+          setExportError(result.message || 'Failed to create chunked export');
+          showToast('Export Failed', result.message || 'Failed to create chunked export', 'error');
+          setChunkedExportProgress(null);
         }
       } else {
-        setExportStatus('failed');
-        setExportError(result.message || 'Failed to create export');
-        showToast('Export Failed', result.message || 'Failed to create export', 'error');
+        // Use regular export for smaller exports
+        const result = exportType === 'contacts'
+          ? await createContactExport(uuids)
+          : await createCompanyExport(uuids);
+
+        performanceMetrics.exportCreationEnd = Date.now();
+        performanceMetrics.exportCreationDuration = performanceMetrics.exportCreationEnd - performanceMetrics.exportCreationStart;
+        
+        if (result.success && result.data) {
+          setCurrentExport(result.data);
+          
+          // Check if export is already completed
+          if (result.data.status === 'completed') {
+            setExportStatus('completed');
+            showToast(
+              'Export Ready', 
+              navigateToHistory 
+                ? 'Your export is ready. You can download it from the History page.' 
+                : 'Your export is ready for download', 
+              'success'
+            );
+          } else {
+            // Start polling for status
+            setExportStatus('processing');
+            showToast(
+              'Processing export...',
+              'This may take a few moments.',
+              'info'
+            );
+            pollExportStatusLocal(result.data.export_id);
+          }
+        } else {
+          setExportStatus('failed');
+          setExportError(result.message || 'Failed to create export');
+          showToast('Export Failed', result.message || 'Failed to create export', 'error');
+        }
+      }
+      
+      // Log performance metrics
+      performanceMetrics.totalDuration = Date.now() - totalStartTime;
+      console.log('[EXPORT] Performance Metrics:', {
+        recordCount: performanceMetrics.recordCount,
+        uuidFetchDuration: `${(performanceMetrics.uuidFetchDuration / 1000).toFixed(2)}s`,
+        exportCreationDuration: `${(performanceMetrics.exportCreationDuration / 1000).toFixed(2)}s`,
+        totalDuration: `${(performanceMetrics.totalDuration / 1000).toFixed(2)}s`,
+        exportMode,
+        exportType,
+      });
+      
+      // Warn if export is slow
+      if (performanceMetrics.totalDuration > 3600000) {
+        console.warn('[EXPORT] Slow export detected:', {
+          duration: `${(performanceMetrics.totalDuration / 1000).toFixed(2)}s`,
+          recordCount: performanceMetrics.recordCount,
+        });
       }
     } catch (error: any) {
       console.error('Export creation error:', error);
       setExportStatus('failed');
       setExportError(error.message || 'An unexpected error occurred while creating the export');
       showToast('Export Failed', error.message || 'An unexpected error occurred', 'error');
+      
+      // Log error metrics
+      performanceMetrics.totalDuration = Date.now() - totalStartTime;
+      console.error('[EXPORT] Export failed - Performance Metrics:', {
+        recordCount: performanceMetrics.recordCount,
+        uuidFetchDuration: `${(performanceMetrics.uuidFetchDuration / 1000).toFixed(2)}s`,
+        exportCreationDuration: `${(performanceMetrics.exportCreationDuration / 1000).toFixed(2)}s`,
+        totalDuration: `${(performanceMetrics.totalDuration / 1000).toFixed(2)}s`,
+        error: error.message,
+      });
     }
   };
 
-  const pollExportStatus = async (exportId: string) => {
-    // Note: Since we don't have a status endpoint, we'll assume exports complete quickly
-    // If the status is 'pending' or 'processing', we'll show a processing state
-    // In a production environment, you would poll a status endpoint here
-    
-    setTimeout(() => {
-      // After a short delay, assume export is ready (or check status if endpoint exists)
-      if (currentExport && (currentExport.status === 'pending' || currentExport.status === 'processing')) {
-        // In a real implementation, you would check the status here
-        // For now, we'll allow the user to try downloading
-        setExportStatus('completed');
+  const pollExportStatusLocal = async (exportId: string) => {
+    try {
+      const result = await pollExportStatus(exportId, {
+        interval: 2000, // Poll every 2 seconds
+        maxAttempts: 150, // Max 5 minutes
+        onProgress: (status: ExportStatusResponse) => {
+          // Update progress state
+          setExportProcessingProgress({
+            percentage: status.progress_percentage || 0,
+            status: status.status,
+          });
+          
+          // Update current export if download URL becomes available
+          if (status.download_url && currentExport) {
+            setCurrentExport({
+              ...currentExport,
+              download_url: status.download_url,
+              status: status.status as any,
+            });
+          }
+        },
+      });
+
+      if (result.success && result.data) {
+        const status = result.data;
+        
+        if (status.status === 'completed') {
+          setExportStatus('completed');
+          setExportProcessingProgress(null);
+          
+          // Update current export with latest download URL
+          if (currentExport && status.download_url) {
+            setCurrentExport({
+              ...currentExport,
+              download_url: status.download_url,
+              status: 'completed',
+            });
+          }
+          
+          showToast(
+            'Export Ready',
+            navigateToHistory 
+              ? 'Your export is ready. You can download it from the History page.' 
+              : 'Your export is ready for download',
+            'success'
+          );
+        } else if (status.status === 'failed') {
+          setExportStatus('failed');
+          setExportProcessingProgress(null);
+          setExportError(status.error_message || 'Export processing failed');
+          showToast(
+            'Export Failed',
+            status.error_message || 'Export processing failed',
+            'error'
+          );
+        }
+      } else {
+        // Polling failed or timed out
+        setExportStatus('failed');
+        setExportProcessingProgress(null);
+        setExportError(result.message || 'Failed to check export status');
         showToast(
-          'Export Ready',
-          navigateToHistory 
-            ? 'Your export is ready. You can download it from the History page.' 
-            : 'Your export is ready for download',
-          'success'
+          'Export Status Check Failed',
+          result.message || 'Failed to check export status. Please check the History page.',
+          'error'
         );
       }
-    }, 3000);
+    } catch (error: any) {
+      console.error('Poll export status error:', error);
+      setExportStatus('failed');
+      setExportProcessingProgress(null);
+      setExportError(error.message || 'Failed to poll export status');
+      showToast(
+        'Export Status Check Failed',
+        error.message || 'Failed to check export status',
+        'error'
+      );
+    }
   };
 
   const handleDownload = async () => {
@@ -351,6 +646,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const getEntityName = () => exportType === 'contacts' ? 'contact' : 'company';
   const getEntityNamePlural = () => exportType === 'contacts' ? 'contacts' : 'companies';
   const getEntityNameCapitalized = () => exportType === 'contacts' ? 'Contacts' : 'Companies';
+  
+  const handleCancelUuidFetch = () => {
+    if (uuidFetchAbortController) {
+      uuidFetchAbortController.abort();
+      setUuidFetchAbortController(null);
+      setIsFetchingUuids(false);
+      setUuidFetchProgress(null);
+      showToast('Cancelled', 'UUID fetching has been cancelled', 'info');
+    }
+  };
 
   const getExportCount = () => {
     switch (exportMode) {
@@ -383,6 +688,26 @@ export const ExportModal: React.FC<ExportModalProps> = ({
       default:
         return '';
     }
+  };
+
+  const getEstimatedTime = (count: number): string => {
+    // Rough estimates: ~100 records per second for UUID fetch, ~50 records per second for export creation
+    const uuidFetchTime = count / 100; // seconds
+    const exportCreationTime = count / 50; // seconds
+    const totalSeconds = uuidFetchTime + exportCreationTime;
+    
+    if (totalSeconds < 60) {
+      return `${Math.ceil(totalSeconds)} seconds`;
+    } else if (totalSeconds < 3600) {
+      return `${Math.ceil(totalSeconds / 60)} minutes`;
+    } else {
+      return `${(totalSeconds / 3600).toFixed(1)} hours`;
+    }
+  };
+
+  const shouldShowWarning = (): boolean => {
+    const count = getExportCount();
+    return count > 10000;
   };
 
   return (
@@ -482,6 +807,115 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   </div>
                 )}
 
+                {/* UUID Fetch Progress Indicator */}
+                {isFetchingUuids && uuidFetchProgress && (
+                  <div className="export-modal-progress">
+                    <div className="export-modal-progress-header">
+                      <span className="export-modal-progress-label">
+                        Fetching {getEntityNamePlural()}...
+                      </span>
+                      <span className="export-modal-progress-percentage">
+                        {uuidFetchProgress.percentage}%
+                      </span>
+                    </div>
+                    <div className="export-modal-progress-bar-container">
+                      <div 
+                        className="export-modal-progress-bar"
+                        style={{ width: `${uuidFetchProgress.percentage}%` }}
+                      />
+                    </div>
+                    <div className="export-modal-progress-text">
+                      {uuidFetchProgress.fetched.toLocaleString()} of {uuidFetchProgress.total.toLocaleString()} {getEntityNamePlural()}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelUuidFetch}
+                      className="export-modal-progress-cancel"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+
+                {/* Chunked Export Progress Indicator */}
+                {chunkedExportProgress && (
+                  <div className="export-modal-progress">
+                    <div className="export-modal-progress-header">
+                      <span className="export-modal-progress-label">
+                        Creating export chunks...
+                      </span>
+                      <span className="export-modal-progress-percentage">
+                        {chunkedExportProgress.percentage}%
+                      </span>
+                    </div>
+                    <div className="export-modal-progress-bar-container">
+                      <div 
+                        className="export-modal-progress-bar"
+                        style={{ width: `${chunkedExportProgress.percentage}%` }}
+                      />
+                    </div>
+                    <div className="export-modal-progress-text">
+                      Chunk {chunkedExportProgress.currentChunk} of {chunkedExportProgress.total}
+                    </div>
+                  </div>
+                )}
+
+                {/* Export Processing Progress Indicator */}
+                {exportProcessingProgress && exportStatus === 'processing' && (
+                  <div className="export-modal-progress">
+                    <div className="export-modal-progress-header">
+                      <span className="export-modal-progress-label">
+                        Processing export...
+                      </span>
+                      <span className="export-modal-progress-percentage">
+                        {exportProcessingProgress.percentage}%
+                      </span>
+                    </div>
+                    <div className="export-modal-progress-bar-container">
+                      <div 
+                        className="export-modal-progress-bar"
+                        style={{ width: `${exportProcessingProgress.percentage}%` }}
+                      />
+                    </div>
+                    <div className="export-modal-progress-text">
+                      Status: {exportProcessingProgress.status}
+                    </div>
+                  </div>
+                )}
+
+                {/* Export Preview */}
+                {(exportMode === 'specified_rows' || exportMode === 'all') && (
+                  <div className="export-modal-preview">
+                    <div className="export-modal-preview-info">
+                      <div className="export-modal-preview-item">
+                        <span className="export-modal-preview-label">Estimated Records:</span>
+                        <span className="export-modal-preview-value">
+                          {getExportCount().toLocaleString()} {getEntityNamePlural()}
+                        </span>
+                      </div>
+                      <div className="export-modal-preview-item">
+                        <span className="export-modal-preview-label">Estimated Time:</span>
+                        <span className="export-modal-preview-value">
+                          {getEstimatedTime(getExportCount())}
+                        </span>
+                      </div>
+                    </div>
+                    {shouldShowWarning() && (
+                      <div className="export-modal-warning">
+                        <AlertTriangleIcon className="export-modal-warning-icon" />
+                        <div className="export-modal-warning-content">
+                          <strong>Large Export Warning</strong>
+                          <p>
+                            Exporting {getExportCount().toLocaleString()} {getEntityNamePlural()} may take a significant amount of time. 
+                            The export will be processed in the background and you'll be notified when it's ready.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <p className="export-modal-text--small">
                   The export will include all {getEntityName()}, company, and metadata fields. The download link will expire in 24 hours.
                 </p>
@@ -494,13 +928,14 @@ export const ExportModal: React.FC<ExportModalProps> = ({
                   variant="primary" 
                   onClick={handleCreateExport}
                   disabled={
+                    isFetchingUuids ||
                     (exportMode === 'selected' && selectedContactUuids.length === 0) ||
                     (exportMode === 'current_page' && currentPageData.length === 0) ||
                     (exportMode === 'specified_rows' && (!specifiedRows || parseInt(specifiedRows, 10) <= 0)) ||
                     (exportMode === 'all' && totalCount === 0)
                   }
                 >
-                  Create Export
+                  {isFetchingUuids ? 'Fetching...' : 'Create Export'}
                 </Button>
               </div>
             </div>

@@ -145,7 +145,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         console.error('[AUTH] Error checking session:', error);
       }
-    }, 3600000); // Check every hour
+    }, 336000000); // Check every hour
 
     return () => {
       isMounted = false;

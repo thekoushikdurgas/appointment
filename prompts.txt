@@ -545,3 +545,7 @@ Analyze the state management setuplearn and understand and analysis my flutter a
 Review the UI/UX implementationlearn and understand and analysis my flutter android app "prbal" in deeply
 
 Check the Firebase integrationlearn and understand and analysis my flutter android app "prbal" in deeply
+
+
+
+in title input will be multi value and input willl be dropdown and show by default /contacts/title/?limit=25&offset=0 and user type "search_text" , /contacts/title/?limit=25&search={search_text}&offset=0 , Learn, understand, and analyse this deeply, and then break your tasks into smaller tasks

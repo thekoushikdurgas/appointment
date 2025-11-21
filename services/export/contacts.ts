@@ -15,6 +15,8 @@ import {
   ServiceResponse,
   CreateContactExportRequest,
   CreateContactExportResponse,
+  ChunkedExportResult,
+  ChunkedExportProgressCallback,
 } from './types';
 
 /**
@@ -104,6 +106,8 @@ export const createContactExport = async (
         data: requestBody,
         useQueue: true,
         useCache: false,
+        timeout: 3600000, // 60 second timeout for export creation
+        priority: 7, // High priority for export creation
       }
     );
 
@@ -347,6 +351,225 @@ export const downloadExport = async (
     return {
       success: false,
       message: formatErrorMessage(parsedError, 'Failed to download export'),
+      error: parsedError,
+    };
+  }
+};
+
+/**
+ * Chunk size for splitting large export requests
+ */
+const DEFAULT_CHUNK_SIZE = 5000;
+
+/**
+ * Create a chunked CSV export of selected contacts
+ * 
+ * Uses the backend chunked export endpoint to create a single export job that processes
+ * multiple chunks of contact UUIDs. The backend handles chunking, processing, and optionally
+ * merging the chunks into a single export file.
+ * 
+ * **Endpoint:** POST /api/v2/exports/contacts/export/chunked
+ * 
+ * **Authentication:** Required (JWT Bearer token)
+ * 
+ * **Request Body:**
+ * - `chunks` (array[array[string]], required): List of UUID chunks to export
+ * - `merge` (boolean, optional, default: true): Whether to merge chunks into a single export file
+ * 
+ * **Response:**
+ * - `export_id` (string, UUID): Main export ID
+ * - `chunk_ids` (array[string]): List of chunk export IDs
+ * - `total_count` (integer): Total number of records across all chunks
+ * - `status` (string): Export status - pending, processing, completed, failed, or cancelled
+ * - `job_id` (string, optional): Celery task ID for tracking the background job
+ * 
+ * @param contactUuids - Array of contact UUIDs to export (will be split into chunks)
+ * @param params - Optional parameters including chunkSize, onProgress, merge, and requestId
+ * @returns Promise resolving to ServiceResponse with ChunkedExportResult
+ * 
+ * @example
+ * ```typescript
+ * const result = await createChunkedContactExport(
+ *   largeUuidArray, // e.g., 15000 UUIDs
+ *   {
+ *     chunkSize: 5000,
+ *     merge: true,
+ *     onProgress: ({ completed, total, percentage }) => {
+ *       console.log(`Created ${completed}/${total} export chunks (${percentage}%)`);
+ *     }
+ *   }
+ * );
+ * 
+ * if (result.success && result.data) {
+ *   console.log(`Main export ID: ${result.data.export_id}`);
+ *   console.log(`Total contacts: ${result.data.totalCount}`);
+ * }
+ * ```
+ */
+export const createChunkedContactExport = async (
+  contactUuids: string[],
+  params?: {
+    chunkSize?: number;
+    merge?: boolean;
+    onProgress?: ChunkedExportProgressCallback;
+    requestId?: string;
+  }
+): Promise<ServiceResponse<ChunkedExportResult>> => {
+  const chunkSize = params?.chunkSize || DEFAULT_CHUNK_SIZE;
+  const merge = params?.merge !== undefined ? params.merge : true;
+  const onProgress = params?.onProgress;
+  const requestId = params?.requestId;
+
+  try {
+    // Validate input
+    if (!Array.isArray(contactUuids) || contactUuids.length === 0) {
+      return {
+        success: false,
+        message: 'At least one contact UUID is required',
+        error: {
+          message: 'At least one contact UUID is required',
+          statusCode: 400,
+          isNetworkError: false,
+          isTimeoutError: false,
+        },
+      };
+    }
+
+    // If UUIDs fit in one chunk, use regular export
+    if (contactUuids.length <= chunkSize) {
+      const result = await createContactExport(contactUuids, requestId);
+      if (result.success && result.data) {
+        return {
+          success: true,
+          message: result.message,
+          data: {
+            exportIds: [result.data.export_id],
+            totalCount: result.data.contact_count,
+            successfulChunks: 1,
+            failedChunks: 0,
+          },
+        };
+      } else {
+        return {
+          success: false,
+          message: result.message,
+          error: result.error,
+        };
+      }
+    }
+
+    // Split UUIDs into chunks
+    const chunks: string[][] = [];
+    for (let i = 0; i < contactUuids.length; i += chunkSize) {
+      chunks.push(contactUuids.slice(i, i + chunkSize));
+    }
+
+    const totalChunks = chunks.length;
+
+    // Report initial progress
+    if (onProgress) {
+      onProgress({
+        completed: 0,
+        total: totalChunks,
+        percentage: 0,
+        currentChunk: 0,
+      });
+    }
+
+    // Prepare headers
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    if (requestId) {
+      headers['X-Request-Id'] = requestId;
+    }
+
+    // Prepare request body for backend chunked endpoint
+    const requestBody = {
+      chunks: chunks,
+      merge: merge,
+    };
+
+    // Make API request to backend chunked endpoint
+    const response = await axiosAuthenticatedRequest(
+      `${API_BASE_URL}/api/v2/exports/contacts/export/chunked`,
+      {
+        method: 'POST',
+        headers,
+        data: requestBody,
+        useQueue: true,
+        useCache: false,
+        timeout: 3600000, // 60 second timeout for chunked export creation
+        priority: 7, // High priority for export creation
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 400) {
+        const error = await parseApiError(response, 'Invalid request data');
+        return {
+          success: false,
+          message: formatErrorMessage(error, 'Failed to create chunked export'),
+          error,
+        };
+      }
+      if (response.status === 401) {
+        const error = await parseApiError(response, 'Authentication required');
+        return {
+          success: false,
+          message: 'Authentication required. Please log in again.',
+          error,
+        };
+      }
+      const error = await parseApiError(response, 'Failed to create chunked export');
+      return {
+        success: false,
+        message: formatErrorMessage(error, 'Failed to create chunked export'),
+        error,
+      };
+    }
+
+    const backendData = await response.json();
+
+    // Report completion progress
+    if (onProgress) {
+      onProgress({
+        completed: totalChunks,
+        total: totalChunks,
+        percentage: 100,
+        currentChunk: totalChunks,
+      });
+    }
+
+    // Map backend response to ChunkedExportResult
+    const result: ChunkedExportResult = {
+      export_id: backendData.export_id,
+      chunk_ids: backendData.chunk_ids || [],
+      exportIds: backendData.chunk_ids || [], // For backward compatibility
+      totalCount: backendData.total_count || 0,
+      total_count: backendData.total_count,
+      status: backendData.status,
+      job_id: backendData.job_id,
+      successfulChunks: backendData.chunk_ids?.length || 0,
+      failedChunks: 0,
+    };
+
+    return {
+      success: true,
+      message: `Successfully created chunked export with ${result.totalCount.toLocaleString()} total contact(s)`,
+      data: result,
+    };
+  } catch (error) {
+    const parsedError = parseExceptionError(error, 'Failed to create chunked export');
+    console.error('[EXPORT] Create chunked export error:', {
+      message: parsedError.message,
+      statusCode: parsedError.statusCode,
+      isNetworkError: parsedError.isNetworkError,
+      isTimeoutError: parsedError.isTimeoutError,
+    });
+    return {
+      success: false,
+      message: formatErrorMessage(parsedError, 'Failed to create chunked export'),
       error: parsedError,
     };
   }
