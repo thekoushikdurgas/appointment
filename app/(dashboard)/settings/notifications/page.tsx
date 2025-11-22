@@ -57,7 +57,7 @@ const NotificationsSettings: React.FC = () => {
                 </div>
                 <div>
                     <h2 className="settings-notifications-title">Notifications</h2>
-                    <p className="settings-notifications-description">Manage how you receive notifications from NexusCRM</p>
+                    <p className="settings-notifications-description">Manage how you receive notifications from Contact360</p>
                 </div>
             </div>
 

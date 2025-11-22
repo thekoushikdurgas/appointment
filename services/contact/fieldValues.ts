@@ -115,7 +115,6 @@ export const fetchFieldValues = async (
         const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/${field}/?${query.toString()}`, {
           method: 'GET',
           headers,
-          useQueue: true,
           useCache: true,
         });
 
@@ -233,7 +232,6 @@ export const fetchKeywords = async (params?: {
         const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/keywords/?${query.toString()}`, {
           method: 'GET',
           headers,
-          useQueue: true,
           useCache: true,
         });
 

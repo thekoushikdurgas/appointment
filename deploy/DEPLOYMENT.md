@@ -1,6 +1,6 @@
-# NexusCRM EC2 Deployment Guide
+# Contact360 EC2 Deployment Guide
 
-Complete step-by-step guide for deploying NexusCRM Next.js application on AWS EC2 with Nginx reverse proxy.
+Complete step-by-step guide for deploying Contact360 Next.js application on AWS EC2 with Nginx reverse proxy.
 
 ## Table of Contents
 
@@ -65,7 +65,7 @@ Once connected to the server, clone the repository and run the setup script:
 ```bash
 # Clone the repository
 cd ~
-git clone https://github.com/thekoushikdurgas/appointment.git nexuscrm
+git clone https://github.com/thekoushikdurgas/appointment.git contact360
 cd appointment
 
 # Make setup script executable
@@ -103,7 +103,7 @@ sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu
 Create the production environment file with your actual values:
 
 ```bash
-cd ~/nexuscrm
+cd ~/contact360
 
 # Create production environment file (use env.example as template if .env.production.example doesn't exist)
 if [ -f ".env.production.example" ]; then
@@ -133,7 +133,7 @@ API_KEY=your_gemini_api_key
 Run the deployment script:
 
 ```bash
-cd ~/nexuscrm
+cd ~/contact360
 
 # Make deployment script executable
 chmod +x deploy/ec2-deploy.sh
@@ -157,7 +157,7 @@ Check PM2 status:
 
 ```bash
 pm2 list
-pm2 logs nexuscrm
+pm2 logs contact360
 ```
 
 You should see the application running. Test locally on the server:
@@ -175,7 +175,7 @@ curl http://localhost:3000
 Copy the Nginx configuration template:
 
 ```bash
-sudo cp ~/appointment/deploy/ec2-nginx.conf /etc/nginx/sites-available/nexuscrm
+sudo cp ~/appointment/deploy/ec2-nginx.conf /etc/nginx/sites-available/contact360
 ```
 
 ### Step 3.2: Enable the Nginx Site
@@ -183,7 +183,7 @@ sudo cp ~/appointment/deploy/ec2-nginx.conf /etc/nginx/sites-available/nexuscrm
 Create a symbolic link to enable the site:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/nexuscrm /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/contact360 /etc/nginx/sites-enabled/
 ```
 
 ### Step 3.3: Disable Default Nginx Site (Optional)
@@ -224,17 +224,17 @@ sudo systemctl status nginx
 ```bash
 # Check PM2 status
 pm2 list
-pm2 status nexuscrm
+pm2 status contact360
 
 # Check application logs
-pm2 logs nexuscrm --lines 50
+pm2 logs contact360 --lines 50
 
 # Check Nginx status
 sudo systemctl status nginx
 
 # Check Nginx logs
-sudo tail -f /var/log/nginx/nexuscrm-access.log
-sudo tail -f /var/log/nginx/nexuscrm-error.log
+sudo tail -f /var/log/nginx/contact360-access.log
+sudo tail -f /var/log/nginx/contact360-error.log
 ```
 
 ### Step 4.2: Test Public Access
@@ -245,7 +245,7 @@ Open your web browser and navigate to:
 http://3.88.218.42
 ```
 
-You should see the NexusCRM application.
+You should see the Contact360 application.
 
 ### Step 4.3: Test Key Functionality
 
@@ -263,7 +263,7 @@ Set up monitoring:
 pm2 monit
 
 # View logs in real-time
-pm2 logs nexuscrm
+pm2 logs contact360
 
 # Check system resources
 htop
@@ -278,7 +278,7 @@ htop
 When you need to deploy updates:
 
 ```bash
-cd ~/nexuscrm
+cd ~/contact360
 
 # Make update script executable (first time only)
 chmod +x deploy/ec2-update.sh
@@ -301,7 +301,7 @@ chmod +x deploy/ec2-update.sh
 If you prefer to update manually:
 
 ```bash
-cd ~/nexuscrm
+cd ~/contact360
 
 # Pull latest code
 git pull origin main
@@ -313,7 +313,7 @@ npm install
 npm run build
 
 # Restart with PM2
-pm2 restart nexuscrm
+pm2 restart contact360
 pm2 save
 ```
 
@@ -322,26 +322,26 @@ pm2 save
 If you need to change environment variables:
 
 ```bash
-cd ~/nexuscrm
+cd ~/contact360
 
 # Edit the production environment file
 nano .env.production
 
 # Restart the application to apply changes
-pm2 restart nexuscrm
+pm2 restart contact360
 ```
 
 ### Viewing Logs
 
 ```bash
 # Application logs
-pm2 logs nexuscrm
+pm2 logs contact360
 
 # Nginx access logs
-sudo tail -f /var/log/nginx/nexuscrm-access.log
+sudo tail -f /var/log/nginx/contact360-access.log
 
 # Nginx error logs
-sudo tail -f /var/log/nginx/nexuscrm-error.log
+sudo tail -f /var/log/nginx/contact360-error.log
 
 # System logs
 sudo journalctl -u nginx -f
@@ -351,13 +351,13 @@ sudo journalctl -u nginx -f
 
 ```bash
 # Restart application
-pm2 restart nexuscrm
+pm2 restart contact360
 
 # Restart Nginx
 sudo systemctl restart nginx
 
 # Restart both
-pm2 restart nexuscrm && sudo systemctl restart nginx
+pm2 restart contact360 && sudo systemctl restart nginx
 ```
 
 ---
@@ -372,17 +372,17 @@ pm2 restart nexuscrm && sudo systemctl restart nginx
 
 ```bash
 # Check logs for errors
-pm2 logs nexuscrm --err
+pm2 logs contact360 --err
 
 # Check if port 3000 is already in use
 sudo lsof -i :3000
 
 # Restart the application
-pm2 restart nexuscrm
+pm2 restart contact360
 
 # If issues persist, delete and recreate
-pm2 delete nexuscrm
-cd ~/nexuscrm
+pm2 delete contact360
+cd ~/contact360
 pm2 start ecosystem.config.js --env production
 pm2 save
 ```
@@ -401,10 +401,10 @@ pm2 list
 curl http://localhost:3000
 
 # Check Nginx error logs
-sudo tail -50 /var/log/nginx/nexuscrm-error.log
+sudo tail -50 /var/log/nginx/contact360-error.log
 
 # Restart both services
-pm2 restart nexuscrm
+pm2 restart contact360
 sudo systemctl restart nginx
 ```
 
@@ -443,10 +443,10 @@ ls -la .env.production
 cat .env.production | grep -v "KEY\|SECRET"
 
 # Restart application after changes
-pm2 restart nexuscrm
+pm2 restart contact360
 
 # Check if variables are loaded
-pm2 logs nexuscrm | grep -i "env\|config"
+pm2 logs contact360 | grep -i "env\|config"
 ```
 
 ### Port Already in Use
@@ -500,7 +500,7 @@ pm2 monit
 # Change instances: 'max' to instances: 2
 
 # Restart with new configuration
-pm2 delete nexuscrm
+pm2 delete contact360
 pm2 start ecosystem.config.js --env production
 ```
 
@@ -535,11 +535,11 @@ pm2 start ecosystem.config.js --env production
 # PM2 Commands
 pm2 list                    # List all processes
 pm2 status                  # Show process status
-pm2 logs nexuscrm           # View logs
+pm2 logs contact360           # View logs
 pm2 monit                   # Real-time monitoring
-pm2 restart nexuscrm        # Restart application
-pm2 stop nexuscrm           # Stop application
-pm2 delete nexuscrm         # Remove from PM2
+pm2 restart contact360        # Restart application
+pm2 stop contact360           # Stop application
+pm2 delete contact360         # Remove from PM2
 
 # Nginx Commands
 sudo nginx -t               # Test configuration
@@ -556,11 +556,11 @@ htop                        # Monitor system resources
 
 ### File Locations
 
-- Application: `/home/ubuntu/nexuscrm`
+- Application: `/home/ubuntu/contact360`
 - Environment: `/home/ubuntu/appointment/.env.production`
 - PM2 Logs: `/home/ubuntu/appointment/logs/`
-- Nginx Config: `/etc/nginx/sites-available/nexuscrm`
-- Nginx Logs: `/var/log/nginx/nexuscrm-*.log`
+- Nginx Config: `/etc/nginx/sites-available/contact360`
+- Nginx Logs: `/var/log/nginx/contact360-*.log`
 
 ---
 
@@ -579,8 +579,8 @@ htop                        # Monitor system resources
 For issues or questions:
 
 1. Check the troubleshooting section above
-2. Review application logs: `pm2 logs nexuscrm`
-3. Review Nginx logs: `sudo tail -f /var/log/nginx/nexuscrm-error.log`
+2. Review application logs: `pm2 logs contact360`
+3. Review Nginx logs: `sudo tail -f /var/log/nginx/contact360-error.log`
 4. Check system resources: `htop` or `free -h`
 
 ---

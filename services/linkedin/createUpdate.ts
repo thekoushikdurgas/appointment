@@ -113,7 +113,6 @@ export const createOrUpdateByLinkedInUrl = async (
       {
         method: 'POST',
         headers,
-        useQueue: true,
         useCache: false,
         data: requestBody,
       }

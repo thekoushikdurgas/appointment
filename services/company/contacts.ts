@@ -107,7 +107,6 @@ export const fetchCompanyContacts = async (
       `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/?${query.toString()}`,
       {
         method: 'GET',
-        useQueue: true,
         useCache: true,
         headers,
       }
@@ -168,7 +167,6 @@ export const fetchCompanyContacts = async (
         const countResp = await axiosAuthenticatedRequest(countUrl, {
           method: 'GET',
           headers: requestId ? { 'X-Request-Id': requestId } : undefined,
-          useQueue: true,
           useCache: true,
         });
 
@@ -262,7 +260,6 @@ export const getCompanyContactsCount = async (
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 
@@ -385,7 +382,6 @@ export const getCompanyContactUuids = async (
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 
@@ -483,7 +479,6 @@ export const fetchCompanyContactAttribute = async (
       `${API_BASE_URL}/api/v1/companies/company/${companyUuid}/contacts/${attribute}/?${query.toString()}`,
       {
         method: 'GET',
-        useQueue: true,
         useCache: true,
         headers,
       }

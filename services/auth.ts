@@ -221,7 +221,6 @@ export const authenticatedFetch = async (
   // Convert fetch options to Axios config
   const axiosConfig: any = {
     method: fetchOptions.method || 'GET',
-    useQueue: true,
     useCache: true,
     headers: {},
   };
@@ -261,7 +260,6 @@ export const authenticatedFetch = async (
   console.log('[AUTH] Making axiosAuthenticatedRequest with config:', {
     url,
     method: axiosConfig.method,
-    useQueue: axiosConfig.useQueue,
     useCache: axiosConfig.useCache,
   });
   
@@ -300,7 +298,6 @@ export const login = async (
           "Content-Type": "application/json",
         },
         data: { email, password },
-        useQueue: true,
         useCache: false,
       },
       "Login failed"
@@ -380,7 +377,6 @@ export const register = async (
           "Content-Type": "application/json",
         },
         data: { name, email, password },
-        useQueue: true,
         useCache: false,
       },
       "Registration failed"
@@ -553,7 +549,6 @@ export const refreshTokenRequest = async (
           "Content-Type": "application/json",
         },
         data: { refresh_token: refreshToken },
-        useQueue: false, // Don't queue refresh token requests
         useCache: false,
       },
       "Token refresh failed"

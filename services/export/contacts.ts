@@ -104,7 +104,6 @@ export const createContactExport = async (
         method: 'POST',
         headers,
         data: requestBody,
-        useQueue: true,
         useCache: false,
         timeout: 3600000, // 60 second timeout for export creation
         priority: 7, // High priority for export creation
@@ -270,7 +269,6 @@ export const downloadExport = async (
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: false,
       responseType: 'blob', // Request blob response for CSV file
     });
@@ -497,7 +495,6 @@ export const createChunkedContactExport = async (
         method: 'POST',
         headers,
         data: requestBody,
-        useQueue: true,
         useCache: false,
         timeout: 3600000, // 60 second timeout for chunked export creation
         priority: 7, // High priority for export creation

@@ -78,7 +78,6 @@ export const createCompany = async (
       `${API_BASE_URL}/api/v1/companies/`,
       {
         method: 'POST',
-        useQueue: true,
         useCache: false,
         headers,
         data: companyData,
@@ -217,7 +216,6 @@ export const updateCompany = async (
         method: 'PUT',
         headers,
         data: companyData,
-        useQueue: true,
         useCache: false,
       }
     );
@@ -358,7 +356,6 @@ export const deleteCompany = async (
       `${API_BASE_URL}/api/v1/companies/${uuid}/`,
       {
         method: 'DELETE',
-        useQueue: true,
         useCache: false,
         headers,
       }

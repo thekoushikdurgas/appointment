@@ -93,7 +93,6 @@ export const fetchCompanies = async (
       `${API_BASE_URL}/api/v1/companies/?${query.toString()}`,
       {
         method: 'GET',
-        useQueue: true,
         useCache: true,
         headers,
       }
@@ -144,7 +143,6 @@ export const fetchCompanies = async (
         const countResp = await axiosAuthenticatedRequest(countUrl, {
           method: 'GET',
           headers: requestId ? { 'X-Request-Id': requestId } : undefined,
-          useQueue: true,
           useCache: true,
         });
 
@@ -221,7 +219,6 @@ export const getCompanyByUuid = async (
       `${API_BASE_URL}/api/v1/companies/${uuid}/`,
       {
         method: 'GET',
-        useQueue: true,
         useCache: true,
         headers,
       }
@@ -290,7 +287,6 @@ export const getCompanyCount = async (
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 
@@ -405,7 +401,6 @@ export const getCompanyUuids = async (
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 
@@ -505,7 +500,6 @@ export const fetchCompanyUuidsPaginated = async (
     const countResponse = await axiosAuthenticatedRequest(countUrl, {
       method: 'GET',
       headers: countHeaders,
-      useQueue: true,
       useCache: true,
     });
 
@@ -539,7 +533,6 @@ export const fetchCompanyUuidsPaginated = async (
       const response = await axiosAuthenticatedRequest(url, {
         method: 'GET',
         headers,
-        useQueue: true,
         useCache: false, // Don't cache paginated requests
         timeout: 336000000, // 1 hour timeout for UUID fetch
         priority: 5, // Higher priority for export-related requests

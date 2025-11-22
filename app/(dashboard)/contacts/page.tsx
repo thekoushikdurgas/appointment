@@ -533,7 +533,6 @@ const ApiFilterMultiSelect: React.FC<{
                     {
                         method: 'GET',
                         headers: {},
-                        useQueue: true,
                         useCache: true,
                     }
                 );
@@ -574,7 +573,6 @@ const ApiFilterMultiSelect: React.FC<{
                         {
                             method: 'GET',
                             headers: {},
-                            useQueue: true,
                             useCache: true,
                         }
                     );

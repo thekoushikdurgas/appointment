@@ -48,7 +48,14 @@ export const LinkedInSearchResults: React.FC<LinkedInSearchResultsProps> = ({
     );
   }
 
-  const hasResults = results.total_contacts > 0 || results.total_companies > 0;
+  // Check for results using totals if available, otherwise fall back to array lengths
+  const contactsCount = results.total_contacts !== undefined 
+    ? results.total_contacts 
+    : (results.contacts?.length || 0);
+  const companiesCount = results.total_companies !== undefined 
+    ? results.total_companies 
+    : (results.companies?.length || 0);
+  const hasResults = contactsCount > 0 || companiesCount > 0;
 
   if (!hasResults) {
     return (
@@ -68,15 +75,15 @@ export const LinkedInSearchResults: React.FC<LinkedInSearchResultsProps> = ({
         <div className="linkedin-search-results__summary-item">
           <UsersIcon className="linkedin-search-results__summary-icon" aria-hidden="true" />
           <span className="linkedin-search-results__summary-label">Contacts:</span>
-          <Badge variant="glass-primary" size="sm" aria-label={`${results.total_contacts} contact${results.total_contacts !== 1 ? 's' : ''}`}>
-            {results.total_contacts}
+          <Badge variant="glass-primary" size="sm" aria-label={`${contactsCount} contact${contactsCount !== 1 ? 's' : ''}`}>
+            {contactsCount}
           </Badge>
         </div>
         <div className="linkedin-search-results__summary-item">
           <BuildingIcon className="linkedin-search-results__summary-icon" aria-hidden="true" />
           <span className="linkedin-search-results__summary-label">Companies:</span>
-          <Badge variant="glass-primary" size="sm" aria-label={`${results.total_companies} compan${results.total_companies !== 1 ? 'ies' : 'y'}`}>
-            {results.total_companies}
+          <Badge variant="glass-primary" size="sm" aria-label={`${companiesCount} compan${companiesCount !== 1 ? 'ies' : 'y'}`}>
+            {companiesCount}
           </Badge>
         </div>
       </div>

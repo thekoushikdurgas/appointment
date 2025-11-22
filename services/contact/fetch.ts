@@ -119,7 +119,6 @@ export const fetchContacts = async (params: FetchContactsParams): Promise<FetchC
         const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/?${query.toString()}`, {
           method: 'GET',
           headers,
-          useQueue: true,
           useCache: true,
         });
 
@@ -175,7 +174,6 @@ export const fetchContacts = async (params: FetchContactsParams): Promise<FetchC
             const countResp = await axiosAuthenticatedRequest(countUrl, {
               method: 'GET',
               headers: requestId ? { 'X-Request-Id': requestId } : undefined,
-              useQueue: true,
               useCache: true,
             });
 
@@ -262,7 +260,6 @@ export const getContactByUuid = async (uuid: string, requestId?: string): Promis
         const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/${uuid}/`, {
           method: 'GET',
           headers,
-          useQueue: true,
           useCache: true,
         });
 
@@ -344,7 +341,6 @@ export const getContactCount = async (filters?: ContactFilters, requestId?: stri
         const response = await axiosAuthenticatedRequest(url, {
           method: 'GET',
           headers,
-          useQueue: true,
           useCache: true,
         });
 
@@ -454,7 +450,6 @@ export const getContactUuids = async (
         const response = await axiosAuthenticatedRequest(url, {
             method: 'GET',
             headers,
-            useQueue: true,
             useCache: true,
         });
 
@@ -554,7 +549,6 @@ export const fetchContactUuidsPaginated = async (
         const countResponse = await axiosAuthenticatedRequest(countUrl, {
             method: 'GET',
             headers: countHeaders,
-            useQueue: true,
             useCache: true,
         });
 
@@ -588,7 +582,6 @@ export const fetchContactUuidsPaginated = async (
             const response = await axiosAuthenticatedRequest(url, {
                 method: 'GET',
                 headers,
-                useQueue: true,
                 useCache: false, // Don't cache paginated requests
                 timeout: 336000000, // 30 second timeout for UUID fetch
                 priority: 5, // Higher priority for export-related requests

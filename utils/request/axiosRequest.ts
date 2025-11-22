@@ -6,7 +6,6 @@
 
 import type { AxiosResponse, AxiosError } from 'axios';
 import axiosInstance, { convertAxiosError } from '@utils/axiosClient';
-import { enqueueRequest, isQueueEnabled } from '@utils/requestQueue';
 import {
   getCachedResponse,
   setCachedResponse,
@@ -18,6 +17,7 @@ import { parseApiError, parseExceptionError, formatErrorMessage } from '@utils/e
 import type { ParsedError } from '@utils/error';
 import type { AxiosRequestOptions } from './types';
 import { AxiosResponseWrapper } from './responseWrapper';
+import { getApiResult, setApiResult } from '@utils/apiStorage';
 
 /**
  * Main request function (replaces utils/request.ts request())
@@ -33,10 +33,8 @@ export const axiosRequest = async (
   console.log('[AXIOS_REQUEST] axiosRequest called:', { url, method: options.method || 'GET' });
   
   const {
-    useQueue = true,
     useCache = true,
     cacheTTL,
-    priority = 0,
     skipCache = false,
     invalidateCache,
     method = 'GET',
@@ -44,9 +42,7 @@ export const axiosRequest = async (
   } = options;
 
   console.log('[AXIOS_REQUEST] Options:', { 
-    useQueue, 
     useCache, 
-    priority, 
     skipCache,
     method,
   });
@@ -76,6 +72,23 @@ export const axiosRequest = async (
       };
       return new AxiosResponseWrapper(mockResponse);
     }
+    
+    // Check fallback storage if cache miss
+    const fallbackData = getApiResult(cacheKey);
+    if (fallbackData !== null) {
+      console.log('[AXIOS_REQUEST] Fallback storage hit for:', cacheKey);
+      // Restore to cache
+      setCachedResponse(cacheKey, fallbackData, cacheTTL);
+      const mockResponse: AxiosResponse = {
+        data: fallbackData,
+        status: 200,
+        statusText: 'OK',
+        headers: {},
+        config: {} as any,
+      };
+      return new AxiosResponseWrapper(mockResponse);
+    }
+    
     console.log('[AXIOS_REQUEST] Cache miss for:', cacheKey);
   }
 
@@ -107,6 +120,8 @@ export const axiosRequest = async (
       if (useCache && method.toUpperCase() === 'GET' && response.status >= 200 && response.status < 300) {
         console.log('[AXIOS_REQUEST] Caching response for:', cacheKey);
         setCachedResponse(cacheKey, response.data, cacheTTL);
+        // Also save to fallback storage
+        setApiResult(cacheKey, response.data, cacheTTL);
       }
 
       // Invalidate cache for write operations
@@ -123,22 +138,31 @@ export const axiosRequest = async (
       // Convert AxiosError to standard Error
       const axiosError = error as AxiosError;
       const parsedError = await convertAxiosError(axiosError, 'Request failed');
+      
+      // Try to retrieve from fallback storage on network errors
+      if (parsedError.isNetworkError && method.toUpperCase() === 'GET') {
+        const fallbackData = getApiResult(cacheKey);
+        if (fallbackData !== null) {
+          console.log('[AXIOS_REQUEST] Using fallback storage data for:', cacheKey);
+          const mockResponse: AxiosResponse = {
+            data: fallbackData,
+            status: 200,
+            statusText: 'OK',
+            headers: {},
+            config: {} as any,
+          };
+          return new AxiosResponseWrapper(mockResponse);
+        }
+      }
+      
       throw new Error(formatErrorMessage(parsedError, 'Request failed'));
     }
   };
 
-  // Use queue if enabled
-  if (useQueue && isQueueEnabled()) {
-    console.log('[AXIOS_REQUEST] Using queue for:', url);
-    const result = await enqueueRequest(executeRequest, priority);
-    console.log('[AXIOS_REQUEST] Queue returned result for:', url);
-    return result;
-  }
-
-  // Execute directly
-  console.log('[AXIOS_REQUEST] Executing directly (no queue) for:', url);
+  // Execute request directly (parallel execution)
+  console.log('[AXIOS_REQUEST] Executing request for:', url);
   const result = await executeRequest();
-  console.log('[AXIOS_REQUEST] Direct execution complete for:', url);
+  console.log('[AXIOS_REQUEST] Request execution complete for:', url);
   return result;
 };
 

@@ -82,56 +82,137 @@ export default function LinkedInPage() {
 
   // Handle search
   const handleSearch = useCallback(async (url: string) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[LINKEDIN_PAGE] handleSearch called at ${timestamp}`, {
+      originalUrl: url,
+      urlLength: url?.length,
+      urlTrimmed: url?.trim(),
+    });
+
     if (!url.trim()) {
+      console.log('[LINKEDIN_PAGE] Empty URL, clearing results');
       setSearchResults(null);
       return;
     }
 
     // Validate URL before searching
+    console.log('[LINKEDIN_PAGE] Validating URL:', url);
     const validation = validateLinkedInUrl(url);
+    console.log('[LINKEDIN_PAGE] Validation result:', {
+      valid: validation.valid,
+      error: validation.error,
+      type: validation.type,
+      normalizedUrl: validation.normalizedUrl,
+    });
+
     if (!validation.valid) {
-      setSearchError(validation.error || 'Invalid LinkedIn URL');
+      const errorMsg = validation.error || 'Invalid LinkedIn URL';
+      console.warn('[LINKEDIN_PAGE] URL validation failed:', errorMsg);
+      setSearchError(errorMsg);
       setSearchResults(null);
-      showToast(validation.error || 'Please enter a valid LinkedIn URL', 'error');
+      showToast(errorMsg, 'error');
       return;
     }
 
     // Use normalized URL for search
     const normalizedUrl = normalizeLinkedInUrl(url);
+    console.log('[LINKEDIN_PAGE] URL normalized:', {
+      original: url,
+      normalized: normalizedUrl,
+      changed: url !== normalizedUrl,
+    });
     
+    console.log('[LINKEDIN_PAGE] Setting loading state and clearing errors');
     setSearchLoading(true);
     setSearchError(null);
     setUrlValidationError(null);
 
     try {
+      console.log('[LINKEDIN_PAGE] Calling searchByLinkedInUrl with normalized URL:', normalizedUrl);
+      const apiCallStartTime = Date.now();
       const result = await searchByLinkedInUrl(normalizedUrl);
+      const apiCallDuration = Date.now() - apiCallStartTime;
+      
+      console.log(`[LINKEDIN_PAGE] API call completed in ${apiCallDuration}ms`, {
+        success: result.success,
+        hasData: !!result.data,
+        message: result.message,
+        error: result.error ? {
+          message: result.error.message,
+          statusCode: result.error.statusCode,
+          isNetworkError: result.error.isNetworkError,
+          isTimeoutError: result.error.isTimeoutError,
+        } : null,
+        dataPreview: result.data ? {
+          total_contacts: result.data.total_contacts,
+          total_companies: result.data.total_companies,
+          contactsLength: result.data.contacts?.length || 0,
+          companiesLength: result.data.companies?.length || 0,
+          firstContact: result.data.contacts?.[0] ? {
+            contact_uuid: result.data.contacts[0].contact?.uuid,
+            contact_name: `${result.data.contacts[0].contact?.first_name} ${result.data.contacts[0].contact?.last_name}`,
+          } : null,
+        } : null,
+      });
 
       if (result.success && result.data) {
+        console.log('[LINKEDIN_PAGE] Search successful, updating state with results');
+        console.log('[LINKEDIN_PAGE] Full response data:', JSON.stringify(result.data, null, 2));
+        
         setSearchResults(result.data);
-        if (result.data.total_contacts === 0 && result.data.total_companies === 0) {
+        console.log('[LINKEDIN_PAGE] searchResults state updated');
+        
+        // Calculate totals from arrays if undefined
+        const contactsCount = result.data.total_contacts !== undefined 
+          ? result.data.total_contacts 
+          : (result.data.contacts?.length || 0);
+        const companiesCount = result.data.total_companies !== undefined 
+          ? result.data.total_companies 
+          : (result.data.companies?.length || 0);
+        
+        if (contactsCount === 0 && companiesCount === 0) {
+          console.log('[LINKEDIN_PAGE] No results found (both totals are 0)');
           showToast('No results found for this LinkedIn URL', 'error');
         } else {
-          const contactText = result.data.total_contacts === 1 ? 'contact' : 'contacts';
-          const companyText = result.data.total_companies === 1 ? 'company' : 'companies';
-          showToast(
-            `Found ${result.data.total_contacts} ${contactText} and ${result.data.total_companies} ${companyText}`,
-            'success'
-          );
+          const contactText = contactsCount === 1 ? 'contact' : 'contacts';
+          const companyText = companiesCount === 1 ? 'company' : 'companies';
+          const successMessage = `Found ${contactsCount} ${contactText} and ${companiesCount} ${companyText}`;
+          console.log('[LINKEDIN_PAGE] Results found, showing success toast:', successMessage);
+          showToast(successMessage, 'success');
         }
       } else {
         const errorMessage = result.message || 'Failed to search';
+        console.error('[LINKEDIN_PAGE] Search failed (result.success is false):', {
+          errorMessage,
+          resultStructure: {
+            success: result.success,
+            hasData: !!result.data,
+            hasError: !!result.error,
+            message: result.message,
+          },
+        });
         setSearchError(errorMessage);
         setSearchResults(null);
+        console.log('[LINKEDIN_PAGE] Error state updated, showing error toast');
         showToast(errorMessage, 'error');
       }
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('[LINKEDIN_PAGE] Exception caught in handleSearch:', {
+        error,
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStack: error instanceof Error ? error.stack : undefined,
+        url: normalizedUrl,
+      });
       const errorMessage = error instanceof Error ? error.message : 'An error occurred while searching';
+      console.log('[LINKEDIN_PAGE] Setting error state and showing error toast');
       setSearchError(errorMessage);
       setSearchResults(null);
       showToast(errorMessage, 'error');
     } finally {
+      console.log('[LINKEDIN_PAGE] Setting searchLoading to false');
       setSearchLoading(false);
+      console.log('[LINKEDIN_PAGE] handleSearch completed');
     }
   }, []);
 

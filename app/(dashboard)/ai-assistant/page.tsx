@@ -164,7 +164,7 @@ const AIAssistantPage: React.FC = () => {
         model: 'gemini-2.5-pro',
         history,
         config: {
-          systemInstruction: `You are NexusAI, an expert assistant for the NexusCRM. Your goal is to help the user manage their contacts efficiently. You can search for existing contacts using the available tools. For general conversation, be friendly, concise, and helpful.`,
+          systemInstruction: `You are Contact360 AI, an expert assistant for Contact360 - Contact Management System. Your goal is to help the user manage their contacts efficiently. You can search for existing contacts using the available tools. For general conversation, be friendly, concise, and helpful.`,
           tools: [{ functionDeclarations: [searchContactsFunctionDeclaration] }],
         },
       });

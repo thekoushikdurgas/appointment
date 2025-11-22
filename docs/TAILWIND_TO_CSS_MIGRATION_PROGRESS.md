@@ -385,6 +385,6 @@ const className = `component__item${isActive ? ' component__item--active' : ''}`
 ---
 
 **Generated**: November 13, 2025  
-**Project**: NexusCRM Tailwind to CSS Migration  
+**Project**: Contact360 Tailwind to CSS Migration  
 **Status**: Foundation Complete (11% converted, 100% infrastructure ready)
 

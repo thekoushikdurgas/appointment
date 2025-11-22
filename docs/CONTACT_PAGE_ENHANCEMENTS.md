@@ -208,7 +208,7 @@ const { handlers } = useSwipeGesture({
 ## File Structure
 
 ```
-nexuscrm/
+contact360/
 ├── app/(dashboard)/contacts/
 │   └── page.tsx (Enhanced with all features)
 ├── components/

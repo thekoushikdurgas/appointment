@@ -1,26 +1,26 @@
 #!/bin/bash
 
 ###############################################################################
-# EC2 Application Deployment Script for NexusCRM
+# EC2 Application Deployment Script for Contact360
 # 
 # This script deploys the Next.js application to the EC2 server.
 # It should be run from the application directory after cloning the repository.
 #
 # Usage:
-#   cd /home/ubuntu/nexuscrm
+#   cd /home/ubuntu/contact360
 #   chmod +x deploy/ec2-deploy.sh
 #   ./deploy/ec2-deploy.sh
 #
 # Prerequisites:
 #   - Server setup completed (run ec2-setup.sh first)
-#   - Repository cloned to /home/ubuntu/nexuscrm
+#   - Repository cloned to /home/ubuntu/contact360
 #   - .env.production file created with production environment variables
 ###############################################################################
 
 set -e  # Exit on any error
 
 echo "=========================================="
-echo "NexusCRM Application Deployment"
+echo "Contact360 Application Deployment"
 echo "=========================================="
 echo ""
 
@@ -89,10 +89,10 @@ fi
 print_status "Build completed successfully!"
 
 # Stop existing PM2 process if running
-if pm2 list | grep -q "nexuscrm"; then
-    print_warning "Stopping existing nexuscrm process..."
-    pm2 stop nexuscrm || true
-    pm2 delete nexuscrm || true
+if pm2 list | grep -q "contact360"; then
+    print_warning "Stopping existing contact360 process..."
+    pm2 stop contact360 || true
+    pm2 delete contact360 || true
 fi
 
 # Create logs directory if it doesn't exist
@@ -119,7 +119,7 @@ print_status "Application is running on: http://localhost:3000"
 print_status ""
 print_status "Next steps:"
 print_status "1. Configure Nginx (see deploy/ec2-nginx.conf)"
-print_status "2. Test the application: pm2 logs nexuscrm"
+print_status "2. Test the application: pm2 logs contact360"
 print_status "3. Access via EC2 public IP: http://3.88.218.42"
 print_status ""
 

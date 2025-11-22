@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document summarizes the work completed for converting Tailwind utility classes to semantic CSS classes across the NexusCRM codebase.
+This document summarizes the work completed for converting Tailwind utility classes to semantic CSS classes across the Contact360 codebase.
 
 ## Completed Work (Approximately 20% Complete)
 

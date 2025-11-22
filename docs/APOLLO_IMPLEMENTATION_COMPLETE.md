@@ -288,7 +288,7 @@ Created comprehensive test documentation:
 ## File Structure
 
 ```
-nexuscrm/
+contact360/
 ├── types/
 │   ├── apollo.ts (NEW) - Type definitions
 │   └── index.ts (MODIFIED) - Export apollo types

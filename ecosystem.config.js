@@ -1,5 +1,5 @@
 /**
- * PM2 Ecosystem Configuration for NexusCRM
+ * PM2 Ecosystem Configuration for Contact360
  * 
  * This configuration file manages the Next.js application in production
  * using PM2 process manager with cluster mode for better performance.
@@ -12,7 +12,7 @@
 
 module.exports = {
   apps: [{
-    name: 'nexuscrm',
+    name: 'contact360',
     script: 'npm',
     args: 'start',
     // Use cluster mode to leverage all CPU cores

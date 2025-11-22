@@ -67,7 +67,6 @@ export async function fetchAnalyticsStats(): Promise<AnalyticsStats> {
     // Fetch total contacts
     const totalResponse = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/count/`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
     
@@ -89,7 +88,6 @@ export async function fetchAnalyticsStats(): Promise<AnalyticsStats> {
       `${API_BASE_URL}/api/v1/contacts/count/?created_at__gte=${firstDayISO}`,
       { 
         method: 'GET',
-        useQueue: true,
         useCache: true,
       }
     );
@@ -141,7 +139,6 @@ export async function fetchContactsByEmailVerification(): Promise<ContactsByEmai
     // Fetch total contacts
     const totalResponse = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/count/`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
     
@@ -158,7 +155,6 @@ export async function fetchContactsByEmailVerification(): Promise<ContactsByEmai
       `${API_BASE_URL}/api/v1/contacts/count/?email_status=Verified`,
       { 
         method: 'GET',
-        useQueue: true,
         useCache: true,
       }
     );
@@ -175,7 +171,6 @@ export async function fetchContactsByEmailVerification(): Promise<ContactsByEmai
       `${API_BASE_URL}/api/v1/contacts/count/?email_status=unverified`,
       { 
         method: 'GET',
-        useQueue: true,
         useCache: true,
       }
     );
@@ -220,7 +215,6 @@ export async function fetchContactsByIndustry(limit: number = 10): Promise<Conta
     // Fetch distinct industries
     const industryResponse = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/industry/?limit=1000&offset=0`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
     
@@ -256,7 +250,6 @@ export async function fetchContactsByIndustry(limit: number = 10): Promise<Conta
           `${API_BASE_URL}/api/v1/contacts/count/?industry=${encodeURIComponent(industry)}`,
           { 
             method: 'GET',
-            useQueue: true,
             useCache: true,
           }
         );
@@ -311,7 +304,6 @@ export async function fetchContactGrowth(days: number = 30): Promise<ContactGrow
         `${API_BASE_URL}/api/v1/contacts/count/?created_at__lte=${dateStr}`,
         { 
           method: 'GET',
-          useQueue: true,
           useCache: true,
         }
       );
@@ -354,7 +346,6 @@ export async function fetchTopCompanies(limit: number = 10): Promise<TopCompany[
       `${API_BASE_URL}/api/v1/contacts/?ordering=-employees&limit=${limit}&fields=company,employees`,
       { 
         method: 'GET',
-        useQueue: true,
         useCache: true,
       }
     );

@@ -66,7 +66,6 @@ export const getApiInfo = async (): Promise<ApiInfoResponse> => {
         // Public endpoint - no authentication required
         const response = await axiosRequest(`${API_BASE_URL}/`, {
           method: 'GET',
-          useQueue: true,
           useCache: true,
         });
 

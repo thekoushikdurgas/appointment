@@ -323,7 +323,7 @@ Successfully integrated the company contacts API into the UI by creating a compr
 ## File Structure
 
 ```
-nexuscrm/
+contact360/
 ├── components/
 │   └── companies/
 │       ├── CompanyContactCard.tsx (NEW - 175 lines)

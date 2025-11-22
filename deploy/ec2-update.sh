@@ -1,13 +1,13 @@
 #!/bin/bash
 
 ###############################################################################
-# EC2 Application Update Script for NexusCRM
+# EC2 Application Update Script for Contact360
 # 
 # This script updates an existing deployment by pulling the latest code,
 # rebuilding, and restarting the application.
 #
 # Usage:
-#   cd /home/ubuntu/nexuscrm
+#   cd /home/ubuntu/contact360
 #   chmod +x deploy/ec2-update.sh
 #   ./deploy/ec2-update.sh
 #
@@ -19,7 +19,7 @@
 set -e  # Exit on any error
 
 echo "=========================================="
-echo "NexusCRM Application Update"
+echo "Contact360 Application Update"
 echo "=========================================="
 echo ""
 
@@ -58,8 +58,8 @@ if [ ! -f ".env.production" ]; then
 fi
 
 # Check if PM2 process is running
-if ! pm2 list | grep -q "nexuscrm"; then
-    print_error "nexuscrm process not found in PM2!"
+if ! pm2 list | grep -q "contact360"; then
+    print_error "contact360 process not found in PM2!"
     print_warning "Please run ec2-deploy.sh first to deploy the application."
     exit 1
 fi
@@ -97,7 +97,7 @@ fi
 
 # Restart application with PM2
 print_status "Restarting application with PM2..."
-pm2 restart nexuscrm
+pm2 restart contact360
 
 # Save PM2 process list
 pm2 save
@@ -108,7 +108,7 @@ pm2 list
 
 # Show recent logs
 print_status "Recent application logs:"
-pm2 logs nexuscrm --lines 20 --nostream
+pm2 logs contact360 --lines 20 --nostream
 
 print_status ""
 print_status "=========================================="
@@ -116,6 +116,6 @@ print_status "Application updated successfully!"
 print_status "=========================================="
 print_status ""
 print_status "If you encounter issues, you can restore from backup:"
-print_status "  rm -rf .next && mv $BACKUP_DIR .next && pm2 restart nexuscrm"
+print_status "  rm -rf .next && mv $BACKUP_DIR .next && pm2 restart contact360"
 print_status ""
 

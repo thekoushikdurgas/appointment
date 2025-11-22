@@ -69,7 +69,6 @@ export const getImportInfo = async (requestId?: string): Promise<ServiceResponse
     const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/import/`, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 
@@ -169,7 +168,6 @@ export const uploadContactsCSV = async (file: File, requestId?: string): Promise
       headers: {
         // Don't set Content-Type for FormData, let Axios handle it
       },
-      useQueue: true,
       useCache: false,
     });
 
@@ -264,7 +262,6 @@ export const getImportJobStatus = async (jobId: string, includeErrors?: boolean,
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 
@@ -397,7 +394,6 @@ export const getImportErrors = async (jobId: string, requestId?: string): Promis
     const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v1/contacts/import/${jobId}/errors/`, {
       method: 'GET',
       headers,
-      useQueue: true,
       useCache: true,
     });
 

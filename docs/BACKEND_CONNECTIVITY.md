@@ -2,7 +2,7 @@
 
 ## Overview
 
-The NexusCRM application requires connectivity to a backend API server for all authenticated operations. This document outlines the connectivity requirements, configuration, and troubleshooting steps.
+The Contact360 application requires connectivity to a backend API server for all authenticated operations. This document outlines the connectivity requirements, configuration, and troubleshooting steps.
 
 ## API Configuration
 

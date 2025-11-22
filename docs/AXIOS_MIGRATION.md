@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the migration from fetch-based API calls to Axios with sequential request queue and automatic response caching.
+This document describes the migration from fetch-based API calls to Axios with parallel execution and automatic response caching with fallback storage.
 
 ## Architecture
 
@@ -14,22 +14,22 @@ This document describes the migration from fetch-based API calls to Axios with s
    - Automatic token refresh on 401 errors
    - Error handling and conversion
 
-2. **Request Queue** (`utils/requestQueue.ts`)
-   - Global sequential request queue (FIFO)
-   - Processes API calls one at a time
-   - Optional priority levels
-   - Queue status monitoring
-
-3. **API Cache** (`utils/apiCache.ts`)
+2. **API Cache** (`utils/apiCache.ts`)
    - Automatic response caching with TTL
    - In-memory cache with localStorage fallback
    - Cache key generation from URL + params + method
    - Automatic cache invalidation
 
-4. **Axios Request Wrapper** (`utils/axiosRequest.ts`)
-   - Unified request wrapper combining queue + cache + Axios
+3. **API Storage** (`utils/apiStorage.ts`)
+   - Fallback storage for API results
+   - Storage chain: sessionStorage → localStorage → cookies
+   - Automatic expiration and cleanup
+
+4. **Axios Request Wrapper** (`utils/request/axiosRequest.ts`)
+   - Unified request wrapper combining cache + storage + Axios
    - Drop-in replacements for `request()` and `authenticatedFetch()`
-   - Configurable queue and cache per request
+   - Configurable cache per request
+   - Parallel execution by default
 
 5. **Sequential Group Execution** (`utils/sequentialGroup.ts`)
    - Utilities for executing groups of related API calls
@@ -87,7 +87,6 @@ import { axiosRequest, axiosAuthenticatedRequest } from '../utils/axiosRequest';
 const response = await axiosRequest(url, {
   method: 'GET',
   timeout: 336000000,
-  useQueue: true,
   useCache: true,
 });
 
@@ -95,7 +94,6 @@ const response = await axiosAuthenticatedRequest(url, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   data: data, // Note: 'data' instead of 'body', no JSON.stringify needed
-  useQueue: true,
   useCache: false,
 });
 ```
@@ -105,7 +103,8 @@ const response = await axiosAuthenticatedRequest(url, {
 1. **Body vs Data**: Use `data` instead of `body`, and no need for `JSON.stringify()` - Axios handles it automatically
 2. **FormData**: Still works, but Axios handles Content-Type automatically
 3. **Response Interface**: Returns a Response-like object compatible with existing code
-4. **Queue Options**: New options `useQueue`, `useCache`, `cacheTTL`, `priority`
+4. **Cache Options**: Options `useCache`, `cacheTTL`, `skipCache`, `invalidateCache`
+5. **Parallel Execution**: All API calls execute in parallel by default (no queue)
 
 ## Request Options
 
@@ -113,10 +112,8 @@ const response = await axiosAuthenticatedRequest(url, {
 
 ```typescript
 interface AxiosRequestOptions extends AxiosRequestConfig {
-  useQueue?: boolean;      // Use global request queue (default: true)
   useCache?: boolean;      // Use response caching (default: true)
   cacheTTL?: number;       // Cache TTL in milliseconds (default: 5 minutes)
-  priority?: number;       // Queue priority 0-10 (default: 0)
   skipCache?: boolean;     // Skip cache check (force fresh request)
   invalidateCache?: string | RegExp; // Pattern to invalidate cache entries
 }
@@ -125,23 +122,11 @@ interface AxiosRequestOptions extends AxiosRequestConfig {
 ### Examples
 
 ```typescript
-// Disable queue for critical request
-await axiosAuthenticatedRequest(url, {
-  method: 'GET',
-  useQueue: false,
-});
-
 // Custom cache TTL
 await axiosRequest(url, {
   method: 'GET',
   useCache: true,
   cacheTTL: 10 * 60 * 1000, // 10 minutes
-});
-
-// High priority request
-await axiosAuthenticatedRequest(url, {
-  method: 'POST',
-  priority: 10, // Highest priority
 });
 
 // Invalidate cache on write
@@ -151,44 +136,28 @@ await axiosAuthenticatedRequest(url, {
 });
 ```
 
-## Queue Management
+## API Storage Management
 
-### Enable/Disable Queue
+### Storage Fallback Chain
 
-```typescript
-import { setQueueEnabled, isQueueEnabled } from '../utils/requestQueue';
+API results are automatically stored with a fallback chain:
+1. **sessionStorage** (primary) - Fast, session-scoped
+2. **localStorage** (secondary) - Persistent across sessions
+3. **cookies** (tertiary) - Works even when storage is disabled
 
-// Disable queue globally
-setQueueEnabled(false);
-
-// Check if queue is enabled
-if (isQueueEnabled()) {
-  console.log('Queue is active');
-}
-```
-
-### Queue Status
+### Storage Functions
 
 ```typescript
-import { getQueueStatus } from '../utils/requestQueue';
+import { getApiResult, setApiResult, clearApiResult } from '../utils/apiStorage';
 
-const status = getQueueStatus();
-console.log({
-  isProcessing: status.isProcessing,
-  pending: status.pending,
-  executing: status.executing,
-  completed: status.completed,
-  enabled: status.enabled,
-});
-```
+// Get stored API result
+const cached = getApiResult(cacheKey);
 
-### Clear Queue
+// Store API result
+setApiResult(cacheKey, data, ttl);
 
-```typescript
-import { clearQueue } from '../utils/requestQueue';
-
-// Clear all pending requests
-clearQueue();
+// Clear stored result
+clearApiResult(cacheKey);
 ```
 
 ## Cache Management
@@ -233,7 +202,7 @@ const results = await executeSequentially([
   () => fetchUser(),
   () => fetchContacts(),
   () => fetchCompanies(),
-], true); // useQueue = true
+]);
 
 if (results.allSucceeded) {
   console.log('All requests succeeded');
@@ -262,8 +231,7 @@ import { executeWithConcurrencyLimit } from '../utils/sequentialGroup';
 // Execute 3 requests at a time
 const results = await executeWithConcurrencyLimit(
   requests,
-  3, // concurrency limit
-  true // useQueue
+  3 // concurrency limit
 );
 ```
 
@@ -311,12 +279,12 @@ The migration maintains backward compatibility:
 
 ## Performance Considerations
 
-### Queue Impact
+### Parallel Execution
 
-- **Sequential execution**: All API calls execute one at a time
-- **Performance**: May slow down parallel operations initially
-- **Benefit**: Prevents server overload and rate limiting
-- **Mitigation**: Can disable queue per-request for critical operations
+- **Concurrent execution**: All API calls execute in parallel by default
+- **Performance**: Faster response times for multiple requests
+- **Consideration**: May increase server load, but improves user experience
+- **Control**: Use `executeWithConcurrencyLimit()` for controlled concurrency
 
 ### Cache Impact
 
@@ -326,19 +294,6 @@ The migration maintains backward compatibility:
 - **TTL**: Default 5 minutes, configurable per request
 
 ## Debugging
-
-### Enable Queue Logging
-
-```typescript
-import { getQueueStatus } from '../utils/requestQueue';
-
-// Monitor queue in development
-if (process.env.NODE_ENV === 'development') {
-  setInterval(() => {
-    console.log('Queue status:', getQueueStatus());
-  }, 5000);
-}
-```
 
 ### Enable Cache Logging
 
@@ -354,12 +309,6 @@ if (process.env.NODE_ENV === 'development') {
 ```
 
 ## Troubleshooting
-
-### Queue Not Processing
-
-- Check if queue is enabled: `isQueueEnabled()`
-- Check queue status: `getQueueStatus()`
-- Ensure requests use `useQueue: true` (default)
 
 ### Cache Not Working
 
@@ -378,10 +327,12 @@ if (process.env.NODE_ENV === 'development') {
 ## Migration Checklist
 
 - [x] Create Axios client with interceptors
-- [x] Implement request queue
 - [x] Implement API cache
+- [x] Implement API storage with fallback chain
 - [x] Create Axios request wrapper
 - [x] Create sequential group utilities
+- [x] Remove request queue system
+- [x] Enable parallel API execution
 - [x] Migrate api.ts and health.ts
 - [x] Migrate auth.ts
 - [x] Migrate user.ts, contact.ts, company.ts
@@ -402,7 +353,7 @@ Potential improvements:
 1. **Request deduplication**: Prevent duplicate requests
 2. **Request cancellation**: Cancel pending requests
 3. **Retry logic**: Automatic retry for failed requests
-4. **Request prioritization**: More sophisticated priority system
-5. **Cache strategies**: Different cache strategies per endpoint
-6. **Offline support**: Queue requests when offline, execute when online
+4. **Cache strategies**: Different cache strategies per endpoint
+5. **Offline support**: Store requests when offline, execute when online
+6. **Request prioritization**: Optional priority system for critical requests
 

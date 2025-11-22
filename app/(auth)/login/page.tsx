@@ -200,7 +200,7 @@ const LoginPage: React.FC = () => {
             Welcome Back
           </h1>
           <p className="auth-description">
-            Sign in to continue to NexusCRM
+            Sign in to continue to Contact360
           </p>
           <p className="auth-swipe-hint">
             Swipe right to register →
@@ -253,7 +253,7 @@ const LoginPage: React.FC = () => {
                 }}
                 onBlur={() => handleBlur('email')}
                 error={touched.email ? errors.email : undefined}
-                placeholder="admin@nexuscrm.com"
+                placeholder="admin@contact360.com"
                 disabled={isLoggingIn}
                 leftIcon={<MailIcon className="auth-form-icon" />}
                 variant="glass-heavy"

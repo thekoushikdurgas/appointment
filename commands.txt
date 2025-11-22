@@ -1,109 +1,317 @@
-# NexusCRM - Development Commands
+# ========================================
+# FRONTEND - NEXT.JS COMMANDS REFERENCE
+# ========================================
+#
+# Contact360 Frontend - Next.js 15, React 19, TypeScript
+# For root-level commands, see: ../commands.txt
+#
+# ========================================
+# QUICK START
+# ========================================
+#
+# 1. Install dependencies:
+#    npm install
+#
+# 2. Environment setup:
+#    cp .env.example .env.local
+#    # Edit .env.local with your configuration
+#
+# 3. Start development server:
+#    npm run dev
+#
+# 4. Open browser:
+#    http://localhost:3000
+#
+# ========================================
+# ENVIRONMENT SETUP
+# ========================================
+#
+# Install dependencies:
+npm install
+npm install <package>              # Install a package
+npm install -D <package>          # Install as dev dependency
 
-## Setup & Installation
+# Update dependencies:
+npm update
+npm outdated                      # Check for outdated packages
 
-npm install                    # Install all dependencies
-npm install <package>         # Install a package
-npm install -D <package>       # Install as dev dependency
+# Clean and reinstall:
+npm run clean:all
+npm run clean:install
 
-## Development
+# ========================================
+# DEVELOPMENT
+# ========================================
+#
+# Start development server:
+npm run dev
+# Server runs at: http://localhost:3000
 
-npm run dev         
+# Start with custom port:
+PORT=3001 npm run dev
 
+# Start with custom host:
+HOSTNAME=0.0.0.0 npm run dev
 
+# ========================================
+# BUILD & PRODUCTION
+# ========================================
+#
+# Build for production:
+npm run build
 
-# Start development server
-npm run build                  # Build for production
-npm run start                  # Start production server
-npm run lint                   # Run ESLint
-npm run lint:fix               # Run ESLint and auto-fix issues
+# Start production server:
+npm run start
 
-## Type Checking
+# Build and start:
+npm run build && npm run start
 
-npm run type-check             # Check TypeScript types without emitting files
-npm run type-check:watch       # Watch mode for type checking
-npx tsc --noEmit               # Alternative: direct TypeScript check
-npx tsc --watch                # Alternative: direct TypeScript watch
+# Analyze bundle size:
+npm run build -- --analyze
 
-## Code Quality
+# ========================================
+# CODE QUALITY
+# ========================================
+#
+# Run ESLint:
+npm run lint
 
-npm run lint                   # Run ESLint
-npm run lint:fix               # Run ESLint and auto-fix issues
+# Fix ESLint issues:
+npm run lint:fix
 
-## Clean & Maintenance
+# Type checking:
+npm run type-check
+npm run type-check:watch          # Watch mode
 
-npm run clean                  # Remove Next.js build output (.next folder)
-npm run clean:all              # Remove .next and node_modules folders
-npm run clean:install          # Clean everything and reinstall dependencies
+# Direct TypeScript check:
+npx tsc --noEmit
+npx tsc --watch --noEmit
 
-# Windows-compatible alternatives (if rimraf not available):
-# rmdir /s /q .next            # Remove .next folder (Windows)
-# rmdir /s /q node_modules     # Remove node_modules folder (Windows)
+# ========================================
+# CLEAN & MAINTENANCE
+# ========================================
+#
+# Remove Next.js build output:
+npm run clean                    # Removes .next folder
+
+# Remove .next and node_modules:
+npm run clean:all
+
+# Clean everything and reinstall:
+npm run clean:install
+
+# Windows alternatives:
+rmdir /s /q .next                # Remove .next folder
+rmdir /s /q node_modules         # Remove node_modules folder
 
 # Unix/Linux/Mac alternatives:
-# rm -rf .next                 # Remove .next folder
-# rm -rf node_modules          # Remove node_modules folder
+rm -rf .next                     # Remove .next folder
+rm -rf node_modules              # Remove node_modules folder
 
-## Environment Variables
+# ========================================
+# TESTING
+# ========================================
+#
+# Run tests (if configured):
+npm test
+npm run test:watch
 
-# Create .env.local file in the root directory with:
+# Run tests with coverage:
+npm run test:coverage
+
+# ========================================
+# PACKAGE MANAGEMENT
+# ========================================
+#
+# Check for outdated packages:
+npm outdated
+
+# Update packages:
+npm update
+
+# Security audit:
+npm audit
+npm audit fix                    # Fix security vulnerabilities
+npm audit fix --force            # Force fix (use with caution)
+
+# ========================================
+# TYPE CHECKING
+# ========================================
+#
+# Check TypeScript types:
+npm run type-check
+npx tsc --noEmit
+
+# Watch mode for type checking:
+npm run type-check:watch
+npx tsc --watch --noEmit
+
+# ========================================
+# UTILITY COMMANDS
+# ========================================
+#
+# Display Next.js environment information:
+npx next-info
+
+# Create a new Next.js app (reference):
+npx create-next-app@latest
+
+# ========================================
+# ENVIRONMENT VARIABLES
+# ========================================
+#
+# Create .env.local file with:
 # NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
 # API_KEY=your_gemini_api_key
 # NEXT_PUBLIC_API_BASE_URL=http://54.87.173.234:8000
+#
+# Note: Variables prefixed with NEXT_PUBLIC_ are exposed to the browser
+#
+# Load environment variables:
+# Next.js automatically loads .env.local, .env.development, .env.production
 
-# Note: This project uses an external REST API (Appointment360) for backend services
+# ========================================
+# CODE GENERATION
+# ========================================
+#
+# Create new page:
+# Create app/[route]/page.tsx
 
-## Git Commands
+# Create new component:
+# Create components/[ComponentName].tsx
 
-git status                     # Check repository status
-git add .                      # Stage all changes
-git commit -m "message"        # Commit changes with message
-git push                        # Push to remote repository
-git pull                        # Pull latest changes
-git branch                      # List branches
-git checkout -b feature/name    # Create and switch to new branch
-git init                        # Initialize git repository
-git stash                       # Stash current changes
-git remote add origin <url>     # Add remote repository
-git branch -M main              # Rename branch to main
-git push -u origin main         # Push and set upstream
+# Create new hook:
+# Create hooks/use[HookName].ts
 
-## Testing & Debugging
+# Create new service:
+# Create services/[serviceName].ts
 
-npm run dev                    # Start development server
-# Open browser DevTools (F12) for debugging
-# Use React DevTools extension for component inspection
+# Create new utility:
+# Create utils/[utilityName].ts
 
-## Build & Deploy
+# ========================================
+# DEPLOYMENT
+# ========================================
+#
+# Build for production:
+npm run build
 
-npm run build                  # Build for production
-npm run start                  # Start production server
-# Check .next/ folder for build output
+# Start production server:
+npm run start
 
-## Utility Commands
+# Deploy to Vercel:
+vercel
+vercel --prod
 
-npx next-info                  # Display Next.js environment information
-npx create-next-app@latest    # Create a new Next.js app
+# Deploy to AWS EC2:
+# See: deploy/DEPLOYMENT.md
 
-## Package Management
+# ========================================
+# DEBUGGING
+# ========================================
+#
+# Start with debugging:
+NODE_OPTIONS='--inspect' npm run dev
 
-npm outdated                   # Check for outdated packages
-npm update                     # Update packages
-npm audit                      # Run security audit
-npm audit fix                  # Fix security vulnerabilities
+# Check for console errors:
+# Open browser DevTools (F12)
 
-## Code Generation (Next.js)
+# React DevTools:
+# Install React DevTools browser extension
 
-# Create new page: Create app/[route]/page.tsx
-# Create new component: Create components/[ComponentName].tsx
-# Create new hook: Create hooks/use[HookName].ts
-# Create new service: Create services/[serviceName].ts
+# Network inspection:
+# Use browser DevTools Network tab
 
-git init
-git add .
-git commit -m "05-11-2025"
-git remote add origin https://github.com/thekoushikdurgas/appointmentbackend.git
-git branch -M main
-git push -u origin main -f
-
-
+# ========================================
+# QUICK REFERENCE
+# ========================================
+#
+# Application URLs:
+# - Development: http://localhost:3000
+# - Production: Configure in deployment
+#
+# Project Structure:
+# - app/               # Next.js app router pages
+#   - (auth)/          # Authentication routes
+#   - (dashboard)/     # Protected dashboard routes
+# - components/        # Reusable React components
+#   - layout/         # Layout components (Sidebar)
+#   - ui/             # UI components
+#   - icons/          # Icon components
+# - contexts/          # React contexts (Auth, Theme)
+# - hooks/            # Custom React hooks
+# - services/         # API service functions
+# - types/            # TypeScript type definitions
+# - utils/            # Utility functions
+# - styles/           # CSS files
+#
+# Common Workflow:
+# 1. Install dependencies: npm install
+# 2. Configure environment: cp .env.example .env.local
+# 3. Start development: npm run dev
+# 4. Run linting: npm run lint
+# 5. Type check: npm run type-check
+# 6. Build: npm run build
+#
+# ========================================
+# TROUBLESHOOTING
+# ========================================
+#
+# Development server won't start:
+# - Check Node.js version: node --version (should be 18+)
+# - Delete node_modules and reinstall: npm run clean:install
+# - Check .env.local file exists
+# - Check for port conflicts: lsof -i :3000 (Mac/Linux) or netstat -ano | findstr :3000 (Windows)
+#
+# Build fails:
+# - Check for TypeScript errors: npm run type-check
+# - Check for linting errors: npm run lint
+# - Clear .next folder: npm run clean
+# - Check environment variables are set correctly
+#
+# Type errors:
+# - Run type check: npm run type-check
+# - Check tsconfig.json configuration
+# - Ensure all dependencies are installed
+#
+# Module not found:
+# - Reinstall dependencies: npm install
+# - Check import paths are correct
+# - Verify package is in package.json
+#
+# Styling issues:
+# - Check styles are imported in layout or page
+# - Verify CSS classes match component usage
+# - Check for conflicting styles
+#
+# API connection issues:
+# - Verify NEXT_PUBLIC_API_BASE_URL in .env.local
+# - Check backend server is running
+# - Verify CORS settings on backend
+# - Check browser console for errors
+#
+# ========================================
+# ENVIRONMENT VARIABLES
+# ========================================
+#
+# Required variables (see .env.local):
+# - NEXT_PUBLIC_API_BASE_URL: Backend API base URL
+# - NEXT_PUBLIC_GEMINI_API_KEY: Google Gemini API key
+# - NEXT_PUBLIC_CONTACTS_WRITE_KEY: Contacts write operations key
+# - NEXT_PUBLIC_COMPANIES_WRITE_KEY: Companies write operations key
+#
+# Note: Variables prefixed with NEXT_PUBLIC_ are exposed to the browser
+# Do not put sensitive keys in NEXT_PUBLIC_ variables
+#
+# ========================================
+# NOTES
+# ========================================
+#
+# - Always run npm install after pulling changes
+# - Use npm run lint before committing
+# - Run npm run type-check to catch type errors
+# - Use npm run clean if build issues occur
+# - Check browser console for runtime errors
+# - Use React DevTools for component debugging
+# - This project uses Next.js App Router (not Pages Router)
+# - Most pages are client components (use 'use client' directive)

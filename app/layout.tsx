@@ -7,8 +7,8 @@ import { ThemeProvider } from '@contexts/ThemeContext';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'NexusCRM - Contact Management System',
-  description: 'Streamline your contact management, track interactions, and grow your business with NexusCRM.',
+  title: 'Contact360 - Contact Management System',
+  description: 'Streamline your contact management, track interactions, and grow your business with Contact360.',
 };
 
 export default function RootLayout({

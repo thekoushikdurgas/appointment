@@ -71,7 +71,6 @@ export const authenticatedFetch = async (
   // Convert fetch options to Axios config
   const axiosConfig: any = {
     method: fetchOptions.method || 'GET',
-    useQueue: true,
     useCache: true,
     headers: {},
   };
@@ -111,7 +110,6 @@ export const authenticatedFetch = async (
   console.log('[AUTH] Making axiosAuthenticatedRequest with config:', {
     url,
     method: axiosConfig.method,
-    useQueue: axiosConfig.useQueue,
     useCache: axiosConfig.useCache,
   });
   

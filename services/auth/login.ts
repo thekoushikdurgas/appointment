@@ -34,7 +34,6 @@ export const login = async (
           "Content-Type": "application/json",
         },
         data: { email, password },
-        useQueue: true,
         useCache: false,
       },
       "Login failed"
@@ -114,7 +113,6 @@ export const register = async (
           "Content-Type": "application/json",
         },
         data: { name, email, password },
-        useQueue: true,
         useCache: false,
       },
       "Registration failed"

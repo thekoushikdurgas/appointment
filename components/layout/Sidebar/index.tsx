@@ -316,7 +316,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <LogoIcon className="w-6 h-6 sm:w-8 sm:h-8 text-primary flex-shrink-0"/>
           </div>
           <h1 className={`text-xl sm:text-2xl font-bold text-foreground whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'md:opacity-0 md:w-0 md:invisible' : 'opacity-100'}`}>
-            NexusCRM
+            Contact360
           </h1>
         </div> */}
 

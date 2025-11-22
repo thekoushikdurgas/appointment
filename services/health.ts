@@ -52,7 +52,6 @@ export const checkHealth = async (): Promise<HealthCheckResult> => {
     // Public endpoint - no authentication required
     const response = await axiosRequest(`${API_BASE_URL}/api/v1/health/`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
 
@@ -122,7 +121,6 @@ export const checkApplicationHealth = async (): Promise<HealthCheckResult> => {
     // Public endpoint - no authentication required
     const response = await axiosRequest(`${baseHost}/health`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
 

@@ -124,7 +124,6 @@ export const exportByLinkedInUrls = async (
       {
         method: 'POST',
         headers,
-        useQueue: true,
         useCache: false,
         data: requestBody,
       }

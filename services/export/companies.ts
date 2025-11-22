@@ -103,7 +103,6 @@ export const createCompanyExport = async (
         method: 'POST',
         headers,
         data: requestBody,
-        useQueue: true,
         useCache: false,
         timeout: 3600000, // 60 second timeout for export creation
         priority: 7, // High priority for export creation

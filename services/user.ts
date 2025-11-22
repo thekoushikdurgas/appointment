@@ -150,7 +150,6 @@ export const getUserProfile = async (sessionUser?: any): Promise<User | null> =>
     console.log('[USER] Making axiosAuthenticatedRequest to fetch profile');
     const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/users/profile/`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
 
@@ -213,7 +212,6 @@ export const updateUserProfile = async (profileData: Partial<User>): Promise<Ser
         'Content-Type': 'application/json',
       },
       data: apiData,
-      useQueue: true,
       useCache: false,
     });
 
@@ -298,7 +296,6 @@ export const uploadUserAvatar = async (file: File): Promise<ServiceResponse<{ us
       headers: {
         // Don't set Content-Type for FormData, let Axios handle it
       },
-      useQueue: true,
       useCache: false,
     });
 
@@ -353,7 +350,6 @@ export const promoteToAdmin = async (): Promise<ServiceResponse<User>> => {
       headers: {
         'Accept': 'application/json',
       },
-      useQueue: true,
       useCache: false,
     });
 

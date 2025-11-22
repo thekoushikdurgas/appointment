@@ -139,7 +139,6 @@ export const getChatHistory = async (params?: {
     const url = `${API_BASE_URL}/api/v2/ai-chats/${queryString ? `?${queryString}` : ''}`;
     const response = await axiosAuthenticatedRequest(url, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
 
@@ -224,7 +223,6 @@ export const getChat = async (id: string): Promise<ServiceResponse<ChatData | nu
 
     const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'GET',
-      useQueue: true,
       useCache: true,
     });
 
@@ -330,7 +328,6 @@ export const createChat = async (
         'Content-Type': 'application/json',
       },
       data: requestBody,
-      useQueue: true,
       useCache: false,
     });
 
@@ -428,7 +425,6 @@ export const updateChat = async (
         'Content-Type': 'application/json',
       },
       data: updateData,
-      useQueue: true,
       useCache: false,
     });
 
@@ -523,7 +519,6 @@ export const deleteChat = async (id: string): Promise<ServiceResponse<boolean>> 
 
     const response = await axiosAuthenticatedRequest(`${API_BASE_URL}/api/v2/ai-chats/${id}/`, {
       method: 'DELETE',
-      useQueue: true,
       useCache: false,
     });
 

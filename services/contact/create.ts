@@ -121,7 +121,6 @@ export const createContact = async (
       method: 'POST',
       headers,
       data: requestBody,
-      useQueue: true,
       useCache: false,
     });
 

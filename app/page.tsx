@@ -28,7 +28,7 @@ const WelcomeHeader: React.FC = () => {
           <div className={`landing-header-logo-bg ${scrolled ? 'landing-header-logo-bg--scrolled' : ''}`}>
             <LogoIcon className="landing-header-logo-icon" />
           </div>
-          <span className="landing-header-logo-text">NexusCRM</span>
+          <span className="landing-header-logo-text">Contact360</span>
         </div>
         <div className="landing-header-actions">
           <Button
@@ -140,10 +140,10 @@ const WelcomePage: React.FC = () => {
             </div>
             
             <h1 className="landing-title">
-              Your <span className="landing-title-highlight" data-text="Nexus">Nexus</span> for Client Relationships
+              Your <span className="landing-title-highlight" data-text="Contact">Contact</span> Management Solution
             </h1>
             <p className="landing-description" style={{ '--animation-delay': '0.2s' } as React.CSSProperties}>
-              Streamline your contact management, track interactions, and grow your business with NexusCRM. 
+              Streamline your contact management, track interactions, and grow your business with Contact360. 
               All your contacts, in one organized place with powerful AI-driven insights.
             </p>
             <div className="landing-cta" style={{ '--animation-delay': '0.4s' } as React.CSSProperties}>
@@ -261,7 +261,7 @@ const WelcomePage: React.FC = () => {
               Ready to Transform Your Business?
             </h2>
             <p className="landing-cta-description" style={{ '--animation-delay': '0.2s' } as React.CSSProperties}>
-              Join thousands of businesses already using NexusCRM to manage their customer relationships effectively.
+              Join thousands of businesses already using Contact360 to manage their customer relationships effectively.
             </p>
             <div className="landing-cta-actions" style={{ '--animation-delay': '0.3s' } as React.CSSProperties}>
               <Button
@@ -291,7 +291,7 @@ const WelcomePage: React.FC = () => {
       
       <footer className="landing-footer">
         <div className="landing-footer-content">
-          <p className="landing-footer-text">&copy; {currentYear} NexusCRM. All rights reserved.</p>
+          <p className="landing-footer-text">&copy; {currentYear} Contact360. All rights reserved.</p>
           <nav className="landing-footer-nav">
             <a href="#" className="landing-footer-link">Terms of Service</a>
             <a href="#" className="landing-footer-link">Privacy</a>

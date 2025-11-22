@@ -24,7 +24,6 @@ export const refreshTokenRequest = async (
           "Content-Type": "application/json",
         },
         data: { refresh_token: refreshToken },
-        useQueue: false, // Don't queue refresh token requests
         useCache: false,
       },
       "Token refresh failed"

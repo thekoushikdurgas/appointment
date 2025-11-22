@@ -92,7 +92,6 @@ export const listExports = async (
       {
         method: 'GET',
         headers,
-        useQueue: true,
         useCache: false,
         timeout: 336000000, // 30 second timeout for status check
         priority: 6, // Higher priority for status checks
@@ -197,7 +196,6 @@ export const deleteAllExports = async (
       {
         method: 'DELETE',
         headers,
-        useQueue: true,
         useCache: false,
       }
     );
@@ -315,7 +313,6 @@ export const getExportStatus = async (
       {
         method: 'GET',
         headers,
-        useQueue: true,
         useCache: false,
         timeout: 30000, // 30 second timeout for status check
         priority: 6, // Higher priority for status checks
@@ -512,7 +509,6 @@ export const cancelExport = async (
       {
         method: 'DELETE',
         headers,
-        useQueue: true,
         useCache: false,
         timeout: 30000, // 30 second timeout
         priority: 6, // Higher priority for cancellation

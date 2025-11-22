@@ -79,7 +79,6 @@ export const fetchFieldValues = async (
       `${API_BASE_URL}/api/v1/companies/${field}/?${query.toString()}`,
       {
         method: 'GET',
-        useQueue: true,
         useCache: true,
         headers,
       }

@@ -164,7 +164,6 @@ export const searchContactsFromApolloUrl = async (
       method: 'POST',
       headers,
       data: requestBody,
-      useQueue: true,
       useCache: false,
     });
 
@@ -364,7 +363,6 @@ export const countContactsFromApolloUrl = async (
       method: 'POST',
       headers,
       data: requestBody,
-      useQueue: true,
       useCache: false,
     });
 
@@ -544,7 +542,6 @@ export const getContactUuidsFromApolloUrl = async (
       method: 'POST',
       headers,
       data: requestBody,
-      useQueue: true,
       useCache: false,
     });
 
@@ -749,7 +746,6 @@ export const getContactUuidsFromApolloUrlPaginated = async (
         method: 'POST',
         headers,
         data: requestBody,
-        useQueue: true,
         useCache: false,
         timeout: 336000000, // 30 second timeout for Apollo UUID fetch
         priority: 5, // Higher priority for export-related requests

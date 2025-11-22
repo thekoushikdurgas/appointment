@@ -129,7 +129,6 @@ export const analyzeApolloUrl = async (
         method: 'POST',
         headers,
         data: requestBody,
-        useQueue: true,
         useCache: false,
       }
     );

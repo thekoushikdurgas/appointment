@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###############################################################################
-# EC2 Initial Server Setup Script for NexusCRM
+# EC2 Initial Server Setup Script for Contact360
 # 
 # This script performs the initial setup of an Ubuntu 22.04 EC2 instance
 # for deploying a Next.js application with Nginx and PM2.
@@ -19,7 +19,7 @@
 set -e  # Exit on any error
 
 echo "=========================================="
-echo "NexusCRM EC2 Server Setup"
+echo "Contact360 EC2 Server Setup"
 echo "=========================================="
 echo ""
 
@@ -84,7 +84,7 @@ pm2 startup systemd -u ubuntu --hp /home/ubuntu
 print_warning "Please run the command shown above to enable PM2 startup."
 
 # Create application directory
-APP_DIR="/home/ubuntu/nexuscrm"
+APP_DIR="/home/ubuntu/contact360"
 if [ ! -d "$APP_DIR" ]; then
     print_status "Creating application directory: $APP_DIR"
     mkdir -p "$APP_DIR"
@@ -107,12 +107,12 @@ print_status ""
 print_status "Next steps:"
 print_status "1. Clone your repository:"
 print_status "   cd /home/ubuntu"
-print_status "   git clone https://github.com/thekoushikdurgas/appointment.git nexuscrm"
+print_status "   git clone https://github.com/thekoushikdurgas/appointment.git contact360"
 print_status ""
 print_status "2. Create .env.production file with your environment variables"
 print_status ""
 print_status "3. Run the deployment script:"
-print_status "   cd /home/ubuntu/nexuscrm"
+print_status "   cd /home/ubuntu/contact360"
 print_status "   chmod +x deploy/ec2-deploy.sh"
 print_status "   ./deploy/ec2-deploy.sh"
 print_status ""

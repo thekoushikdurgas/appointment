@@ -28,12 +28,10 @@ export interface GroupExecutionResult<T = any> {
  * Execute requests sequentially (one after another)
  * 
  * @param requests - Array of request functions to execute
- * @param useQueue - Whether to use the global request queue (default: true)
  * @returns Promise resolving to aggregated results
  */
 export const executeSequentially = async <T = any>(
-  requests: Array<() => Promise<T>>,
-  useQueue: boolean = true
+  requests: Array<() => Promise<T>>
 ): Promise<GroupExecutionResult<T>> => {
   const results: GroupRequestResult<T>[] = [];
   const errors: Error[] = [];
@@ -42,16 +40,8 @@ export const executeSequentially = async <T = any>(
     const requestFn = requests[i];
     
     try {
-      let result: T;
-      
-      if (useQueue) {
-        // Use queue for sequential execution
-        const { enqueueRequest } = await import('./requestQueue');
-        result = await enqueueRequest(requestFn);
-      } else {
-        // Execute directly (still sequential, but bypasses queue)
-        result = await requestFn();
-      }
+      // Execute directly (sequential execution)
+      const result = await requestFn();
 
       results.push({
         success: true,
@@ -81,8 +71,7 @@ export const executeSequentially = async <T = any>(
 /**
  * Execute requests concurrently (in parallel)
  * 
- * Note: This bypasses the global request queue and executes all requests in parallel.
- * Use with caution as it may overwhelm the server or cause rate limiting.
+ * Note: All requests execute in parallel. Use with caution as it may overwhelm the server or cause rate limiting.
  * 
  * @param requests - Array of request functions to execute
  * @returns Promise resolving to aggregated results
@@ -126,13 +115,11 @@ export const executeConcurrently = async <T = any>(
  * 
  * @param requests - Array of request functions to execute
  * @param concurrency - Maximum number of concurrent requests (default: 3)
- * @param useQueue - Whether to use the global request queue for each batch (default: true)
  * @returns Promise resolving to aggregated results
  */
 export const executeWithConcurrencyLimit = async <T = any>(
   requests: Array<() => Promise<T>>,
-  concurrency: number = 3,
-  useQueue: boolean = true
+  concurrency: number = 3
 ): Promise<GroupExecutionResult<T>> => {
   const results: GroupRequestResult<T>[] = [];
   const errors: Error[] = [];
@@ -141,10 +128,8 @@ export const executeWithConcurrencyLimit = async <T = any>(
   for (let i = 0; i < requests.length; i += concurrency) {
     const batch = requests.slice(i, i + concurrency);
     
-    // Execute batch sequentially if using queue, otherwise concurrently
-    const batchResults = useQueue
-      ? await executeSequentially(batch, true)
-      : await executeConcurrently(batch);
+    // Execute batch concurrently
+    const batchResults = await executeConcurrently(batch);
 
     results.push(...batchResults.results);
     errors.push(...batchResults.errors);
